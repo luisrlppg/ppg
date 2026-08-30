@@ -102,7 +102,17 @@ async function main() {
     create: { id: 1, state: { lastLowStockIds: [], lastCheck: null } },
   });
 
-  console.log("Seed listo: auth + catálogos + ubicaciones.");
+  // --- Clientes (E2) ---
+  const partners = [
+    { nombre: "Juguería El Tesoro", telefono: "55 1234 5678", direccion: "Av. Hidalgo 12, Cd. de México", email: "compras@eltesoro.mx" },
+    { nombre: "Dulcería La Michoacana", telefono: "55 8765 4321", direccion: "Calle Allende 34, Morelia", email: "pedidos@lamichoacana.mx" },
+  ];
+  for (const p of partners) {
+    const exists = await prisma.partner.findFirst({ where: { nombre: p.nombre } });
+    if (!exists) await prisma.partner.create({ data: p });
+  }
+
+  console.log("Seed listo: auth + catálogos + ubicaciones + clientes.");
 }
 
 main()

@@ -287,7 +287,7 @@ export class ProductosService {
       where,
       take: 30,
       orderBy: { nombre: "asc" },
-      include: { product: { select: { id: true, nombre: true, skuBase: true, uom: true } }, stockLevels: true },
+      include: { product: { select: { id: true, nombre: true, skuBase: true, uom: true, basePrice: true } }, stockLevels: true },
     });
     return rows.map((r) => ({
       id: r.id,
@@ -298,6 +298,7 @@ export class ProductosService {
       uom: r.product.uom,
       activo: r.activo,
       stockActual: ProductosService.stockTotals(r.stockLevels).total,
+      precio: r.price === null ? dec(r.product.basePrice) : dec(r.price),
     }));
   }
 

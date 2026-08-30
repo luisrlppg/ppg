@@ -130,3 +130,106 @@ export interface EventoNotificacion {
   ok: boolean;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------- E2: ventas
+
+export interface Partner {
+  id: number;
+  nombre: string;
+  telefono: string | null;
+  direccion: string | null;
+  email: string | null;
+  activo: boolean;
+  ordenes?: number;
+}
+
+export interface VarianteBuscada {
+  id: number;
+  sku: string;
+  nombre: string;
+  productId: number;
+  producto: string;
+  uom: string;
+  activo: boolean;
+  stockActual: number;
+  precio: number;
+}
+
+export interface VentaLinea {
+  id: number;
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  qtyDelivered: number;
+  estadoEntrega: "pendiente" | "parcial" | "entregado";
+}
+
+export interface ResumenItem {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  cantidad: number;
+  tipo?: "fabricacion" | "ensamble";
+}
+
+export interface ResumenNeteo {
+  fabricar: ResumenItem[];
+  comprar: ResumenItem[];
+}
+
+export interface Venta {
+  id: number;
+  numero: string;
+  fecha: string;
+  fechaEntregaDeseada: string | null;
+  estado: "abierta" | "despachada" | "cancelada";
+  origen: "interno" | "web";
+  confirmadaAt: string | null;
+  notas: string | null;
+  partnerId: number | null;
+  partner: (Pick<Partner, "id" | "nombre" | "telefono" | "direccion" | "email">) | null;
+  resumen: ResumenNeteo | null;
+  lines: VentaLinea[];
+  ordenesFabricacion: OrdenFabricacion[];
+}
+
+export interface OrdenFabricacion {
+  id: number;
+  numero: string;
+  sku: string;
+  nombre: string;
+  producto: string;
+  cantidad: number;
+  uom?: string;
+  tipo: "fabricacion" | "ensamble";
+  estado: "borrador" | "confirmada" | "en_progreso" | "hecha" | "cancelada";
+  fecha?: string;
+  notas?: string | null;
+  generatedFrom?: string | null;
+  componenteVariantes?: number;
+  lines: {
+    id: number;
+    variantId: number;
+    sku: string;
+    nombre: string;
+    producto: string;
+    uom: string;
+    cantidadRequerida: number;
+    cantidadReservada: number;
+  }[];
+}
+
+export interface FaltanteCompra {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  cantidad: number;
+  pedidos: string[];
+}

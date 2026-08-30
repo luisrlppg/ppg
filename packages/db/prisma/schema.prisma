@@ -1,6 +1,6 @@
 // PPG ERP — Base de datos central.
 // v0 (E0): auth. v1 (E1): catálogos, producto/variantes, precios, ubicaciones, stock.
-// v2 (E2/E3): ventas y fabricación; producción. -- se agregan en sus entregas.
+// v2 (E2): clientes, ventas y fabricación (§4). v3 (E3): producción/reportes.
 
 generator client {
   provider = "prisma-client-js"
@@ -121,11 +121,14 @@ model ProductVariant {
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
-  variantAttributes VariantAttribute[]
-  packagings       VariantPackaging[]
-  stockLevels      StockLevel[]
-  moves            StockMove[]
-  priceChanges     PriceChange[]
+  variantAttributes   VariantAttribute[]
+  packagings          VariantPackaging[]
+  stockLevels         StockLevel[]
+  moves               StockMove[]
+  priceChanges        PriceChange[]
+  salesLines          SalesOrderLine[]
+  manufacturingOrders ManufacturingOrder[]
+  moLines             ManufacturingOrderLine[]
 
   @@index([productId])
 }
@@ -286,6 +289,132 @@ model StockMove {
   @@index([variantId])
   @@index([locationId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// E2 — Clientes, Ventas y Fabricación
+// ---------------------------------------------------------------------------
+
+model Partner {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  telefono  String?
+  direccion String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders SalesOrder[]
+
+  @@index([nombre])
+}
+
+enum OrigenPedido {
+  interno
+  web
+}
+
+enum EstadoVenta {
+  abierta
+  despachada
+  cancelada
+}
+
+enum EstadoEntrega {
+  pendiente
+  parcial
+  entregado
+}
+
+model SalesOrder {
+  id                  Int            @id @default(autoincrement())
+  numero              String         @unique
+  partnerId           Int?
+  partner             Partner?       @relation(fields: [partnerId], references: [id])
+  fecha               DateTime       @default(now())
+  fechaEntregaDeseada DateTime?
+  estado              EstadoVenta    @default(abierta)
+  origen              OrigenPedido   @default(interno)
+  paymentMethod       String?        // punto de extensión de pago (E5 / tienda)
+  nombreEnvio         String?        // datos de invitado cuando origen = web (§7.7)
+  telefonoEnvio       String?
+  emailEnvio          String?
+  notas               String?
+  confirmadaAt        DateTime?      // cuando se aplicó el neteo (§7.5)
+  resumen             Json?          // resultado del neteo: { fabricar: [...], comprar: [...] }
+  userId              Int?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  lines SalesOrderLine[]
+
+  @@index([partnerId])
+  @@index([estado])
+  @@index([fecha])
+}
+
+model SalesOrderLine {
+  id             Int           @id @default(autoincrement())
+  orderId        Int
+  order          SalesOrder    @relation(fields: [orderId], references: [id])
+  variantId      Int
+  variant        ProductVariant @relation(fields: [variantId], references: [id])
+  cantidad       Decimal
+  precioUnitario Decimal
+  qtyDelivered   Decimal       @default(0)
+  estadoEntrega  EstadoEntrega @default(pendiente)
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
+enum TipoOF {
+  fabricacion // 1 componente exacto (§ decisión): se produce de una sola materia/componente
+  ensamble    // 2+ componentes exactos: se arma a partir de varios
+}
+
+enum EstadoOF {
+  borrador
+  confirmada
+  en_progreso
+  hecha
+  cancelada
+}
+
+model ManufacturingOrder {
+  id            Int          @id @default(autoincrement())
+  numero        String       @unique
+  variantId     Int
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  cantidad      Decimal
+  tipo          TipoOF
+  estado        EstadoOF     @default(confirmada)
+  fecha         DateTime     @default(now())
+  notas         String?
+  generatedFrom String?      // trazabilidad: número del pedido que la originó
+  finalizadoAt  DateTime?
+  userId        Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  lines ManufacturingOrderLine[]
+
+  @@index([variantId])
+  @@index([estado])
+}
+
+model ManufacturingOrderLine {
+  id                 Int                 @id @default(autoincrement())
+  orderId            Int
+  order              ManufacturingOrder  @relation(fields: [orderId], references: [id])
+  componentVariantId Int
+  componentVariant   ProductVariant      @relation(fields: [componentVariantId], references: [id])
+  cantidadRequerida  Decimal
+  cantidadReservada  Decimal             @default(0)
+
+  @@index([orderId])
+  @@index([componentVariantId])
 }
 
 // ---------------------------------------------------------------------------

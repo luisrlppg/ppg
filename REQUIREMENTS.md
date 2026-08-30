@@ -374,7 +374,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 |---|---|---|
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
 | **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), registrar ensamble | ✅ entregado |
-| **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática | ⏳ pendiente |
+| **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática | ✅ entregado |
 | **Tienda (futura)** | Storefront público: `/api/public` + `apps/storefront` (catálogo de publicados, pedido invitado, misma tubería E2, pago futuro) — entrega propia después de E2 | ⏳ después de E2 |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV | ⏳ pendiente |
 | **E4** | Signage: pantallas TV leyendo de nuestras ventas/fabricación/stock (ya no de Odoo) | ⏳ pendiente |

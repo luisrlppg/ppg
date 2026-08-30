@@ -7,6 +7,10 @@ import { CatalogosModule } from "./catalogos/catalogos.module";
 import { ProductosModule } from "./productos/productos.module";
 import { InventarioModule } from "./inventario/inventario.module";
 import { MonitorModule } from "./monitor/monitor.module";
+import { ClientesModule } from "./clientes/clientes.module";
+import { VentasModule } from "./ventas/ventas.module";
+import { FabricacionModule } from "./fabricacion/fabricacion.module";
+import { PublicModule } from "./public/public.module";
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { MonitorModule } from "./monitor/monitor.module";
     ProductosModule,
     InventarioModule,
     MonitorModule,
+    ClientesModule,
+    VentasModule,
+    FabricacionModule,
+    PublicModule,
   ],
 })
 export class AppModule {}

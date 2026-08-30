@@ -8,8 +8,11 @@ import type { PublicUser } from "@ppg/shared";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
+  { href: "/ventas", label: "Ventas" },
+  { href: "/fabricacion", label: "Fabricación" },
   { href: "/productos", label: "Productos" },
   { href: "/inventario", label: "Inventario" },
+  { href: "/clientes", label: "Clientes" },
   { href: "/monitor", label: "Monitor" },
   { href: "/catalogos", label: "Catálogos" },
 ];
