@@ -1,0 +1,14 @@
+:80 {
+	encode gzip
+	request_body {
+		max_size 16MB
+	}
+
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

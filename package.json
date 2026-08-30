@@ -1,0 +1,20 @@
+{
+  "name": "ppg-erp",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma migrate dev",
+    "db:seed": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma db seed",
+    "db:studio": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma studio",
+    "build": "pnpm -r build",
+    "dev": "pnpm --parallel --filter @ppg/api --filter @ppg/web run dev",
+    "dev:api": "pnpm --filter @ppg/api run dev",
+    "dev:web": "pnpm --filter @ppg/web run dev"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.2",
+    "typescript": "^5.7.2"
+  }
+}

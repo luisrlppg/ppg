@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+.env
+.env.local
+*.log
+data/
+coverage/
+.dev/
+.DS_Store
+uploads/

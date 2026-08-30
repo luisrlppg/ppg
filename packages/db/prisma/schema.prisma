@@ -1,0 +1,33 @@
+// PPG ERP — Base de datos central (schema v0: E0/auth).
+// El resto del modelo (§4 REQUIREMENTS.md) llega en E1.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Roles del sistema (REQUIREMENTS §2, §10)
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+/// Usuarios con password hash (bcrypt). Sesión JWT httpOnly por cookie.
+model User {
+  id               Int      @id @default(autoincrement())
+  username         String   @unique
+  passwordHash     String
+  nombre           String
+  roleId           Int
+  role             Role     @relation(fields: [roleId], references: [id])
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([roleId])
+}

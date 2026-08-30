@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ppg
+      POSTGRES_PASSWORD: ppg
+      POSTGRES_DB: ppg
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ppg -d ppg"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Perfil "full": despliegue completo (api + web + caddy).
+  # Dev local: basta con `docker compose up -d postgres`.
+  api:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql://ppg:ppg@postgres:5432/ppg?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      COOKIE_NAME: ppg_session
+      API_PORT: 3001
+    profiles: ["full"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/web.Dockerfile
+    profiles: ["full"]
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+    profiles: ["full"]
+    depends_on:
+      - api
+      - web
+
+volumes:
+  pgdata:
