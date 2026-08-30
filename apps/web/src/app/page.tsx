@@ -1,72 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
-import {
-  HOME_BY_ROLE,
-  type MeResponse,
-  type PublicUser,
-} from "@ppg/shared";
+import AppShell from "@/components/app-shell";
+import { HOME_BY_ROLE } from "@ppg/shared";
+
+const MODULES = [
+  { href: "/productos", title: "Productos y variantes", desc: "Catálogo, grid de combos, precios y listas de materiales (BOM)." },
+  { href: "/inventario", title: "Inventario", desc: "Existencia por ubicación, ajustes, transferencias y registro de ensambles." },
+  { href: "/monitor", title: "Monitor de stock", desc: "Bajo stock, alertas por Telegram / WhatsApp / email y eventos." },
+  { href: "/catalogos", title: "Catálogos", desc: "Categorías, empaques y atributos (ejes de los combos)." },
+];
 
 export default function Home() {
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await api<MeResponse>("/auth/me");
-        setUser(data.user);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  if (loading) {
-    return (
-      <main className="screen card center-card">
-        <p className="muted">Cargando…</p>
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="screen card center-card">
-        <h1>PPG</h1>
-        <p className="muted">Inicia sesión para comenzar.</p>
-        <Link className="btn primary block" href="/login" style={{ marginTop: 16 }}>
-          Iniciar sesión
-        </Link>
-      </main>
-    );
-  }
-
   return (
-    <>
-      <header className="nav">
-        <span className="brand">PPG</span>
-        <span className="user">
-          <span>Hola, {user.nombre}</span>
-          <button className="btn ghost" type="button" onClick={() => api("/auth/logout", { method: "POST" }).then(() => location.reload())}>
-            Salir
-          </button>
-        </span>
-      </header>
-      <main className="screen">
-        <h2>{HOME_BY_ROLE[user.role]}</h2>
-        <p className="muted">
-          Tu rol es <strong>{user.role}</strong>. Aquí verás tus tareas de hoy.
-        </p>
-        <ul className="step-list">
-          <li>Esta es la base (E0): usuarios, roles y sesión.</li>
-          <li>En E1 llegará el inventario completo.</li>
-        </ul>
-      </main>
-    </>
+    <AppShell>
+      <h2>Inicio</h2>
+      <p className="muted">
+        Tu área: <strong>{HOME_BY_ROLE["admin"]}</strong> (adaptable por rol en E2+).
+      </p>
+      <div className="grid-2">
+        {MODULES.map((m) => (
+          <Link key={m.href} href={m.href} style={{ textDecoration: "none", color: "inherit" }}>
+            <div className="card" style={{ height: "100%" }}>
+              <h3 style={{ marginTop: 0 }}>{m.title}</h3>
+              <p className="muted">{m.desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </AppShell>
   );
 }

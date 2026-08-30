@@ -8,8 +8,8 @@ function env(name: string, fallback: string): string {
 }
 
 async function main() {
+  // --- Roles y usuarios (E0) ---
   const ROLES = ["admin", "supervisor", "operador"] as const;
-
   for (const name of ROLES) {
     await prisma.role.upsert({
       where: { name },
@@ -37,7 +37,6 @@ async function main() {
     { username: "super", password: "super123", nombre: "Supervisora de Inventario", role: "supervisor" },
     { username: "juan", password: "op123", nombre: "Juan", role: "operador" },
   ];
-
   for (const u of users) {
     await prisma.user.upsert({
       where: { username: u.username },
@@ -51,7 +50,59 @@ async function main() {
     });
   }
 
-  console.log("Seed listo: roles + usuarios iniciales.");
+  // --- Ubicaciones (E1) ---
+  const ubicaciones = [
+    { nombre: "Almacén principal", tipo: "almacen" as const },
+    { nombre: "Recibo de Producción", tipo: "temporal" as const },
+  ];
+  for (const u of ubicaciones) {
+    await prisma.location.upsert({
+      where: { nombre: u.nombre },
+      update: {},
+      create: u,
+    });
+  }
+
+  // --- Categorías y empaques de arranque (E1) ---
+  const categorias = ["Cepillos", "Vástagos", "Taparroscas", "Pinceles", "Cerda", "Empaques"];
+  for (const nombre of categorias) {
+    await prisma.category.upsert({ where: { nombre }, update: {}, create: { nombre } });
+  }
+
+  const empaques = ["Caja de almacén", "Bolsa individual"];
+  for (const nombre of empaques) {
+    await prisma.packaging.upsert({ where: { nombre }, update: {}, create: { nombre } });
+  }
+
+  // --- Atributos y valores de arranque (E1) ---
+  const atributos: Record<string, string[]> = {
+    "Tipo de cepillo": ["Recto", "Espiral", "Bala", "Balita", "Pino", "Cacahuate", "Globo"],
+    "Color de cerda": ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "Transparente"],
+    "Tamaño de vástago": ["3mm", "4.5mm", "6mm", "7mm", "8mm"],
+  };
+  for (const [nombre, valores] of Object.entries(atributos)) {
+    const attribute = await prisma.attribute.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre },
+    });
+    for (const valor of valores) {
+      await prisma.attributeValue.upsert({
+        where: { attributeId_valor: { attributeId: attribute.id, valor } },
+        update: {},
+        create: { attributeId: attribute.id, valor },
+      });
+    }
+  }
+
+  // --- Estado del monitor (E1): fila singleton ---
+  await prisma.monitorState.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, state: { lastLowStockIds: [], lastCheck: null } },
+  });
+
+  console.log("Seed listo: auth + catálogos + ubicaciones.");
 }
 
 main()

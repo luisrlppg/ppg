@@ -173,3 +173,160 @@ select:focus {
   padding: 16px 18px;
   margin: 8px 0;
 }
+
+/* ---- Navegación ---- */
+.nav-links {
+  display: flex;
+  gap: 16px;
+  margin-left: 24px;
+  flex-wrap: wrap;
+}
+
+.nav-links a {
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-links a.active {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.subnav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 20px;
+}
+
+/* ---- Tablas ---- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+.table th {
+  text-align: left;
+  background: #eee;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+.table td {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 1rem;
+}
+
+.table tr:hover td {
+  background: #fafafa;
+}
+
+/* ---- Badges ---- */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.badge.normal {
+  background: #e2f2e6;
+  color: var(--ok);
+}
+
+.badge.bajo {
+  background: #ffe9a8;
+  color: #6a4a00;
+}
+
+.badge.critico {
+  background: #fcd7d7;
+  color: var(--brand-dark);
+}
+
+/* ---- Formularios y utilidades ---- */
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.row.stretch-btns .btn {
+  align-self: flex-end;
+}
+
+.small {
+  font-size: 0.9rem;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 820px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.muted-2 {
+  color: #666;
+}
+
+.kbd-chip {
+  display: inline-block;
+  background: #eee;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.empty {
+  color: #777;
+  padding: 16px 0;
+}
+
+.msg-ok {
+  background: #e2f2e6;
+  color: var(--ok);
+  border: 2px solid var(--ok);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+
+.spacer {
+  height: 12px;
+}
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.inline-form label {
+  margin: 0;
+  min-width: 120px;
+}
+
+.inline-form input,
+.inline-form select {
+  margin: 0;
+  flex: 1;
+  min-width: 160px;
+}

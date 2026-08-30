@@ -5,7 +5,8 @@
     "rootDir": "src",
     "baseUrl": ".",
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "declaration": false
   },
   "include": ["src"]
 }

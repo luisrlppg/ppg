@@ -1,5 +1,6 @@
-// PPG ERP — Base de datos central (schema v0: E0/auth).
-// El resto del modelo (§4 REQUIREMENTS.md) llega en E1.
+// PPG ERP — Base de datos central.
+// v0 (E0): auth. v1 (E1): catálogos, producto/variantes, precios, ubicaciones, stock.
+// v2 (E2/E3): ventas y fabricación; producción. -- se agregan en sus entregas.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,24 +11,298 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Roles del sistema (REQUIREMENTS §2, §10)
+// ---------------------------------------------------------------------------
+// E0 — Auth
+// ---------------------------------------------------------------------------
+
 model Role {
   id    Int    @id @default(autoincrement())
   name  String @unique
   users User[]
 }
 
-/// Usuarios con password hash (bcrypt). Sesión JWT httpOnly por cookie.
 model User {
-  id               Int      @id @default(autoincrement())
-  username         String   @unique
-  passwordHash     String
-  nombre           String
-  roleId           Int
-  role             Role     @relation(fields: [roleId], references: [id])
-  active           Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  nombre       String
+  roleId       Int
+  role         Role     @relation(fields: [roleId], references: [id])
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([roleId])
+}
+
+// ---------------------------------------------------------------------------
+// Catálogos
+// ---------------------------------------------------------------------------
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  nombre   String    @unique
+  products Product[]
+  createdAt DateTime @default(now())
+}
+
+model Packaging {
+  id           Int               @id @default(autoincrement())
+  nombre       String            @unique
+  activo       Boolean           @default(true)
+  variantLinks VariantPackaging[]
+}
+
+model Attribute {
+  id                Int                    @id @default(autoincrement())
+  nombre            String                 @unique
+  values            AttributeValue[]
+  productLines      ProductAttributeLine[]
+  variantAttributes VariantAttribute[]
+  createdAt         DateTime               @default(now())
+}
+
+model AttributeValue {
+  id                Int                    @id @default(autoincrement())
+  attributeId       Int
+  attribute         Attribute             @relation(fields: [attributeId], references: [id])
+  valor             String
+  variantAttributes VariantAttribute[]
+  createdAt         DateTime               @default(now())
+
+  @@unique([attributeId, valor])
+  @@index([attributeId])
+}
+
+// ---------------------------------------------------------------------------
+// Producto / variantes
+// ---------------------------------------------------------------------------
+
+enum Uom {
+  pieza
+  metro
+}
+
+model Product {
+  id              Int                   @id @default(autoincrement())
+  nombre          String
+  skuBase         String                @unique
+  categoryId      Int?
+  category        Category?             @relation(fields: [categoryId], references: [id])
+  uom             Uom                   @default(pieza)
+  basePrice       Decimal               @default(0) // neto, sin IVA
+  hasVariants     Boolean               @default(false) // true = familia con grid (combo/perezoso)
+  imagen          String?
+  activo          Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  variants        ProductVariant[]
+  attributeLines  ProductAttributeLine[]
+  components      ProductComponent[]    @relation("ComponentParent") // BOM de este producto
+  componentOf     ProductComponent[]    @relation("ComponentChild") // dónde se usa este producto
+
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id               Int                 @id @default(autoincrement())
+  productId        Int
+  product          Product             @relation(fields: [productId], references: [id])
+  nombre           String
+  sku              String              @unique
+  price            Decimal?            // override si difiere del base (neto, sin IVA)
+  stockMin         Decimal             @default(0)
+  stockMax         Decimal             @default(0)
+  longLead         Boolean             @default(false)
+  published        Boolean             @default(false) // visible en tienda pública (§7.7)
+  imagen           String?
+  activo           Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  variantAttributes VariantAttribute[]
+  packagings       VariantPackaging[]
+  stockLevels      StockLevel[]
+  moves            StockMove[]
+  priceChanges     PriceChange[]
+
+  @@index([productId])
+}
+
+/// Ejes del grid de una familia (combo): product.attribute_lines
+model ProductAttributeLine {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  attributeId Int
+  attribute   Attribute @relation(fields: [attributeId], references: [id])
+  sortOrder   Int       @default(0)
+
+  @@unique([productId, attributeId])
+  @@index([productId])
+}
+
+/// Qué combo es cada variante (variante.perezosa = sin stock real; materializable)
+model VariantAttribute {
+  id          Int             @id @default(autoincrement())
+  variantId   Int
+  variant     ProductVariant  @relation(fields: [variantId], references: [id])
+  attributeId Int
+  attribute   Attribute       @relation(fields: [attributeId], references: [id])
+  valueId     Int
+  value       AttributeValue  @relation(fields: [valueId], references: [id])
+
+  @@unique([variantId, attributeId])
+  @@index([variantId])
+}
+
+/// BOM a nivel producto. componente = products. exacto entra al neteo; consumible (cerda) NO (§5.7)
+enum TipoComponente {
+  exacto
+  consumible
+}
+
+model ProductComponent {
+  id          Int             @id @default(autoincrement())
+  productId   Int             // producto padre (lo que se ensambla)
+  product     Product         @relation("ComponentParent", fields: [productId], references: [id])
+  componentId Int             // productos que se consumen
+  component   Product         @relation("ComponentChild", fields: [componentId], references: [id])
+  cantidad    Decimal         @default(1)
+  tipo        TipoComponente  @default(exacto)
+
+  @@unique([productId, componentId])
+  @@index([productId])
+}
+
+/// Piezas que caben en cada empaque de esa variante
+model VariantPackaging {
+  id          Int         @id @default(autoincrement())
+  variantId   Int
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  packagingId Int
+  packaging   Packaging   @relation(fields: [packagingId], references: [id])
+  cantidad    Decimal     @default(1)
+
+  @@unique([variantId, packagingId])
+  @@index([variantId])
+}
+
+// ---------------------------------------------------------------------------
+// Precios
+// ---------------------------------------------------------------------------
+
+enum CampoPrecio {
+  base
+  variante
+}
+
+enum SourcePrecio {
+  manual
+  api
+}
+
+model PriceChange {
+  id            Int          @id @default(autoincrement())
+  variantId     Int?         // null cuando el cambio es del precio base del producto
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+  campo         CampoPrecio
+  precioAnterior Decimal
+  precioNuevo    Decimal
+  source        SourcePrecio @default(manual)
+  userId        Int?
+  createdAt     DateTime     @default(now())
+
+  @@index([variantId])
+}
+
+// ---------------------------------------------------------------------------
+// Ubicaciones y stock
+// ---------------------------------------------------------------------------
+
+enum TipoUbicacion {
+  almacen
+  temporal
+}
+
+model Location {
+  id          Int           @id @default(autoincrement())
+  nombre      String        @unique
+  tipo        TipoUbicacion @default(almacen)
+  activo      Boolean       @default(true)
+  stockLevels StockLevel[]
+  movesFrom   StockMove[]   @relation("MoveFrom")
+  movesTo     StockMove[]   @relation("MoveTo")
+  movesAt     StockMove[]   @relation("MoveAt")
+  createdAt   DateTime      @default(now())
+}
+
+/// La física del stock: único por variante + ubicación.
+/// stock_actual(variante) = SUM(stock_levels.qty)
+model StockLevel {
+  id        Int            @id @default(autoincrement())
+  variantId Int
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  locationId Int
+  location  Location       @relation(fields: [locationId], references: [id])
+  qty       Decimal        @default(0)
+
+  @@unique([variantId, locationId])
+  @@index([variantId])
+  @@index([locationId])
+}
+
+enum MotivoStock {
+  apertura
+  entrada
+  salida
+  ajuste
+  ensamble
+  transferencia
+  despacho
+  produccion
+  consumo
+}
+
+/// Bitácora de movimientos. qty con signo respecto a la ubicación (lugar por moverse).
+/// fromLocationId + toLocationId = transferencia; locationId = movimiento simple en esa ubicación.
+model StockMove {
+  id             Int          @id @default(autoincrement())
+  variantId      Int
+  variant        ProductVariant @relation(fields: [variantId], references: [id])
+  locationId     Int?         // ubicación afectada en movimientos simples
+  location       Location?    @relation("MoveAt", fields: [locationId], references: [id])
+  fromLocationId Int?         // transferencia: origen
+  fromLocation   Location?    @relation("MoveFrom", fields: [fromLocationId], references: [id])
+  toLocationId   Int?         // transferencia: destino
+  toLocation     Location?    @relation("MoveTo", fields: [toLocationId], references: [id])
+  qty            Decimal
+  motivo         MotivoStock
+  ref            String?      // referencia de trazabilidad (ej. reporte, orden)
+  userId         Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([variantId])
+  @@index([locationId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Estado del monitor de stock (solo avisar productos NUEVOS que caen a bajo stock)
+// ---------------------------------------------------------------------------
+
+model MonitorState {
+  id        Int      @id @default(1) // singleton
+  state     Json     // { lastLowStockIds: number[], lastCheck: iso }
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationEvent {
+  id        Int      @id @default(autoincrement())
+  type      String   // 'stock' | 'prueba' | ...
+  channels  Json     // ['email','telegram','callmebot'] (exitosos)
+  subject   String
+  ok        Boolean
+  createdAt DateTime @default(now())
 }

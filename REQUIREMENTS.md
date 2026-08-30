@@ -251,7 +251,7 @@ Ejemplo multi-nivel resolviendo la venta de "taparrosca con pincel":
 - `POST /variants/:id/packagings`
 - `POST /variants/:id/stock` (ajuste con motivo → `stock_moves` con origen/destino; default `"Almacén principal"`; soporta decimales)
 - `POST /products/:id/assemble` (Registrar ensamble con BOM, §5.4)
-- `GET /stock/low` (suma ≤ stock_min) · `POST /stock/check` (monitor, solo nuevos) · `POST /stock/notify` (forzado)
+- `GET /stock/low` (suma ≤ stock_min) · `POST /stock/check` (verificación **manual** opcional) · `POST /stock/notify` (forzado)
 - `GET /locations` (física de stock visible; el flujo completo de ubicación se usar en E3)
 
 ### 6.2 Web (una sola app)
@@ -261,7 +261,7 @@ Ejemplo multi-nivel resolviendo la venta de "taparrosca con pincel":
 - **Alerta manual** y estado del monitor.
 
 ### 6.3 Monitor de stock + notificaciones
-Replica la lógica de PPG Unified (`check_stock.py` + scheduler): comparar la suma de stock vs mínimo, notificar **solo lo nuevo**, marcar críticos `long_lead`, canal Email/Telegram/WhatsApp/CallMeBot portado del código actual, con reporte forzado manual. Aplica a cualquier `uom`.
+**Sin timer ni polling**: el propio ERP conoce el instante exacto de cada cambio de inventario, así que el monitor se dispara de inmediato al registrar un movimiento (`stock_moves`: ajuste, entrada, salida, transferencia, ensamble, venta, producción, consumo). En el momento en que una variante queda **igual o por debajo de su `stock_min`**, se genera el evento y notifica **solo lo nuevo** (no se repite mientras siga bajo el umbral, y vuelve a avisar si sube y vuelve a bajar), marcando críticos `long_lead`. Canales portados del código actual: Email, Telegram, WhatsApp (CallMeBot). `POST /stock/check` queda como verificación manual opcional (botón "revisar ahora") y `POST /stock/notify` como reporte **forzado** de todo lo bajo stock. Aplica a cualquier `uom`.
 
 ## 7. Módulo Ventas y Fabricación (E2) — alcance funcional
 
@@ -373,7 +373,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 | Entrega | Contenido | Estado |
 |---|---|---|
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
-| **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones, registrar ensamble | ⏳ pendiente |
+| **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), registrar ensamble | ✅ entregado |
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática | ⏳ pendiente |
 | **Tienda (futura)** | Storefront público: `/api/public` + `apps/storefront` (catálogo de publicados, pedido invitado, misma tubería E2, pago futuro) — entrega propia después de E2 | ⏳ después de E2 |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV | ⏳ pendiente |
