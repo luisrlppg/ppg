@@ -18,12 +18,13 @@ Construir un ERP propio, libre de Odoo, con una **base de datos central (Postgre
 |---|---|
 | Stack | TypeScript full-stack |
 | Backend | NestJS (apps/api) |
-| Frontend | **Una sola** app Next.js para todo (panel interno + rutas públicas de pantallas TV) |
+| Frontend | Panel interno `apps/web` (Next.js, detrás de login) + futura `apps/storefront` (tienda pública, tras E2) + pantallas TV |
 | DB | PostgreSQL central, única; propiedad exclusiva de `apps/api` vía Prisma |
 | Acceso multi-app | Otras apps solo por API/REST (futuro SSE); nunca acceso directo a la DB |
 | Despliegue | Servidor local / LAN · Linux · Docker Compose |
 | Alcance inicial | Portar PPG Unified (reportes de producción, signage, stock) |
-| Ventas | Uso interno (equipo), sin portal público a clientes |
+| Ventas internas | Panel interno (equipo): teléfono/WhatsApp/correo; neteo, venta mínima, OF (§7) |
+| Venta pública (futura) | Tienda propia (storefront) tras E2: catálogo + pedido invitado; SOLO vía `/api/public` (leer productos + alta de órdenes); **nunca** acceso directo a la DB (§7.7) |
 | Usuarios | Login por usuario con roles y distintos alcances administrativos |
 | Moneda | Solo MXN |
 | Precios | Netos (sin IVA); IVA (16%) se aplica en ventas/cotizaciones después |
@@ -42,7 +43,8 @@ Construir un ERP propio, libre de Odoo, con una **base de datos central (Postgre
 apps/erp/
 ├── apps/
 │   ├── api/            # NestJS + Prisma + PostgreSQL + jobs (monitor de stock)
-│   └── web/            # Next.js — toda la UI (panel, inventario, futuras pantallas)
+│   ├── web/            # Next.js — panel interno (inventario, ventas, reportes)
+│   └── storefront/     # (futura, tras E2) Next.js — tienda pública; SOLO usa /api/public
 ├── packages/
 │   ├── db/             # Schema Prisma + migraciones (dueño: apps/api)
 │   └── shared/         # Tipos TS, constantes, validadores
@@ -100,7 +102,7 @@ Alcances:
 | Tabla | Campos | Notas |
 |---|---|---|
 | `products` | id, nombre, category_id, `uom`, `base_price`, imagen, activo, notas, timestamps | Familia o producto simple |
-| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock) |
+| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo, published (bool) | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock). `published` = visible en tienda pública (§7.7) |
 | `attributes` | id, nombre | Ej. "Tamaño de vástago", "Color de cerda", "Tipo de agujero" |
 | `attribute_values` | id, attribute_id, valor | Ej. "4.5mm", "Negro", "Circular" |
 | `product_attribute_lines` | id, product_id, attribute_id | Ejes del grid de una familia |
@@ -145,7 +147,7 @@ Motivos: `produccion`, `consumo`, `ensamble`, `ubicacion`, `despacho`, `ajuste`,
 | Tabla | Campos | Notas |
 |---|---|---|
 | `partners` | id, nombre, telefono, direccion, email, activo, timestamps | Clientes |
-| `sales_orders` | id, numero, partner_id, fecha, fecha_entrega_deseada, estado (`abierta`\|`despachada`\|`cancelada`), notas, user_id, timestamps | Orden de venta |
+| `sales_orders` | id, numero, partner_id, fecha, fecha_entrega_deseada, estado (`abierta`\|`despachada`\|`cancelada`), `origen` (`interno`\|`web`), `payment_method` (nullable; extensión de pago futuro), nombre_envio, telefono_envio, email_envio, notas, user_id, timestamps | Orden de venta; `origen=web` → datos de invitado (§7.7) |
 | `sales_order_lines` | id, order_id, variant_id, cantidad, precio_unitario, qty_delivered, estado_entrega (`pendiente`\|`parcial`\|`entregado`) | Líneas de la orden |
 
 #### Fabricación (E2)
@@ -293,6 +295,18 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 - **Órdenes de fabricación**: lista con estado y componentes requeridos; confirmada→en progreso→hecha (ejecución real se registra en E3 con los reportes).
 - **Resumen de faltantes** y pendientes de compra.
 
+### 7.7 Tienda pública (storefront) — futura, después de E2
+- App separada `apps/storefront` (Next.js) en su propio dominio; **es la única pieza expuesta a internet**.
+- **NO se conecta a la DB**: consume solo `/api/public/*` de `apps/api` (se mantiene §2: DB propiedad exclusiva de la API).
+- Endpoints públicos:
+  - `GET /api/public/catalog` → productos/variantes con `published=true`, precio efectivo y empaques.
+  - `GET /api/public/products/:id` → detalle para ficha del producto.
+  - `POST /api/public/orders` → alta de orden **pendiente**, `origen='web'`, datos de invitado (nombre, teléfono, email).
+  - `GET /api/public/orders/:numero` → el cliente consulta el estado de su pedido.
+- Reglas: los **precios se recalculan en servidor** (nunca se confía en el precio que manda el cliente); límite de peticiones/rate-limit; **sin** inventario, usuarios, reportes ni datos internos.
+- La orden web entra a la **misma tubería** `sales_orders` (§7.1–7.5): al confirmar el equipo se aplica neteo, venta mínima y órdenes de fabricación con cascada.
+- Pago: `sales_orders.payment_method` queda **nullable** como punto de extensión; hoy la tienda solo registra el pedido y se cobra por teléfono/WhatsApp. Una pasarela (Stripe/MercadoPago…) se integra después sin cambiar la estructura.
+
 ## 8. Módulo Producción y Reportes (E3) — alcance funcional
 
 ### 8.1 Reporte ligado a variantes
@@ -361,6 +375,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
 | **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones, registrar ensamble | ⏳ pendiente |
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática | ⏳ pendiente |
+| **Tienda (futura)** | Storefront público: `/api/public` + `apps/storefront` (catálogo de publicados, pedido invitado, misma tubería E2, pago futuro) — entrega propia después de E2 | ⏳ después de E2 |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV | ⏳ pendiente |
 | **E4** | Signage: pantallas TV leyendo de nuestras ventas/fabricación/stock (ya no de Odoo) | ⏳ pendiente |
 | **E5** | Etiquetas + ventas consolidadas + facturación/IVA + pricing updater; desconexión progresiva de Odoo (queda como respaldo) | ⏳ pendiente |
