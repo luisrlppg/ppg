@@ -9,7 +9,7 @@ Diseño completo en [`REQUIREMENTS.md`](./REQUIREMENTS.md). Construcción increm
 
 | Entrega | Contenido | Estado |
 |---|---|---|
-| **E0** | Fundaciones: monorepo, docker-compose, Prisma base, auth (users/roles), shell de UI | ⏳ en curso |
+| **E0** | Fundaciones: monorepo, docker-compose, Prisma base, auth (users/roles), shell de UI | ✅ entregado |
 | E1–E5 | Ver `REQUIREMENTS.md` §10 (plan de entregas) | ⏳ pendiente |
 
 ## Estructura
@@ -64,4 +64,15 @@ pnpm db:studio   # explorar la base
 pnpm build       # compila todos los paquetes
 pnpm dev:api     # solo API
 pnpm dev:web     # solo web
+```
+
+## Servidores en Windows (sin bloquear la terminal)
+
+`scripts/dev.ps1` arranca/detiene api y web **desacoplados** (no bloquean el chat/terminal):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 up      # postgres + api + web
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 stop    # detiene api y web
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 status  # puertos 3000/3001
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 logs    # tail api.log / web.log
 ```
