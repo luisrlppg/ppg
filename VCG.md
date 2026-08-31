@@ -162,7 +162,7 @@ local + `fetch` manual.
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
 | Detalle/edición de producto | `app/productos/[id]/page.tsx` | **814** (antes 937) | datos base · atributos · ejes · combinaciones/grid · variantes · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas) |
-| Reportes de producción | `app/reportes/page.tsx` | **852** (4 tabs) | form 99‑238/406‑548 · bandeja 240‑326/550‑652 · ubicar lotes 328‑383/654‑697 · stats 385‑403/699‑816 |
+| Reportes de producción | `app/reportes/page.tsx` | **714** (antes 852) | form · bandeja · ubicar lotes — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
 | Ventas | `app/ventas/page.tsx` | **508** (lista/nueva/detalle) | lista 29‑49/441‑507 · alta 59‑129/187‑273 · detalle+confirmar+despachar 131‑184/275‑438 |
 | Catálogos | `app/catalogos/page.tsx` | **439** | atributos 66‑129/206‑326 · categorías 131‑164/330‑379 · empaques 166‑199/383‑436 |
 | Lista productos | `app/productos/page.tsx` | **400** (tabs productos/catálogos) | alta 59‑117/276‑397 · catálogos base 119‑186/203‑274 |
@@ -226,7 +226,7 @@ local + `fetch` manual.
 ## 7. Tareas pendientes / próximos pasos (contexto)
 
 - **Modularización** (prioridad actual del equipo): los archivos masivos a dividir son
-  en web `productos/[id]/page.tsx` (814), `reportes/page.tsx` (852), `ventas/page.tsx` (508),
+  en web `productos/[id]/page.tsx` (814), `reportes/page.tsx` (714), `ventas/page.tsx` (508),
   `catalogos/page.tsx` (439). *(La API ya quedó modularizada: vendría revisar
   `fabricacion.service.ts` que es pequeño.)*
   *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.ofs.ts` + `ventas.types.ts`;
@@ -235,7 +235,8 @@ local + `fetch` manual.
   `catalogos.controller.ts` → `catalogos.atributos-producto.ts`;
   `monitor.service.ts` → `monitor.notificadores.ts`;
   `inventario.service.ts` → `inventario.ensamble.ts`.
-  Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`.)*
+  Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`;
+  `reportes/page.tsx` → `components/reportes/stats-produccion.tsx`.)*
 - **Candidatos a refactor cross‑cutting:** recursión BOM (3 copias), disparo de monitor,
   helpers `common/util.ts` (mezclados).
 - Probar flujo E3 completo: storefront → confirmación → OFs recursivas.
