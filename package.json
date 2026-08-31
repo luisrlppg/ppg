@@ -9,6 +9,7 @@
     "db:deploy": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma migrate deploy",
     "db:seed": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma db seed",
     "db:seed:products": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-products.ts",
+    "db:seed:demo": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-demo.ts",
     "db:studio": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma studio",
     "build": "pnpm -r build",
     "dev": "pnpm --parallel --filter @ppg/api --filter @ppg/web run dev",

@@ -61,12 +61,13 @@ scripts/      # Scripts de utilidad
 ## Scripts útiles
 - `scripts/reset-variants.ts` — limpia variantes, limpia atributos/valores
 - `scripts/seed-products.ts` — configura estructura BOM + ProductAttributeLine + ProductPasso
+- `scripts/seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3 (reportes/producción); idempotente
 - `scripts/dev.sh` — gestor de servidores: `./scripts/dev.sh <up|stop|status|logs>`
 - `start-dev.sh` — iniciar servidores (build API + arranque rápido)
 
 ## Pendiente
 1. **Modularización** — separar código en módulos (Catálogos, Manufactura, etc.)
-2. **Probar flujo completo** — storefront → confirmación → OFs recursivas
+2. **Probar flujo de ventas → OFs recursivas** — el flujo E3 (reportes/producción) ya verificó end-to-end (2026-08-31); queda probar la cascada de OFs desde la confirmación de una venta
 3. **WSL2** — setup completo de dev en Linux
 
 ## Credenciales
