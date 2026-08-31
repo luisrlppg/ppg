@@ -7,8 +7,7 @@
 
 ## Estructura del proyecto
 ```
-D:\documents\luisrlp\jobs\ppg\apps\erp\  (Windows)
-/mnt/d/documents/luisrlp/jobs/ppg/apps/erp/  (WSL2)
+/home/luisrlp/ppgapps/ppg/  (WSL2/Linux)
 apps/
   api/        # NestJS API (puerto 3001)
   web/        # Next.js (puerto 3000, proxy /api → :3001)
@@ -62,7 +61,8 @@ scripts/      # Scripts de utilidad
 ## Scripts útiles
 - `scripts/reset-variants.ts` — limpia variantes, limpia atributos/valores
 - `scripts/seed-products.ts` — configura estructura BOM + ProductAttributeLine + ProductPasso
-- `start-dev.ps1` / `start-dev.bat` — iniciar servidores en Windows
+- `scripts/dev.sh` — gestor de servidores: `./scripts/dev.sh <up|stop|status|logs>`
+- `start-dev.sh` — iniciar servidores (build API + arranque rápido)
 
 ## Pendiente
 1. **Modularización** — separar código en módulos (Catálogos, Manufactura, etc.)
