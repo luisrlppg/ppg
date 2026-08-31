@@ -15,6 +15,7 @@ export interface Passo {
   sortOrder: number;
   pregunta: string;
   attributeId: number | null;
+  variantProductId: number;
   isQtyStep: boolean;
   opciones: PassoOption[];
 }
@@ -118,12 +119,13 @@ export class PublicService {
 
     const result: Passo[] = [];
     for (const passo of passos) {
+      const vpId = passo.variantProductId ?? passo.productId;
       if (passo.isQtyStep) {
-        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, isQtyStep: true, opciones: [] });
+        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: true, opciones: [] });
         continue;
       }
       if (!passo.attributeId) {
-        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, isQtyStep: false, opciones: [] });
+        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: false, opciones: [] });
         continue;
       }
       const values = await this.prisma.attributeValue.findMany({
@@ -134,7 +136,7 @@ export class PublicService {
       for (const v of values) {
         const variants = await this.prisma.productVariant.findMany({
           where: {
-            productId,
+            productId: vpId,
             variantAttributes: { some: { attributeId: passo.attributeId, valueId: v.id } },
             activo: true,
           },
@@ -154,6 +156,7 @@ export class PublicService {
         sortOrder: passo.sortOrder,
         pregunta: passo.pregunta,
         attributeId: passo.attributeId,
+        variantProductId: vpId,
         isQtyStep: false,
         opciones: [...seen.values()].sort((a, b) => a.valor.localeCompare(b.valor)),
       });

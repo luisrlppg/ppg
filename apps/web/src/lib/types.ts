@@ -325,6 +325,7 @@ export interface Passo {
   sortOrder: number;
   pregunta: string;
   attributeId: number | null;
+  variantProductId: number;
   isQtyStep: boolean;
   opciones: PassoOption[];
 }

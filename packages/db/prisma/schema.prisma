@@ -150,15 +150,18 @@ model ProductAttributeLine {
 }
 
 /// Pasos de selección guiada para el storefront (E3)
+/// productId = producto cuyo storefront se navega (ej. Taparrosca)
+/// variantProductId = producto cuyas variantes se consultan para las opciones (ej. Vástago, Pincel)
 model ProductPasso {
-  id           Int     @id @default(autoincrement())
-  productId    Int
-  product      Product @relation(fields: [productId], references: [id])
-  sortOrder    Int     @default(0)
-  pregunta     String
-  attributeId  Int?
-  attribute    Attribute? @relation(fields: [attributeId], references: [id])
-  isQtyStep    Boolean @default(false)
+  id               Int     @id @default(autoincrement())
+  productId        Int
+  product          Product @relation(fields: [productId], references: [id])
+  variantProductId Int?    // null = same as productId
+  sortOrder        Int     @default(0)
+  pregunta         String
+  attributeId      Int?
+  attribute        Attribute? @relation(fields: [attributeId], references: [id])
+  isQtyStep        Boolean @default(false)
 
   @@index([productId])
 }

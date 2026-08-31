@@ -13,10 +13,8 @@ interface ProductoBasico {
   basePrice: number;
 }
 
-interface PasoSeleccion {
-  pergunta: string;
-  attributeId: number | null;
-  opciones: PassoOption[];
+interface PasoUI {
+  passo: Passo;
   seleccion: string;
   seleccionVariantId: number | null;
 }
@@ -30,8 +28,8 @@ export default function TiendaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [selecciones, setSelecciones] = useState<PasoUI[]>([]);
   const [pasoActual, setPasoActual] = useState(0);
-  const [selecciones, setSelecciones] = useState<PasoSeleccion[]>([]);
   const [cantidad, setCantidad] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoNumero, setPedidoNumero] = useState<string | null>(null);
@@ -41,25 +39,20 @@ export default function TiendaPage() {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
 
-  const cargar = useCallback(async () => {
+  const carregar = useCallback(async () => {
     try {
       const [p, ps] = await Promise.all([
         api<ProductoBasico>(`/productos/${pid}`),
         api<Passo[]>(`/public/productos/${pid}/pasos`),
       ]);
       setProducto(p);
-      setPassos(ps.filter((s) => !s.isQtyStep || s.opciones.length > 0 || true));
-      setSelecciones(
-        ps
-          .filter((s) => !s.isQtyStep)
-          .map((s) => ({
-            pergunta: s.pregunta,
-            attributeId: s.attributeId,
-            opciones: s.opciones,
-            seleccion: "",
-            seleccionVariantId: null,
-          })),
-      );
+      const attrSteps = ps.filter((s) => !s.isQtyStep);
+      setPassos(attrSteps);
+      setSelecciones(attrSteps.map((s) => ({
+        passo: s,
+        seleccion: "",
+        seleccionVariantId: null,
+      })));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -67,11 +60,10 @@ export default function TiendaPage() {
     }
   }, [pid]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { carregar(); }, [carregar]);
 
-  const passosAtributo = passos.filter((p) => !p.isQtyStep);
-  const totalPasos = passosAtributo.length + 2;
-  const pasoActualIdx = pasoActual;
+  const passosAtributo = passos;
+  const totalPasos = passosAtributo.length + 1;
 
   function seleccionarOpcion(pasoIdx: number, opt: PassoOption) {
     setSelecciones((prev) => {
@@ -81,18 +73,31 @@ export default function TiendaPage() {
     });
   }
 
-  function opcionesFiltradas(pasoIdx: number): PassoOption[] {
-    if (pasoIdx === 0) return passosAtributo[0]?.opciones ?? [];
-    const variantIdAnterior = selecciones[pasoIdx - 1]?.seleccionVariantId;
-    if (!variantIdAnterior) return [];
-    return (passosAtributo[pasoIdx]?.opciones ?? []).filter(
-      (o) => o.variantId === variantIdAnterior,
-    );
+  function opcionesDelPaso(pasoIdx: number): PassoOption[] {
+    const paso = passosAtributo[pasoIdx];
+    if (!paso) return [];
+
+    if (pasoIdx === 0) return paso.opciones;
+
+    const prevSelections = selecciones.slice(0, pasoIdx);
+
+    return paso.opciones.filter((opt) => {
+      for (const prev of prevSelections) {
+        if (!prev.seleccionVariantId) continue;
+        const prevOpt = prev.passo.opciones.find((o) => o.variantId === prev.seleccionVariantId);
+        if (!prevOpt) continue;
+        const sameValue = paso.opciones.some(
+          (o) => o.variantId === opt.variantId && o.valueId === prevOpt.valueId,
+        );
+        if (!sameValue) return false;
+      }
+      return true;
+    });
   }
 
   function puedeAvanzar(): boolean {
-    if (pasoActualIdx < passosAtributo.length) {
-      return !!selecciones[pasoActualIdx]?.seleccion;
+    if (pasoActual < passosAtributo.length) {
+      return !!selecciones[pasoActual]?.seleccion;
     }
     return cantidad > 0;
   }
@@ -105,7 +110,7 @@ export default function TiendaPage() {
   function variantSkuFinal(): string {
     const last = selecciones[selecciones.length - 1];
     if (!last?.seleccionVariantId) return "";
-    const opt = last.opciones.find((o) => o.variantId === last.seleccionVariantId);
+    const opt = last.passo.opciones.find((o) => o.variantId === last.seleccionVariantId);
     return opt?.sku ?? "";
   }
 
@@ -115,13 +120,15 @@ export default function TiendaPage() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const pasosConfig = selecciones.map((s, i) => ({
-        pregunta: s.pergunta,
-        opciones: (passosAtributo[i]?.opciones ?? [])
-          .filter((o) => o.variantId === s.seleccionVariantId)
-          .map((o) => o.valor),
-        seleccion: s.seleccion,
-      }));
+      const pasosConfig = selecciones.map((s, i) => {
+        const attrsForThisVariant = passosAtributo[i].opciones.filter((o) => o.variantId === s.seleccionVariantId);
+        const valores = [...new Set(attrsForThisVariant.map((o) => o.valor))];
+        return {
+          pregunta: s.passo.pregunta,
+          opciones: valores,
+          seleccion: s.seleccion,
+        };
+      });
       const cfg: ConfiguracionLinea = { pasos: pasosConfig };
       const r = await api<{ numero: string }>("public/orders", {
         method: "POST",
@@ -169,8 +176,9 @@ export default function TiendaPage() {
     );
   }
 
-  const esPasoCantidad = pasoActualIdx === passosAtributo.length;
-  const esPasoRevision = pasoActualIdx === passosAtributo.length + 1;
+  const pasoIdx = pasoActual;
+  const paso = passosAtributo[pasoIdx];
+  const esRevision = pasoActual === passosAtributo.length;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
@@ -183,39 +191,39 @@ export default function TiendaPage() {
 
       <div style={{ maxWidth: 600, margin: "40px auto", padding: "0 16px" }}>
         <h1 style={{ fontSize: "1.4em", marginBottom: 4 }}>{producto.nombre}</h1>
-        <p className="muted small" style={{ margin: "0 0 24px" }}>SKU: {producto.skuBase} · Precio base: ${producto.basePrice.toFixed(2)}/{producto.uom}</p>
+        <p className="muted small" style={{ margin: "0 0 24px" }}>
+          SKU: {producto.skuBase} · Precio base: ${producto.basePrice.toFixed(2)}/{producto.uom}
+        </p>
 
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {Array.from({ length: totalPasos }).map((_, i) => (
               <div key={i} style={{
                 flex: 1, height: 4, borderRadius: 2,
-                background: i <= pasoActualIdx ? "var(--primary)" : "#ddd",
+                background: i <= pasoActual ? "var(--primary)" : "#ddd",
               }} />
             ))}
           </div>
           <p className="muted small" style={{ marginTop: 6 }}>
-            Paso {Math.min(pasoActualIdx + 1, totalPasos)} de {totalPasos}
-            {esPasoCantidad ? " — Cantidad" : esPasoRevision ? " — Revisar" : ` — ${passosAtributo[pasoActualIdx]?.pregunta ?? ""}`}
+            Paso {Math.min(pasoActual + 1, totalPasos)} de {totalPasos}
+            {esRevision ? " — Revisar" : ` — ${paso?.pregunta ?? ""}`}
           </p>
         </div>
 
         <div className="card">
-          {!esPasoCantidad && !esPasoRevision && (
+          {!esRevision && paso && (
             <>
-              <h3 style={{ marginTop: 0 }}>
-                {passosAtributo[pasoActualIdx]?.pregunta ?? ""}
-              </h3>
+              <h3 style={{ marginTop: 0 }}>{paso.pregunta}</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {opcionesFiltradas(pasoActualIdx).length === 0 && (
+                {opcionesDelPaso(pasoIdx).length === 0 && (
                   <p className="muted">Completa el paso anterior primero.</p>
                 )}
-                {opcionesFiltradas(pasoActualIdx).map((opt) => {
-                  const sel = selecciones[pasoActualIdx]?.seleccionVariantId === opt.variantId;
+                {opcionesDelPaso(pasoIdx).map((opt) => {
+                  const sel = selecciones[pasoIdx]?.seleccionVariantId === opt.variantId;
                   return (
                     <button
                       key={`${opt.variantId}-${opt.valueId}`}
-                      onClick={() => seleccionarOpcion(pasoActualIdx, opt)}
+                      onClick={() => seleccionarOpcion(pasoIdx, opt)}
                       style={{
                         padding: "12px 16px",
                         border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
@@ -244,39 +252,14 @@ export default function TiendaPage() {
             </>
           )}
 
-          {esPasoCantidad && (
-            <>
-              <h3 style={{ marginTop: 0 }}>¿Cuántas piezas necesitas?</h3>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <button
-                  className="btn ghost"
-                  onClick={() => setCantidad((c) => Math.max(1, c - 1))}
-                  disabled={cantidad <= 1}
-                >−</button>
-                <input
-                  type="number"
-                  min="1"
-                  value={cantidad}
-                  onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
-                  style={{ width: 100, textAlign: "center", fontSize: "1.2em", padding: "8px" }}
-                />
-                <button
-                  className="btn ghost"
-                  onClick={() => setCantidad((c) => c + 1)}
-                >+</button>
-                <span className="muted"> {producto.uom}(s)</span>
-              </div>
-            </>
-          )}
-
-          {esPasoRevision && (
+          {esRevision && (
             <>
               <h3 style={{ marginTop: 0 }}>Revisa tu pedido</h3>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   {selecciones.map((s, i) => (
                     <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "8px 0", color: "#666" }}>{s.pergunta}</td>
+                      <td style={{ padding: "8px 0", color: "#666" }}>{s.passo.pregunta}</td>
                       <td style={{ padding: "8px 0", textAlign: "right", fontWeight: "bold" }}>{s.seleccion}</td>
                     </tr>
                   ))}
@@ -305,18 +288,18 @@ export default function TiendaPage() {
           )}
 
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-            {pasoActualIdx > 0 ? (
-              <button className="btn ghost" onClick={() => setPasoActual(pasoActualIdx - 1)}>
+            {pasoActual > 0 ? (
+              <button className="btn ghost" onClick={() => setPasoActual(pasoActual - 1)}>
                 ← Atrás
               </button>
             ) : <span />}
-            {!esPasoRevision ? (
+            {!esRevision ? (
               <button
                 className="btn primary"
-                onClick={() => setPasoActual(pasoActualIdx + 1)}
+                onClick={() => setPasoActual(pasoActual + 1)}
                 disabled={!puedeAvanzar()}
               >
-                {esPasoCantidad ? "Revisar →" : "Siguiente →"}
+                {pasoActual === passosAtributo.length - 1 ? "Revisar →" : "Siguiente →"}
               </button>
             ) : (
               <button
