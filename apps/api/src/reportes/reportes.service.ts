@@ -3,18 +3,16 @@ import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { MonitorService } from "../monitor/monitor.service";
+import { exportarReportes } from "./reportes.export";
+import { estadisticas } from "./reportes.stats";
+import { HORAS_TURNO, SECCIONES, TURNOS, Seccion, Turno } from "./reportes.constants";
 
-export const TURNOS = ["matutino", "vespertino", "nocturno"] as const;
-export type Turno = (typeof TURNOS)[number];
-
-export const SECCIONES = ["maquina1", "maquina2", "maquina3", "ensamble", "ensartado", "pegado", "perforado"] as const;
-export type Seccion = (typeof SECCIONES)[number];
-
-export const HORAS_TURNO: Record<Turno, number> = {
-  matutino: 8,
-  vespertino: 7.5,
-  nocturno: 8,
-};
+export {
+  TURNOS,
+  SECCIONES,
+  HORAS_TURNO,
+} from "./reportes.constants";
+export type { Turno, Seccion } from "./reportes.constants";
 
 interface LineaInput {
   variantId: number;
@@ -394,110 +392,12 @@ export class ReportesService {
 
   // ---------------------------------------------------------------- Stats
   async stats(query: { desde?: string; hasta?: string }) {
-    const desde = query.desde ? new Date(`${query.desde}T00:00:00`) : new Date(0);
-    const hasta = query.hasta ? new Date(`${query.hasta}T23:59:59`) : new Date();
-    const reports = await this.prisma.productionReport.findMany({
-      where: { estado: "aplicado", fecha: { gte: desde, lte: hasta } },
-      include: {
-        lines: {
-          include: { variant: { include: { product: { select: { nombre: true } } } } },
-        },
-      },
-    });
-
-    const porSeccion = new Map<string, { unidades: number; metrica: number }>();
-    const consumo = new Map<string, { variantId: number; nombre: string; producto: string; unidades: number }>();
-    let totalFinal = 0;
-    let totalConsumo = 0;
-
-    for (const r of reports) {
-      const horas = dec(r.horasTrabajadas) > 0 ? dec(r.horasTrabajadas) : HORAS_TURNO[r.turno as Turno] ?? 8;
-      const base = Math.max(1, r.personas) * horas;
-      for (const l of r.lines) {
-        const ok = dec(l.ok);
-        if (l.tipo === "final") {
-          totalFinal += ok;
-          const act = porSeccion.get(l.seccion) ?? { unidades: 0, metrica: 0 };
-          act.unidades += ok;
-          act.metrica += ok / base;
-          porSeccion.set(l.seccion, act);
-        } else {
-          totalConsumo += ok;
-          const clave = `${l.variantId}`;
-          const act = consumo.get(clave) ?? { variantId: l.variantId, nombre: l.variant.nombre, producto: l.variant.product.nombre, unidades: 0 };
-          act.unidades += ok;
-          consumo.set(clave, act);
-        }
-      }
-    }
-
-    return {
-      desde: query.desde ?? "inicio",
-      hasta: query.hasta ?? "hoy",
-      reportesAplicados: reports.length,
-      totalFinal,
-      totalConsumo,
-      porSeccion: [...porSeccion.entries()].map(([seccion, v]) => ({
-        seccion,
-        unidades: Math.round(v.unidades * 1000) / 1000,
-        unidadesPorPersonaHora: Math.round(v.metrica * 1000) / 1000,
-      })),
-      consumo: [...consumo.values()].map((c) => ({
-        ...c,
-        unidades: Math.round(c.unidades * 1000) / 1000,
-      })),
-    };
+    return estadisticas(this.prisma, query);
   }
 
   // -------------------------------------------------------------- Exportar
   async exportar(query: { desde?: string; hasta?: string }): Promise<string> {
-    const desde = query.desde ? new Date(`${query.desde}T00:00:00`) : new Date(0);
-    const hasta = query.hasta ? new Date(`${query.hasta}T23:59:59`) : new Date();
-    const reports = await this.prisma.productionReport.findMany({
-      where: { fecha: { gte: desde, lte: hasta } },
-      orderBy: { fecha: "asc" },
-      include: {
-        manufacturingOrder: { select: { numero: true } },
-        lines: {
-          include: { variant: { include: { product: { select: { nombre: true, uom: true } } } } },
-        },
-      },
-    });
-    const header = [
-      "reporte",
-      "fecha",
-      "turno",
-      "estado",
-      "personas",
-      "horas",
-      "seccion",
-      "producto",
-      "variante",
-      "sku",
-      "tipo",
-      "cantidad",
-      "of",
-    ];
-    const filas = reports.flatMap((r) =>
-      r.lines.map((l) =>
-        [
-          r.numero,
-          new Date(r.fecha).toISOString().slice(0, 10),
-          r.turno,
-          r.estado,
-          r.personas,
-          dec(r.horasTrabajadas),
-          l.seccion,
-          l.variant.product.nombre,
-          l.variant.nombre,
-          l.variant.sku,
-          l.tipo,
-          dec(l.ok),
-          r.manufacturingOrder?.numero ?? "",
-        ].join(";"),
-      ),
-    );
-    return [header.join(";"), ...filas].join("\r\n");
+    return exportarReportes(this.prisma, query);
   }
 
   // --------------------------------------------------------------- Helpers

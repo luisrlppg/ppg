@@ -2,32 +2,9 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { Prisma } from "@ppg/db";
 import { PrismaService } from "../prisma/prisma.service";
 import { dec, toTipoComponente, toUom } from "../common/util";
+import { gridProducto, Grid, MaterializableCombo } from "./productos.grid";
 
-function slugify(valores: string[]): string {
-  return valores
-    .map((v) =>
-      v
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, ""),
-    )
-    .join("-");
-}
-
-export interface MaterializableCombo {
-  valueIds: number[];
-  valoracion: string[];
-  varianteId: number | null;
-  nombre: string;
-  sku: string;
-}
-
-export interface Grid {
-  ejes: { attributeId: number; nombre: string; valores: { id: number; valor: string }[]; sortOrder: number }[];
-  combinaciones: MaterializableCombo[];
-}
+export type { Grid, MaterializableCombo } from "./productos.grid";
 
 @Injectable()
 export class ProductosService {
@@ -379,58 +356,11 @@ export class ProductosService {
 
   // -------------------------------------------------------------- Grid
   async grid(productId: number): Promise<Grid> {
-    const p = await this.prisma.product.findUnique({
-      where: { id: productId },
-      include: {
-        attributeLines: { include: { attribute: { include: { values: { orderBy: { id: "asc" } } } } }, orderBy: { sortOrder: "asc" } },
-        variants: { include: { variantAttributes: { include: { value: true } } } },
-      },
-    });
-    if (!p) throw new NotFoundException("Producto no encontrado");
-
-    const ejes = p.attributeLines.map((l) => ({
-      attributeId: l.attributeId,
-      nombre: l.attribute.nombre,
-      sortOrder: l.sortOrder,
-      valores: l.attribute.values.map((v) => ({ id: v.id, valor: v.valor })),
-    }));
-
-    const existing = p.variants.filter((v) => v.variantAttributes.length === ejes.length);
-    const combinaciones: MaterializableCombo[] = [];
-
-    const cartesian: number[][] = ejes.reduce<number[][]>(
-      (acc, eje) => {
-        if (acc.length === 0) return eje.valores.map((v) => [v.id]);
-        const out: number[][] = [];
-        for (const prefix of acc) for (const v of eje.valores) out.push([...prefix, v.id]);
-        return out;
-      },
-      [],
-    );
-
-    const valorById = new Map<number, string>();
-    for (const e of ejes) for (const v of e.valores) valorById.set(v.id, v.valor);
-
-    for (const valueIds of cartesian) {
-      const match = existing.find((v) => {
-        const set = new Set(v.variantAttributes.map((va) => va.valueId));
-        return valueIds.length === set.size && valueIds.every((vid) => set.has(vid));
-      });
-      const valoracion = valueIds.map((id) => valorById.get(id) ?? id.toString());
-      combinaciones.push({
-        valueIds,
-        valoracion,
-        varianteId: match ? match.id : null,
-        nombre: valoracion.join(" "),
-        sku: `${p.skuBase}-${slugify(valoracion)}`,
-      });
-    }
-
-    return { ejes, combinaciones };
+    return gridProducto(this.prisma, productId);
   }
 
   async materializar(productId: number, valueIds: number[]) {
-    const grid = await this.grid(productId);
+    const grid = await gridProducto(this.prisma, productId);
     const axisSizes = grid.ejes.map((e) => e.valores.length);
     if (valueIds.length !== axisSizes.length) {
       throw new BadRequestException(`Se requieren ${axisSizes.length} valores de atributo`);
@@ -459,7 +389,7 @@ export class ProductosService {
   }
 
   async generar(productId: number): Promise<{ creadas: number }> {
-    const grid = await this.grid(productId);
+    const grid = await gridProducto(this.prisma, productId);
     let creadas = 0;
     for (const c of grid.combinaciones) {
       if (!c.varianteId) {

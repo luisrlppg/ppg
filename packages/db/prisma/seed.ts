@@ -72,6 +72,37 @@ async function main() {
     await prisma.category.upsert({ where: { nombre }, update: {}, create: { nombre } });
   }
 
+  // --- Productos base (E3) ---
+  // Vástago: producto base sin BOM. Cerda: consumible por kg.
+  // Pincel: ensamble (Vástago + Cerda). Taparrosca: ensamble (Pincel + Vástago).
+  const productosBase: Array<{ nombre: string; sku: string; categoria: string; uom: Uom; basePrice: number; hasVariants: boolean }> = [
+    { nombre: "Vástago", sku: "VAST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
+    { nombre: "Cerda", sku: "CERD", categoria: "Cerda", uom: Uom.kg, basePrice: 80, hasVariants: false },
+    { nombre: "Pincel", sku: "PIN", categoria: "Pinceles", uom: Uom.pieza, basePrice: 20, hasVariants: true },
+    { nombre: "Taparrosca con Pincel", sku: "TP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 40, hasVariants: true },
+  ];
+  for (const p of productosBase) {
+    const category = await prisma.category.findUnique({ where: { nombre: p.categoria } });
+    await prisma.product.upsert({
+      where: { skuBase: p.sku },
+      update: {
+        nombre: p.nombre,
+        categoryId: category?.id ?? null,
+        uom: p.uom,
+        basePrice: p.basePrice,
+        hasVariants: p.hasVariants,
+      },
+      create: {
+        nombre: p.nombre,
+        skuBase: p.sku,
+        categoryId: category?.id ?? null,
+        uom: p.uom,
+        basePrice: p.basePrice,
+        hasVariants: p.hasVariants,
+      },
+    });
+  }
+
   const empaques = ["Caja de almacén", "Bolsa individual"];
   for (const nombre of empaques) {
     await prisma.packaging.upsert({ where: { nombre }, update: {}, create: { nombre } });

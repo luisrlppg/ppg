@@ -4,25 +4,10 @@ import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { ProductosService } from "../productos/productos.service";
 import { MonitorService } from "../monitor/monitor.service";
+import { crearOFS } from "./ventas.ofs";
+import { ConfiguracionLinea, ResumenItem, ResumenNeteo } from "./ventas.types";
 
-export interface ResumenItem {
-  variantId: number;
-  sku: string;
-  nombre: string;
-  producto: string;
-  cantidad: number;
-  tipo?: "fabricacion" | "ensamble";
-}
-
-export interface ResumenNeteo {
-  fabricar: ResumenItem[];
-  comprar: ResumenItem[];
-}
-
-export interface ConfiguracionLinea {
-  pasos?: { pregunta: string; opciones: string[]; seleccion: string }[];
-  resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
-}
+export type { ResumenItem, ResumenNeteo, ConfiguracionLinea } from "./ventas.types";
 
 interface VarianteCtx {
   id: number;
@@ -524,101 +509,18 @@ for (const line of order.lines) {
     userId: number | null,
     path: number[],
   ): Promise<void> {
-    if (path.includes(variantId)) {
-      throw new BadRequestException(`Dependencia circular detectada en OF para variantId=${variantId}`);
-    }
-
-    const v = await tx.productVariant.findUnique({
-      where: { id: variantId },
-      include: {
-        product: {
-          include: {
-            components: {
-              where: { tipo: "exacto" },
-              include: { component: true },
-            },
-          },
-        },
-        stockLevels: true,
+    await crearOFS(
+      {
+        tx,
+        resolveComponentVariant: (componentProductId, ctx) =>
+          this.productos.resolveComponentVariant(componentProductId, ctx),
       },
-    });
-    if (!v) throw new NotFoundException(`Variante ${variantId} no encontrada`);
-
-    const stockActual = v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
-    const falta = cantidad - stockActual;
-    if (falta <= 0) return;
-
-    const comps = v.product.components;
-    if (comps.length === 0) return;
-
-    if (comps.length === 1) {
-      const mo = await tx.manufacturingOrder.create({
-        data: {
-          numero: placeholderNumero(),
-          variantId,
-          cantidad: falta,
-          tipo: "fabricacion",
-          estado: "confirmada",
-          generatedFrom: `venta:${ordenId}`,
-          userId,
-          salesOrderLineId: ordenId,
-          configuracion: configuracion as unknown as Prisma.InputJsonValue,
-        },
-      });
-      await tx.manufacturingOrder.update({
-        where: { id: mo.id },
-        data: { numero: `OF-${String(mo.id).padStart(4, "0")}` },
-      });
-      return;
-    }
-
-    const mo = await tx.manufacturingOrder.create({
-      data: {
-        numero: placeholderNumero(),
-        variantId,
-        cantidad: falta,
-        tipo: "ensamble",
-        estado: "confirmada",
-        generatedFrom: `venta:${ordenId}`,
-        userId,
-        salesOrderLineId: ordenId,
-        configuracion: configuracion as unknown as Prisma.InputJsonValue,
-      },
-    });
-    await tx.manufacturingOrder.update({
-      where: { id: mo.id },
-      data: { numero: `OF-${String(mo.id).padStart(4, "0")}` },
-    });
-
-    for (const c of comps) {
-      const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
-        productId: v.productId,
-        variantAttributes: [],
-      });
-      if (!compVariant) {
-        throw new BadRequestException(
-          `No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`,
-        );
-      }
-      const reqCantidad = falta * dec(c.cantidad);
-      const compStock = (await tx.stockLevel.findMany({ where: { variantId: compVariant.id } })).reduce(
-        (a, l) => a + dec(l.qty),
-        0,
-      );
-      if (compStock >= reqCantidad) continue;
-
-      const compComps = (
-        await tx.product.findUnique({
-          where: { id: c.component.id },
-          include: { components: { where: { tipo: "exacto" } } },
-        })
-      )?.components ?? [];
-      if (compComps.length === 0) continue;
-
-      await this.crearOFS(tx, ordenId, compVariant.id, reqCantidad - compStock, {}, userId, [
-        ...path,
-        variantId,
-      ]);
-    }
+      ordenId,
+      variantId,
+      cantidad,
+      configuracion,
+      userId,
+      path,
+    );
   }
 }
