@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Uom } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -77,19 +77,43 @@ async function main() {
     await prisma.packaging.upsert({ where: { nombre }, update: {}, create: { nombre } });
   }
 
-  // --- Atributos y valores de arranque (E1) ---
-  const atributos: Record<string, string[]> = {
+  // --- Atributos y valores (E1 + E3) ---
+  // Atributos del seed original (globales)
+  const oldAttributes: Record<string, string[]> = {
     "Tipo de cepillo": ["Recto", "Espiral", "Bala", "Balita", "Pino", "Cacahuate", "Globo"],
     "Color de cerda": ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "Transparente"],
     "Tamaño de vástago": ["3mm", "4.5mm", "6mm", "7mm", "8mm"],
   };
-  for (const [nombre, valores] of Object.entries(atributos)) {
+  for (const [nombre, valores] of Object.entries(oldAttributes)) {
     const attribute = await prisma.attribute.upsert({
       where: { nombre },
       update: {},
       create: { nombre },
     });
     for (const valor of valores) {
+      await prisma.attributeValue.upsert({
+        where: { attributeId_valor: { attributeId: attribute.id, valor } },
+        update: {},
+        create: { attributeId: attribute.id, valor },
+      });
+    }
+  }
+
+  // --- Atributos nuevos para Taparrosca (E3) ---
+  const newAttributes: Record<string, { values: string[]; uom?: string }> = {
+    "Tamaño rosca": { values: ["10mm", "13mm", "15mm"] },
+    "Altura vastago": { values: ["10mm", "12mm", "13mm", "15mm", "18mm", "20mm", "30mm", "35mm"] },
+    "Agujero vastago": { values: ["Plano", "Normal"] },
+    "Forma tapa": { values: ["Hexagonal", "Bala", "Rebeca", "Yadis"] },
+    "Color tapa": { values: ["Negro", "Blanco", "Transparente", "Personalizado"] },
+  };
+  for (const [nombre, config] of Object.entries(newAttributes)) {
+    const attribute = await prisma.attribute.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre },
+    });
+    for (const valor of config.values) {
       await prisma.attributeValue.upsert({
         where: { attributeId_valor: { attributeId: attribute.id, valor } },
         update: {},
@@ -115,7 +139,7 @@ async function main() {
     if (!exists) await prisma.partner.create({ data: p });
   }
 
-  console.log("Seed listo: auth + catálogos + ubicaciones + clientes.");
+  console.log("Seed listo: auth + catálogos + ubicaciones + clientes + atributos.");
 }
 
 main()

@@ -20,6 +20,12 @@ export interface Atributo {
   id: number;
   nombre: string;
   valores: AtributoValor[];
+  productIds?: number[];
+}
+
+export interface AtributosProducto {
+  propios: Atributo[];
+  heredados: Atributo[];
 }
 
 export interface ProductoLite {

@@ -32,6 +32,28 @@ export default function ProductoDetallePage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
+  // --- Atributos propios y heredados del producto ---
+  const [propios, setPropios] = useState<Atributo[]>([]);
+  const [heredados, setHeredados] = useState<Atributo[]>([]);
+  const [showCreateAttrModal, setShowCreateAttrModal] = useState(false);
+  const [createAttrNombre, setCreateAttrNombre] = useState("");
+  const [createAttrValores, setCreateAttrValores] = useState("");
+  const [editingAttr, setEditingAttr] = useState<Atributo | null>(null);
+  const [editAttrValores, setEditAttrValores] = useState<string[]>([]);
+  const [newValor, setNewValor] = useState("");
+  const [savingAttr, setSavingAttr] = useState(false);
+  const [showAddGlobalModal, setShowAddGlobalModal] = useState(false);
+  const [globalAttrSearch, setGlobalAttrSearch] = useState("");
+  const [asigningAttr, setAsigningAttr] = useState(false);
+
+  const cargarAtributosProducto = useCallback(async () => {
+    try {
+      const result = await api<{ propios: Atributo[]; heredados: Atributo[] }>(`/catalogos/atributos/producto/${prodId}`);
+      setPropios(result.propios);
+      setHeredados(result.heredados);
+    } catch { setPropios([]); setHeredados([]); }
+  }, [prodId]);
+
   const cargar = useCallback(async () => {
     const [pd, g] = await Promise.all([
       api<ProductoDetalle>(`/productos/${prodId}`),
@@ -39,7 +61,8 @@ export default function ProductoDetallePage() {
     ]);
     setD(pd);
     setGrid(g);
-  }, [prodId]);
+    await cargarAtributosProducto();
+  }, [prodId, cargarAtributosProducto]);
 
   useEffect(() => {
     api<Categoria[]>("/catalogos/categorias").then(setCategorias).catch(() => setCategorias([]));
@@ -69,7 +92,90 @@ export default function ProductoDetallePage() {
     } catch (e) { notify(e as Error, ""); }
   }
 
-  // ------------------------------------------------------------------ Ejes
+  // ------------------------------------------------------------------ Atributos locales
+  async function crearAtributo() {
+    if (!createAttrNombre.trim()) return;
+    setSavingAttr(true);
+    try {
+      const valores = createAttrValores.split(",").map((v) => v.trim()).filter(Boolean);
+      // Crear atributo global
+      await api("/catalogos/atributos", {
+        method: "POST",
+        body: JSON.stringify({ nombre: createAttrNombre.trim(), valores }),
+      });
+      // Buscar el atributo creado para obtener su ID
+      const allAttrs = await api<Atributo[]>("/catalogos/atributos");
+      const created = allAttrs.find((a) => a.nombre === createAttrNombre.trim());
+      if (created) {
+        // Asignar al producto via PUT ejes (agrega a los existentes)
+        const allPropiosIds = [...propios, ...heredados].map((a) => a.id);
+        const newEjes = [...allPropiosIds, created.id].map((attrId, i) => ({ attributeId: attrId, sortOrder: i }));
+        await api(`/productos/${prodId}/ejes`, {
+          method: "PUT",
+          body: JSON.stringify({ ejes: newEjes }),
+        });
+      }
+      setCreateAttrNombre("");
+      setCreateAttrValores("");
+      setShowCreateAttrModal(false);
+      await cargarAtributosProducto();
+      notify(null, "Atributo creado y asignado.");
+    } catch (e) { notify(e as Error, e instanceof Error ? e.message : "Error"); }
+    finally { setSavingAttr(false); }
+  }
+
+  function abrirEditarAttr(attr: Atributo) {
+    setEditingAttr(attr);
+    setEditAttrValores(attr.valores.map((v) => v.valor));
+    setNewValor("");
+  }
+
+  async function agregarValor() {
+    if (!newValor.trim() || !editingAttr) return;
+    try {
+      await api(`/catalogos/atributos/${editingAttr.id}/valores`, {
+        method: "POST",
+        body: JSON.stringify({ valor: newValor.trim() }),
+      });
+      setNewValor("");
+      await cargarAtributosProducto();
+      const updated = [...propios, ...heredados].find((a) => a.id === editingAttr.id);
+      if (updated) setEditAttrValores(updated.valores.map((v) => v.valor));
+    } catch (e) { notify(e as Error, ""); }
+  }
+
+  async function eliminarValor(attrId: number, valorId: number) {
+    try {
+      await api(`/catalogos/atributos/${attrId}/valores/${valorId}`, { method: "DELETE" });
+      await cargarAtributosProducto();
+      const updated = [...propios, ...heredados].find((a) => a.id === attrId);
+      if (updated) setEditAttrValores(updated.valores.map((v) => v.valor));
+      notify(null, "Valor eliminado.");
+    } catch (e) { notify(e as Error, ""); }
+  }
+
+  async function desasignarAtributo(attrId: number) {
+    try {
+      await api(`/catalogos/atributos/${attrId}/desasignar/${prodId}`, { method: "DELETE" });
+      setEditingAttr(null);
+      await cargarAtributosProducto();
+      notify(null, "Atributo desasignado del producto.");
+    } catch (e) { notify(e as Error, ""); }
+  }
+
+  async function asignarAtributoGlobal(attrId: number) {
+    setAsigningAttr(true);
+    try {
+      await api(`/catalogos/atributos/${attrId}/asignar/${prodId}`, { method: "POST" });
+      setShowAddGlobalModal(false);
+      setGlobalAttrSearch("");
+      await cargarAtributosProducto();
+      notify(null, "Atributo asignado.");
+    } catch (e) { notify(e as Error, ""); }
+    finally { setAsigningAttr(false); }
+  }
+
+  // ------------------------------------------------------------------ Ejes (para grid legacy)
   const [ejesSel, setEjesSel] = useState<number[]>([]);
   const [nuevoEje, setNuevoEje] = useState("");
   const [showMasCombinaciones, setShowMasCombinaciones] = useState(false);
@@ -307,43 +413,254 @@ export default function ProductoDetallePage() {
         </div>
       </div>
 
-      {/* --- Ejes del grid (solo si tiene variantes) --- */}
+      {/* --- Atributos y valores (solo si tiene variantes) --- */}
       {d.hasVariants && (
         <div className="card">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ marginTop: 0, marginBottom: 0 }}>Ejes del grid</h3>
+            <h3 style={{ marginTop: 0, marginBottom: 0 }}>Atributos</h3>
             <button
               className="btn ghost sm"
               onClick={() => setShowMasCombinaciones(!showMasCombinaciones)}
             >
-              {showMasCombinaciones ? "Ocultar combinaciones" : "Más combinaciones"}
+              {showMasCombinaciones ? "Ocultar combinaciones" : "Ver combinaciones"}
             </button>
           </div>
           <p className="muted small" style={{ margin: "4px 0 12px" }}>
-            Los ejes definen las combinaciones de variantes. Al guardar, las combinaciones no materializadas aparecerán en "Más combinaciones".
+            Los atributos definen las opciones de venta. Los valores se usan para filtrar variantes.
           </p>
-          {ejesSel.map((attrId, i) => {
-            const nombre = atributos.find((a) => a.id === attrId)?.nombre ?? `#${attrId}`;
-            return (
-              <div key={attrId} className="row" style={{ marginBottom: 8 }}>
-                <span>{i + 1}. {nombre}</span>
-                <button type="button" className="btn ghost sm" onClick={() => setEjesSel(ejesSel.filter((x) => x !== attrId))}>
-                  Quitar
-                </button>
-              </div>
-            );
-          })}
-          <div className="inline-form" style={{ marginTop: 8 }}>
-            <select value={nuevoEje} onChange={(e) => setNuevoEje(e.target.value)}>
-              <option value="">Agregar atributo…</option>
-              {atributos.filter((a) => !ejesSel.includes(a.id)).map((a) => (
-                <option key={a.id} value={a.id}>{a.nombre}</option>
-              ))}
-            </select>
-            <button type="button" className="btn ghost sm" onClick={() => { if (nuevoEje) { setEjesSel([...ejesSel, Number(nuevoEje)]); setNuevoEje(""); } }}>
-              Agregar
+
+          {propios.length > 0 && (
+            <>
+              <p className="muted small" style={{ margin: "0 0 8px", fontWeight: 600 }}>PROPIOS</p>
+              <table className="table" style={{ marginBottom: 12 }}>
+                <tbody>
+                  {propios.map((attr) => (
+                    <tr key={attr.id}>
+                      <td><strong>{attr.nombre}</strong></td>
+                      <td className="muted-2">
+                        {attr.valores.length === 0 ? (
+                          <span className="muted small">sin valores</span>
+                        ) : (
+                          attr.valores.map((v) => v.valor).join(", ")
+                        )}
+                      </td>
+                      <td style={{ width: 200 }}>
+                        <button type="button" className="btn ghost sm" onClick={() => abrirEditarAttr(attr)}>Editar</button>
+                        <button type="button" className="btn ghost sm" style={{ color: "red" }} onClick={() => desasignarAtributo(attr.id)}>Desasignar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {heredados.length > 0 && (
+            <>
+              <p className="muted small" style={{ margin: "8px 0 8px", fontWeight: 600 }}>HEREDADOS (de componentes del BOM)</p>
+              <table className="table" style={{ marginBottom: 12 }}>
+                <tbody>
+                  {heredados.map((attr) => (
+                    <tr key={attr.id}>
+                      <td><span className="muted">{attr.nombre}</span></td>
+                      <td className="muted-2">
+                        {attr.valores.length === 0 ? (
+                          <span className="muted small">sin valores</span>
+                        ) : (
+                          attr.valores.map((v) => v.valor).join(", ")
+                        )}
+                      </td>
+                      <td style={{ width: 200 }}></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="btn primary sm"
+            onClick={() => { setShowCreateAttrModal(true); setCreateAttrNombre(""); setCreateAttrValores(""); }}
+          >
+            + Crear nuevo atributo
+          </button>
+          <span style={{ margin: "0 8px" }} />
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={() => { setShowAddGlobalModal(true); setGlobalAttrSearch(""); }}
+          >
+            + Agregar atributo global ▾
+          </button>
+        </div>
+      )}
+
+      {/* --- Modal: Crear atributo --- */}
+      {showCreateAttrModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateAttrModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Crear atributo</h3>
+            <label style={{ display: "block", marginBottom: 12 }}>
+              Nombre del atributo
+              <input
+                value={createAttrNombre}
+                onChange={(e) => setCreateAttrNombre(e.target.value)}
+                placeholder="ej. Color tapa"
+                autoFocus
+              />
+            </label>
+            <label style={{ display: "block", marginBottom: 12 }}>
+              Valores (separados por coma)
+              <input
+                value={createAttrValores}
+                onChange={(e) => setCreateAttrValores(e.target.value)}
+                placeholder="Negro, Blanco, Transparente"
+              />
+            </label>
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setShowCreateAttrModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={crearAtributo}
+                disabled={savingAttr || !createAttrNombre.trim()}
+              >
+                {savingAttr ? "Creando…" : "Crear atributo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Modal: Editar atributo --- */}
+      {editingAttr && (
+        <div className="modal-overlay" onClick={() => setEditingAttr(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Editar atributo: {editingAttr.nombre}</h3>
+            <p className="muted small" style={{ margin: "0 0 12px" }}>
+              Los valores definen las opciones disponibles en el storefront.
+            </p>
+
+            <div style={{ marginBottom: 12 }}>
+              {editAttrValores.map((valor, i) => {
+                const original = editingAttr.valores[i];
+                return (
+                  <div key={original?.id ?? i} className="row" style={{ marginBottom: 6 }}>
+                    <span style={{ flex: 1 }}>{valor}</span>
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      style={{ color: "red" }}
+                      onClick={() => original && eliminarValor(editingAttr.id, original.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                );
+              })}
+              {editAttrValores.length === 0 && (
+                <p className="muted small">Sin valores. Agrega uno abajo.</p>
+              )}
+            </div>
+
+            <div className="inline-form" style={{ marginBottom: 12 }}>
+              <input
+                value={newValor}
+                onChange={(e) => setNewValor(e.target.value)}
+                placeholder="Nuevo valor"
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarValor())}
+              />
+              <button type="button" className="btn ghost sm" onClick={agregarValor} disabled={!newValor.trim()}>
+                Agregar
+              </button>
+            </div>
+
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="btn"
+                style={{ color: "red" }}
+                onClick={() => { desasignarAtributo(editingAttr.id); setEditingAttr(null); }}
+              >
+                Desasignar del producto
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setEditingAttr(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Modal: Agregar atributo global --- */}
+      {showAddGlobalModal && (
+        <div className="modal-overlay" onClick={() => setShowAddGlobalModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: 400 }}>
+            <h3>Agregar atributo global</h3>
+            <p className="muted small" style={{ margin: "0 0 12px" }}>
+              Solo se muestran atributos no asignados a este producto.
+            </p>
+            <input
+              value={globalAttrSearch}
+              onChange={(e) => setGlobalAttrSearch(e.target.value)}
+              placeholder="Buscar atributo..."
+              autoFocus
+              style={{ marginBottom: 12 }}
+            />
+            <div style={{ maxHeight: 300, overflowY: "auto", border: "1px solid var(--line)", borderRadius: 4, padding: 8 }}>
+              {atributos
+                .filter((a) => {
+                  const assignedIds = [...propios, ...heredados].map((p) => p.id);
+                  if (assignedIds.includes(a.id)) return false;
+                  if (!globalAttrSearch) return true;
+                  return a.nombre.toLowerCase().includes(globalAttrSearch.toLowerCase());
+                })
+                .map((attr) => (
+                  <div key={attr.id} className="row" style={{ marginBottom: 8, alignItems: "center" }}>
+                    <span style={{ flex: 1 }}>
+                      <strong>{attr.nombre}</strong>
+                      <span className="muted"> — {attr.valores.length} valores</span>
+                    </span>
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      onClick={() => asignarAtributoGlobal(attr.id)}
+                      disabled={asigningAttr}
+                    >
+                      Asignar
+                    </button>
+                  </div>
+                ))}
+              {atributos.filter((a) => {
+                const assignedIds = [...propios, ...heredados].map((p) => p.id);
+                if (assignedIds.includes(a.id)) return false;
+                if (!globalAttrSearch) return true;
+                return a.nombre.toLowerCase().includes(globalAttrSearch.toLowerCase());
+              }).length === 0 && (
+                <p className="muted small" style={{ textAlign: "center", padding: 16 }}>
+                  No hay atributos disponibles para asignar.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn"
+              style={{ marginTop: 12 }}
+              onClick={() => setShowAddGlobalModal(false)}
+            >
+              Cerrar
             </button>
-            <button type="button" className="btn primary sm" onClick={guardarEjes}>Guardar ejes</button>
           </div>
         </div>
       )}
