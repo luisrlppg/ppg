@@ -241,7 +241,7 @@ local + `fetch` manual.
   `catalogos/page.tsx` → `components/catalogos/atributos-globales.tsx`.)*
 - **Candidatos a refactor cross‑cutting:** recursión BOM (3 copias), disparo de monitor,
   helpers `common/util.ts` (mezclados).
-- Probar flujo E3 completo (reportes → confirmación → ubicar): **verificado end-to-end 2026-08-31** con `scripts/seed-demo.ts`. Pendiente probar la cascada de OFs desde la confirmación de una venta (E2).
+- Probar flujo E3 completo (reportes → confirmación → ubicar): **verificado end-to-end 2026-08-31** con `scripts/seed-demo.ts`. Flujo E2 (venta → confirmación → neteo → cascada de OFs multi-nivel → despacho/consumo → `despachada`) **verificado end-to-end 2026-08-31** con `scripts/seed-demo-ventas.ts`; se corrigieron 3 bugs (DTO `configuracion` en ventas internas, OFs duplicadas por doble bucle en `confirmar` eliminando `crearOFS`/`ventas.ofs.ts`, y `await` perdido del `$transaction` en `despacharLinea` que tumbaba el proceso).
 
 ---
 

@@ -4,7 +4,6 @@ import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { ProductosService } from "../productos/productos.service";
 import { MonitorService } from "../monitor/monitor.service";
-import { crearOFS } from "./ventas.ofs";
 import { ConfiguracionLinea, ResumenItem, ResumenNeteo } from "./ventas.types";
 
 export type { ResumenItem, ResumenNeteo, ConfiguracionLinea } from "./ventas.types";
@@ -342,6 +341,10 @@ export class VentasService {
       }
 
       // 2) Por cada demanda: OF recursiva (con configuracion + ensamble) o simple ( resto) o pendiente compra (hoja).
+      const configPorVariant = new Map<number, ConfiguracionLinea>();
+      for (const l of order.lines) {
+        if (l.configuracion) configPorVariant.set(l.variantId, l.configuracion as ConfiguracionLinea);
+      }
       const fabricar: ResumenItem[] = [];
       const comprar: ResumenItem[] = [];
       for (const [variantId, cantidad] of [...demand.entries()].sort((a, b) => a[0] - b[0])) {
@@ -361,6 +364,8 @@ export class VentasService {
             estado: "confirmada",
             generatedFrom: order.numero,
             userId: userId ?? null,
+            configuracion: (configPorVariant.get(variantId) as unknown as Prisma.InputJsonValue) ?? undefined,
+            salesOrderLineId: order.lines.find((l) => l.variantId === variantId)?.id ?? null,
           },
         });
         await tx.manufacturingOrder.update({
@@ -390,15 +395,6 @@ export class VentasService {
         where: { id },
         data: { confirmadaAt: new Date(), resumen: resumen as unknown as Prisma.InputJsonValue },
       });
-for (const line of order.lines) {
-        const v = await load(line.variantId);
-        if (v.product.components.length > 1 && line.configuracion) {
-          const falta = dec(line.cantidad) - stockOf(v);
-          if (falta > 0) {
-            await this.crearOFS(tx, line.id, line.variantId, falta, line.configuracion as ConfiguracionLinea, userId ?? null, []);
-          }
-        }
-      }
 
       return { resumen, modelo: { numero: order.numero, estado: order.estado } };
     });
@@ -414,7 +410,7 @@ for (const line of order.lines) {
     if (!(cantidad > 0)) throw new BadRequestException("La cantidad a despachar debe ser mayor a 0");
 
     const notificar: number[] = [];
-    this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       const line = await tx.salesOrderLine.findUnique({
         where: { id: lineaId },
         include: { order: true },
@@ -498,29 +494,5 @@ for (const line of order.lines) {
       void userId;
       return { ok: true };
     });
-  }
-
-  private async crearOFS(
-    tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
-    ordenId: number,
-    variantId: number,
-    cantidad: number,
-    configuracion: ConfiguracionLinea,
-    userId: number | null,
-    path: number[],
-  ): Promise<void> {
-    await crearOFS(
-      {
-        tx,
-        resolveComponentVariant: (componentProductId, ctx) =>
-          this.productos.resolveComponentVariant(componentProductId, ctx),
-      },
-      ordenId,
-      variantId,
-      cantidad,
-      configuracion,
-      userId,
-      path,
-    );
   }
 }

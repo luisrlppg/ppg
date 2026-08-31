@@ -21,6 +21,7 @@ class LineaVentaDto {
   @IsNumber() variantId!: number;
   @IsNumber() cantidad!: number;
   @IsOptional() @IsNumber() precioUnitario?: number;
+  @IsOptional() configuracion?: Record<string, unknown>;
 }
 
 class CrearVentaDto {

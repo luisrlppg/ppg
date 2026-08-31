@@ -2,15 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { Partner, VarianteBuscada } from "@/lib/types";
+import type { Partner, VarianteBuscada, Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
 
 interface LineaForm {
   variantId: number;
+  productId: number;
   sku: string;
   nombre: string;
   producto: string;
   cantidad: string;
   precio: string;
+  configurable: boolean;
+  pasos?: Passo[];
+  seleccionOpts?: (PassoOption | null)[];
+  configuracion?: ConfiguracionLinea;
+  configVariantId?: number;
 }
 
 interface Props {
@@ -46,11 +52,34 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
     return () => clearTimeout(t);
   }, [busqVar]);
 
-  function agregarLinea(v: VarianteBuscada) {
+  async function cargarPasos(productId: number): Promise<Passo[]> {
+    try {
+      const pasos = await api<Passo[]>(`/public/productos/${productId}/pasos`);
+      return pasos;
+    } catch {
+      return [];
+    }
+  }
+
+  async function agregarLinea(v: VarianteBuscada) {
     if (lineas.some((l) => l.variantId === v.id)) return;
+    const pasos = await cargarPasos(v.productId);
+    const attrSteps = pasos.filter((s) => !s.isQtyStep);
+    const configurable = attrSteps.length > 0;
     setLineas([
       ...lineas,
-      { variantId: v.id, sku: v.sku, nombre: v.nombre, producto: v.producto, cantidad: "1", precio: String(v.precio) },
+      {
+        variantId: v.id,
+        productId: v.productId,
+        sku: v.sku,
+        nombre: v.nombre,
+        producto: v.producto,
+        cantidad: "1",
+        precio: String(v.precio),
+        configurable,
+        pasos: configurable ? attrSteps : undefined,
+        seleccionOpts: configurable ? attrSteps.map(() => null) : undefined,
+      },
     ]);
     setBusqVar("");
     setResultados([]);
@@ -60,11 +89,59 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
     setLineas(lineas.map((l, j) => (j === i ? { ...l, [campo]: valor } : l)));
   }
 
+  function opcionesDelPaso(linea: LineaForm, pasoIdx: number): PassoOption[] {
+    const paso = linea.pasos?.[pasoIdx];
+    if (!paso) return [];
+    if (pasoIdx === 0) return paso.opciones;
+    const prevSel = linea.seleccionOpts?.[pasoIdx - 1];
+    if (!prevSel) return paso.opciones.filter((o) => o.valueId === null || false);
+    return paso.opciones.filter(
+      (o) => o.valueId === prevSel.valueId || paso.opciones.some((p) => p.valueId === prevSel.valueId && p.variantId === o.variantId),
+    );
+  }
+
+  function elegirOpcion(i: number, pasoIdx: number, opt: PassoOption) {
+    setLineas((prev) =>
+      prev.map((l, j) => {
+        if (j !== i) return l;
+        const seleccionOpts = (l.seleccionOpts ?? []).slice();
+        if (pasoIdx < seleccionOpts.length) seleccionOpts[pasoIdx] = opt;
+        for (let k = pasoIdx + 1; k < seleccionOpts.length; k++) seleccionOpts[k] = null;
+        return { ...l, seleccionOpts, configuracion: undefined, configVariantId: undefined };
+      }),
+    );
+  }
+
+  function aplicarConfiguracion(i: number) {
+    const linea = lineas[i];
+    const pasos = linea.pasos ?? [];
+    const seleccionOpts = linea.seleccionOpts ?? [];
+    if (seleccionOpts.some((s) => !s) || seleccionOpts.length === 0) return;
+    const ultima = seleccionOpts[seleccionOpts.length - 1];
+    if (!ultima) return;
+    const cfg: ConfiguracionLinea = {
+      pasos: pasos.map((p, idx) => {
+        const opt = seleccionOpts[idx];
+        const valores = [...new Set(p.opciones.filter((o) => o.variantId === opt?.variantId).map((o) => o.valor))];
+        return { pregunta: p.pregunta, opciones: valores, seleccion: opt?.valor ?? "" };
+      }),
+    };
+    setLineas((prev) =>
+      prev.map((l, j) => (j === i ? { ...l, configuracion: cfg, configVariantId: ultima.variantId, sku: ultima.sku } : l)),
+    );
+  }
+
   async function crearVenta(e: React.FormEvent) {
     e.preventDefault();
     if (lineas.length === 0) {
       onError("Agrega al menos una variante.");
       return;
+    }
+    for (const l of lineas) {
+      if (l.configurable && !l.configuracion) {
+        onError(`La variante "${l.producto} — ${l.nombre}" requiere configuración.`);
+        return;
+      }
     }
     setGuardando(true);
     onError("");
@@ -75,7 +152,12 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
           partnerId: partnerId ? Number(partnerId) : undefined,
           fechaEntregaDeseada: fechaEntrega || undefined,
           notas: notas || undefined,
-          lines: lineas.map((l) => ({ variantId: l.variantId, cantidad: Number(l.cantidad), precioUnitario: l.precio === "" ? undefined : Number(l.precio) })),
+          lines: lineas.map((l) => ({
+            variantId: l.configVariantId ?? l.variantId,
+            cantidad: Number(l.cantidad),
+            precioUnitario: l.precio === "" ? undefined : Number(l.precio),
+            configuracion: l.configuracion ? JSON.stringify(l.configuracion) : undefined,
+          })),
         }),
       });
       onMsg("Venta registrada. Revisa el seguimiento y confírmala cuando esté lista.");
@@ -140,21 +222,63 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
       )}
 
       {lineas.map((l, i) => (
-        <div key={l.variantId} className="row" style={{ background: "#fafafa", padding: "8px 12px", borderRadius: 8, marginBottom: 6 }}>
-          <span style={{ flex: 2 }}>
-            <strong>{l.producto}</strong> — {l.nombre} <span className="muted small">({l.sku})</span>
-          </span>
-          <label style={{ flex: 0.7 }}>
-            Cantidad
-            <input type="number" step="0.001" min="0.001" value={l.cantidad} onChange={(e) => cambiarLinea(i, "cantidad", e.target.value)} />
-          </label>
-          <label style={{ flex: 0.9 }}>
-            Precio ($)
-            <input type="number" step="0.01" value={l.precio} onChange={(e) => cambiarLinea(i, "precio", e.target.value)} />
-          </label>
-          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>
-            Quitar
-          </button>
+        <div key={i} style={{ background: "#fafafa", padding: "8px 12px", borderRadius: 8, marginBottom: 6 }}>
+          <div className="row">
+            <span style={{ flex: 2 }}>
+              <strong>{l.producto}</strong> — {l.nombre} <span className="muted small">({l.sku})</span>
+              {l.configurable && <span className="muted small" style={{ color: "var(--warning)" }}> · configurable</span>}
+            </span>
+            <label style={{ flex: 0.7 }}>
+              Cantidad
+              <input type="number" step="0.001" min="0.001" value={l.cantidad} onChange={(e) => cambiarLinea(i, "cantidad", e.target.value)} />
+            </label>
+            <label style={{ flex: 0.9 }}>
+              Precio ($)
+              <input type="number" step="0.01" value={l.precio} onChange={(e) => cambiarLinea(i, "precio", e.target.value)} />
+            </label>
+            <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>
+              Quitar
+            </button>
+          </div>
+
+          {l.configurable && l.pasos && (
+            <div style={{ marginTop: 8, padding: 8, background: "#fff", border: "1px solid #eee", borderRadius: 6 }}>
+              {l.pasos.map((p, pi) => {
+                const opciones = opcionesDelPaso(l, pi);
+                const elegida = l.seleccionOpts?.[pi]?.variantId;
+                return (
+                  <label key={pi} style={{ display: "block", marginBottom: 6 }}>
+                    {p.pregunta} <span className="muted small">({p.opciones.length} opts)</span>
+                    <select
+                      style={{ width: "100%", marginTop: 2 }}
+                      value={elegida ?? ""}
+                      onChange={(e) => {
+                        const opt = opciones.find((o) => o.variantId === Number(e.target.value));
+                        if (opt) elegirOpcion(i, pi, opt);
+                      }}
+                      disabled={pi > 0 && !l.seleccionOpts?.[pi - 1]}
+                    >
+                      <option value="">— Elegir —</option>
+                      {opciones.map((o) => (
+                        <option key={o.variantId} value={o.variantId}>
+                          {o.valor} ({o.sku})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+              {l.configuracion ? (
+                <p className="muted small" style={{ margin: "4px 0 0" }}>
+                  Configurado → {l.sku}
+                </p>
+              ) : (
+                <button type="button" className="btn primary small" style={{ marginTop: 4 }} onClick={() => aplicarConfiguracion(i)}>
+                  Aplicar configuración
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ))}
       {lineas.length === 0 && <p className="muted">Busca y agrega las variantes.</p>}

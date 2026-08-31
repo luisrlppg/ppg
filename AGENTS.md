@@ -62,13 +62,18 @@ scripts/      # Scripts de utilidad
 - `scripts/reset-variants.ts` — limpia variantes, limpia atributos/valores
 - `scripts/seed-products.ts` — configura estructura BOM + ProductAttributeLine + ProductPasso
 - `scripts/seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3 (reportes/producción); idempotente
+- `scripts/seed-demo-ventas.ts` — siembra variantes únicas + combo taparrosca SIN stock para probar el flujo ventas → confirmación → neteo → cascada de OFs (E2); idempotente
 - `scripts/dev.sh` — gestor de servidores: `./scripts/dev.sh <up|stop|status|logs>`
 - `start-dev.sh` — iniciar servidores (build API + arranque rápido)
 
 ## Pendiente
 1. **Modularización** — separar código en módulos (Catálogos, Manufactura, etc.)
-2. **Probar flujo de ventas → OFs recursivas** — el flujo E3 (reportes/producción) ya verificó end-to-end (2026-08-31); queda probar la cascada de OFs desde la confirmación de una venta
-3. **WSL2** — setup completo de dev en Linux
+2. **WSL2** — setup completo de dev en Linux
+
+> **Ventas → OFs recursivas (E2): verificado end-to-end (2026-08-31).** Al confirmar una venta se netea (fabricar vs comprar), se generan OFs únicas en cascada multi-nivel (combo → pincel → vástago) con sus líneas de componentes y la `configuracion` en la OF de ensamble, y el despacho consume stock hasta `despachada`. Durante la verificación se corrigieron 3 bugs:
+> - DTO de ventas internas no aceptaba `configuracion` (el service sí la leía, pero `whitelist: true` la descartaba).
+> - Doble bucle en `confirmar` generaba cada OF dos veces (neteo + `crearOFS`); se eliminó el bucle redundante y el archivo `ventas.ofs.ts`.
+> - `despacharLinea` no hacía `await` del `$transaction`, lo que tumbaba el proceso (unhandled rejection) al lanzar errores de stock; ahora devuelve 400 limpio.
 
 ## Credenciales
 - Admin: `admin` / `admin123`
