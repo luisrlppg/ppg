@@ -215,6 +215,9 @@ export class VentasService {
         });
         if (!v) throw new NotFoundException(`Variante ${line.variantId} no encontrada`);
         if (!(line.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
+        if (v.product.uom === "pieza" && !Number.isInteger(line.cantidad)) {
+          throw new BadRequestException("La cantidad para productos en piezas debe ser un número entero");
+        }
         const precio = line.precioUnitario === undefined ? await this.efectivo(v) : line.precioUnitario;
         await tx.salesOrderLine.create({
           data: {
@@ -265,6 +268,10 @@ export class VentasService {
         for (const line of data.lines) {
           const v = await tx.productVariant.findUnique({ where: { id: line.variantId }, include: { product: true } });
           if (!v) throw new NotFoundException(`Variante ${line.variantId} no encontrada`);
+          if (!(line.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
+          if (v.product.uom === "pieza" && !Number.isInteger(line.cantidad)) {
+            throw new BadRequestException("La cantidad para productos en piezas debe ser un número entero");
+          }
           const precio = line.precioUnitario === undefined ? await this.efectivo(v) : line.precioUnitario;
           await tx.salesOrderLine.create({
             data: {

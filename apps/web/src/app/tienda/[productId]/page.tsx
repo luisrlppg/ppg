@@ -265,7 +265,17 @@ export default function TiendaPage() {
                   ))}
                   <tr style={{ borderBottom: "1px solid #eee" }}>
                     <td style={{ padding: "8px 0", color: "#666" }}>Cantidad</td>
-                    <td style={{ padding: "8px 0", textAlign: "right", fontWeight: "bold" }}>{cantidad} {producto.uom}(s)</td>
+                    <td style={{ padding: "8px 0", textAlign: "right" }}>
+                      <input
+                        type="number"
+                        min={producto.uom === "kg" ? "0.001" : "1"}
+                        step={producto.uom === "kg" ? "0.001" : "1"}
+                        value={cantidad}
+                        onChange={(e) => setCantidad(producto.uom === "kg" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0)}
+                        style={{ width: 80, textAlign: "right", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 4 }}
+                      />
+                      <span style={{ marginLeft: 6, color: "#666" }}>{producto.uom}(s)</span>
+                    </td>
                   </tr>
                   <tr>
                     <td style={{ padding: "8px 0", color: "#666" }}>SKU final</td>

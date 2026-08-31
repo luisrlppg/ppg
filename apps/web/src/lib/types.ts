@@ -319,6 +319,7 @@ export interface PassoOption {
   variantId: number;
   sku: string;
   enStock: boolean;
+  uom: string;
 }
 
 export interface Passo {

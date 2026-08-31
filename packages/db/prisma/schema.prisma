@@ -82,6 +82,7 @@ model AttributeValue {
 enum Uom {
   pieza
   metro
+  kg
 }
 
 model Product {

@@ -9,6 +9,7 @@ export interface PassoOption {
   variantId: number;
   sku: string;
   enStock: boolean;
+  uom: string;
 }
 
 export interface Passo {
@@ -54,6 +55,9 @@ export class PublicService {
         const v = await tx.productVariant.findUnique({ where: { id: line.variantId }, include: { product: true } });
         if (!v) throw new BadRequestException(`Variante ${line.variantId} no disponible`);
         if (!(line.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
+        if (v.product.uom === "pieza" && !Number.isInteger(line.cantidad)) {
+          throw new BadRequestException("La cantidad para productos en piezas debe ser un número entero");
+        }
         const precio = v.price === null ? dec(v.product.basePrice) : dec(v.price);
         const cfg = line.configuracion ? (JSON.parse(line.configuracion) as Prisma.InputJsonValue) : undefined;
         await tx.salesOrderLine.create({
@@ -140,11 +144,11 @@ export class PublicService {
             variantAttributes: { some: { attributeId: passo.attributeId, valueId: v.id } },
             activo: true,
           },
-          include: { stockLevels: true },
+          include: { stockLevels: true, product: { select: { uom: true } } },
         });
         for (const variant of variants) {
           const enStock = variant.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
-          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.id, sku: variant.sku, enStock });
+          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.id, sku: variant.sku, enStock, uom: variant.product.uom as string });
         }
       }
       const seen = new Map<string, PassoOption>();
