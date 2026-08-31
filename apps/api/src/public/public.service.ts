@@ -1,6 +1,23 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
+
+export interface PassoOption {
+  valueId: number;
+  valor: string;
+  variantId: number;
+  sku: string;
+  enStock: boolean;
+}
+
+export interface Passo {
+  sortOrder: number;
+  pregunta: string;
+  attributeId: number | null;
+  isQtyStep: boolean;
+  opciones: PassoOption[];
+}
 
 @Injectable()
 export class PublicService {
@@ -12,7 +29,7 @@ export class PublicService {
     nombre?: string;
     telefono?: string;
     email?: string;
-    lines: { variantId: number; cantidad: number }[];
+    lines: { variantId: number; cantidad: number; configuracion?: string }[];
   }): Promise<{ numero: string; estado: string }> {
     if (!data.lines || data.lines.length === 0) {
       throw new BadRequestException("El pedido necesita al menos una línea");
@@ -37,8 +54,9 @@ export class PublicService {
         if (!v) throw new BadRequestException(`Variante ${line.variantId} no disponible`);
         if (!(line.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
         const precio = v.price === null ? dec(v.product.basePrice) : dec(v.price);
+        const cfg = line.configuracion ? (JSON.parse(line.configuracion) as Prisma.InputJsonValue) : undefined;
         await tx.salesOrderLine.create({
-          data: { orderId: order.id, variantId: line.variantId, cantidad: line.cantidad, precioUnitario: precio },
+          data: { orderId: order.id, variantId: line.variantId, cantidad: line.cantidad, precioUnitario: precio, configuracion: cfg },
         });
       }
       return { numero: `PED-${String(order.id).padStart(4, "0")}`, estado: "abierta" };
@@ -87,5 +105,59 @@ export class PublicService {
       publicado: v.published,
       empaques: v.packagings.map((p) => ({ nombre: p.packaging.nombre, cantidad: dec(p.cantidad) })),
     }));
+  }
+
+  async getPasos(productId: number): Promise<Passo[]> {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException(`Producto ${productId} no encontrado`);
+
+    const passos = await this.prisma.productPasso.findMany({
+      where: { productId },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    const result: Passo[] = [];
+    for (const passo of passos) {
+      if (passo.isQtyStep) {
+        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, isQtyStep: true, opciones: [] });
+        continue;
+      }
+      if (!passo.attributeId) {
+        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, isQtyStep: false, opciones: [] });
+        continue;
+      }
+      const values = await this.prisma.attributeValue.findMany({
+        where: { attributeId: passo.attributeId },
+        orderBy: { valor: "asc" },
+      });
+      const opciones: PassoOption[] = [];
+      for (const v of values) {
+        const variants = await this.prisma.productVariant.findMany({
+          where: {
+            productId,
+            variantAttributes: { some: { attributeId: passo.attributeId, valueId: v.id } },
+            activo: true,
+          },
+          include: { stockLevels: true },
+        });
+        for (const variant of variants) {
+          const enStock = variant.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
+          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.id, sku: variant.sku, enStock });
+        }
+      }
+      const seen = new Map<string, PassoOption>();
+      for (const o of opciones) {
+        const key = `${o.valueId}-${o.variantId}`;
+        if (!seen.has(key)) seen.set(key, o);
+      }
+      result.push({
+        sortOrder: passo.sortOrder,
+        pregunta: passo.pregunta,
+        attributeId: passo.attributeId,
+        isQtyStep: false,
+        opciones: [...seen.values()].sort((a, b) => a.valor.localeCompare(b.valor)),
+      });
+    }
+    return result;
   }
 }

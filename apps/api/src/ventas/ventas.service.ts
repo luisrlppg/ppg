@@ -19,6 +19,11 @@ export interface ResumenNeteo {
   comprar: ResumenItem[];
 }
 
+export interface ConfiguracionLinea {
+  pasos?: { pregunta: string; opciones: string[]; seleccion: string }[];
+  resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
+}
+
 interface VarianteCtx {
   id: number;
   productId: number;
@@ -30,7 +35,7 @@ interface VarianteCtx {
     id: number;
     nombre: string;
     basePrice: unknown;
-    components: { componentId: number; cantidad: unknown; component: { id: number; nombre: string } }[];
+    components: { componentId: number; cantidad: unknown; tipo: string; component: { id: number; nombre: string } }[];
   };
 }
 
@@ -139,6 +144,7 @@ export class VentasService {
         subtotal: dec(l.cantidad) * dec(l.precioUnitario),
         qtyDelivered: dec(l.qtyDelivered),
         estadoEntrega: l.estadoEntrega,
+        configuracion: l.configuracion as ConfiguracionLinea | null,
       })),
       ordenesFabricacion: ofs.map((mo) => ({
         id: mo.id,
@@ -149,6 +155,8 @@ export class VentasService {
         cantidad: dec(mo.cantidad),
         tipo: mo.tipo,
         estado: mo.estado,
+        salesOrderLineId: mo.salesOrderLineId,
+        configuracion: mo.configuracion as ConfiguracionLinea | null,
         lineas: mo.lines.map((ml) => ({
           id: ml.id,
           variantId: ml.componentVariantId,
@@ -173,7 +181,7 @@ export class VentasService {
       nombreEnvio?: string;
       telefonoEnvio?: string;
       emailEnvio?: string;
-      lines: { variantId: number; cantidad: number; precioUnitario?: number }[];
+      lines: { variantId: number; cantidad: number; precioUnitario?: number; configuracion?: ConfiguracionLinea }[];
     },
     userId?: number,
   ) {
@@ -209,7 +217,13 @@ export class VentasService {
         if (!(line.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
         const precio = line.precioUnitario === undefined ? await this.efectivo(v) : line.precioUnitario;
         await tx.salesOrderLine.create({
-          data: { orderId: order.id, variantId: line.variantId, cantidad: line.cantidad, precioUnitario: precio },
+          data: {
+            orderId: order.id,
+            variantId: line.variantId,
+            cantidad: line.cantidad,
+            precioUnitario: precio,
+            configuracion: (line.configuracion as unknown as Prisma.InputJsonValue) ?? undefined,
+          },
         });
       }
       return tx.salesOrder.findUniqueOrThrow({ where: { id: order.id } });
@@ -224,7 +238,7 @@ export class VentasService {
       fecha?: string;
       fechaEntregaDeseada?: string | null;
       notas?: string;
-      lines?: { variantId: number; cantidad: number; precioUnitario?: number }[];
+      lines?: { variantId: number; cantidad: number; precioUnitario?: number; configuracion?: ConfiguracionLinea }[];
     },
     userId?: number,
   ) {
@@ -253,7 +267,13 @@ export class VentasService {
           if (!v) throw new NotFoundException(`Variante ${line.variantId} no encontrada`);
           const precio = line.precioUnitario === undefined ? await this.efectivo(v) : line.precioUnitario;
           await tx.salesOrderLine.create({
-            data: { orderId: id, variantId: line.variantId, cantidad: line.cantidad, precioUnitario: precio },
+            data: {
+              orderId: id,
+              variantId: line.variantId,
+              cantidad: line.cantidad,
+              precioUnitario: precio,
+              configuracion: (line.configuracion as unknown as Prisma.InputJsonValue) ?? undefined,
+            },
           });
         }
       }
@@ -329,7 +349,7 @@ export class VentasService {
         await netear(line.variantId, dec(line.cantidad), []);
       }
 
-      // 2) Por cada demanda: OF (fabricable) o pendiente de compra (hoja).
+      // 2) Por cada demanda: OF recursiva (con configuracion + ensamble) o simple ( resto) o pendiente compra (hoja).
       const fabricar: ResumenItem[] = [];
       const comprar: ResumenItem[] = [];
       for (const [variantId, cantidad] of [...demand.entries()].sort((a, b) => a[0] - b[0])) {
@@ -378,6 +398,16 @@ export class VentasService {
         where: { id },
         data: { confirmadaAt: new Date(), resumen: resumen as unknown as Prisma.InputJsonValue },
       });
+for (const line of order.lines) {
+        const v = await load(line.variantId);
+        if (v.product.components.length > 1 && line.configuracion) {
+          const falta = dec(line.cantidad) - stockOf(v);
+          if (falta > 0) {
+            await this.crearOFS(tx, line.id, line.variantId, falta, line.configuracion as ConfiguracionLinea, userId ?? null, []);
+          }
+        }
+      }
+
       return { resumen, modelo: { numero: order.numero, estado: order.estado } };
     });
   }
@@ -476,5 +506,112 @@ export class VentasService {
       void userId;
       return { ok: true };
     });
+  }
+
+  private async crearOFS(
+    tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
+    ordenId: number,
+    variantId: number,
+    cantidad: number,
+    configuracion: ConfiguracionLinea,
+    userId: number | null,
+    path: number[],
+  ): Promise<void> {
+    if (path.includes(variantId)) {
+      throw new BadRequestException(`Dependencia circular detectada en OF para variantId=${variantId}`);
+    }
+
+    const v = await tx.productVariant.findUnique({
+      where: { id: variantId },
+      include: {
+        product: {
+          include: {
+            components: {
+              where: { tipo: "exacto" },
+              include: { component: true },
+            },
+          },
+        },
+        stockLevels: true,
+      },
+    });
+    if (!v) throw new NotFoundException(`Variante ${variantId} no encontrada`);
+
+    const stockActual = v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
+    const falta = cantidad - stockActual;
+    if (falta <= 0) return;
+
+    const comps = v.product.components;
+    if (comps.length === 0) return;
+
+    if (comps.length === 1) {
+      const mo = await tx.manufacturingOrder.create({
+        data: {
+          numero: placeholderNumero(),
+          variantId,
+          cantidad: falta,
+          tipo: "fabricacion",
+          estado: "confirmada",
+          generatedFrom: `venta:${ordenId}`,
+          userId,
+          salesOrderLineId: ordenId,
+          configuracion: configuracion as unknown as Prisma.InputJsonValue,
+        },
+      });
+      await tx.manufacturingOrder.update({
+        where: { id: mo.id },
+        data: { numero: `OF-${String(mo.id).padStart(4, "0")}` },
+      });
+      return;
+    }
+
+    const mo = await tx.manufacturingOrder.create({
+      data: {
+        numero: placeholderNumero(),
+        variantId,
+        cantidad: falta,
+        tipo: "ensamble",
+        estado: "confirmada",
+        generatedFrom: `venta:${ordenId}`,
+        userId,
+        salesOrderLineId: ordenId,
+        configuracion: configuracion as unknown as Prisma.InputJsonValue,
+      },
+    });
+    await tx.manufacturingOrder.update({
+      where: { id: mo.id },
+      data: { numero: `OF-${String(mo.id).padStart(4, "0")}` },
+    });
+
+    for (const c of comps) {
+      const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
+        productId: v.productId,
+        variantAttributes: [],
+      });
+      if (!compVariant) {
+        throw new BadRequestException(
+          `No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`,
+        );
+      }
+      const reqCantidad = falta * dec(c.cantidad);
+      const compStock = (await tx.stockLevel.findMany({ where: { variantId: compVariant.id } })).reduce(
+        (a, l) => a + dec(l.qty),
+        0,
+      );
+      if (compStock >= reqCantidad) continue;
+
+      const compComps = (
+        await tx.product.findUnique({
+          where: { id: c.component.id },
+          include: { components: { where: { tipo: "exacto" } } },
+        })
+      )?.components ?? [];
+      if (compComps.length === 0) continue;
+
+      await this.crearOFS(tx, ordenId, compVariant.id, reqCantidad - compStock, {}, userId, [
+        ...path,
+        variantId,
+      ]);
+    }
   }
 }

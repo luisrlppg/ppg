@@ -115,9 +115,9 @@ export class ProductosService {
         price: v.price === null ? null : dec(v.price),
         stockMin: dec(v.stockMin),
         stockMax: dec(v.stockMax),
-        stockActual: ProductosService.stockTotals(v.stockLevels),
+        stockActual: ProductosService.stockTotals(v.stockLevels).total,
         packagings: v.packagings.map((vp) => ({ packagingId: vp.packagingId, nombre: vp.packaging.nombre, cantidad: dec(vp.cantidad) })),
-        atributos: v.variantAttributes.map((va) => ({
+        valoracion: v.variantAttributes.map((va) => ({
           attributeId: va.attributeId,
           attribute: va.attribute.nombre,
           valueId: va.valueId,
@@ -307,7 +307,7 @@ export class ProductosService {
     if (!sku) throw new BadRequestException("sku es obligatorio");
     const dup = await this.prisma.productVariant.findUnique({ where: { sku } });
     if (dup) throw new BadRequestException(`Ya existe la variante "${sku}"`);
-    return this.prisma.productVariant.create({
+    const variant = await this.prisma.productVariant.create({
       data: {
         productId,
         nombre: data.nombre,
@@ -315,6 +315,8 @@ export class ProductosService {
         price: data.price === undefined || data.price === null ? null : data.price,
       },
     });
+    await this.inheritPackagingsToVariant(productId, variant.id);
+    return variant;
   }
 
   async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; published: boolean; activo: boolean; imagen: string | null }>) {
@@ -357,6 +359,22 @@ export class ProductosService {
       }
     });
     return { ok: true };
+  }
+
+  private async inheritPackagingsToVariant(productId: number, newVariantId: number) {
+    const source = await this.prisma.productVariant.findFirst({
+      where: { productId, packagings: { some: {} } },
+      include: { packagings: true },
+      orderBy: { id: "asc" },
+    });
+    if (!source) return;
+    await this.prisma.$transaction(async (tx) => {
+      for (const p of source.packagings) {
+        await tx.variantPackaging.create({
+          data: { variantId: newVariantId, packagingId: p.packagingId, cantidad: p.cantidad },
+        });
+      }
+    });
   }
 
   // -------------------------------------------------------------- Grid
@@ -436,6 +454,7 @@ export class ProductosService {
         },
       },
     });
+    await this.inheritPackagingsToVariant(productId, variant.id);
     return variant.id;
   }
 

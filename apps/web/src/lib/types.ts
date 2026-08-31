@@ -48,6 +48,7 @@ export interface Variante {
   stockActual: number;
   uom?: string;
   valoracion: { attributeId: number; attribute: string; valueId: number; valor: string }[];
+  packagings?: { packagingId: number; nombre: string; cantidad: number }[];
 }
 
 export interface GridCombo {
@@ -232,4 +233,113 @@ export interface FaltanteCompra {
   producto: string;
   cantidad: number;
   pedidos: string[];
+}
+
+// ---------------------------------------------------------------- E3: reportes
+
+export type Turno = "matutino" | "vespertino" | "nocturno";
+export type SeccionReporte = "maquina1" | "maquina2" | "maquina3" | "ensamble" | "ensartado" | "pegado" | "perforado";
+export type TipoLineaReporte = "final" | "consumo";
+
+export interface ReporteLinea {
+  id: number;
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  seccion: SeccionReporte;
+  tipo: TipoLineaReporte;
+  ok: number;
+  qtyAplicada: number;
+  qtyUbicada: number;
+  pendienteUbicar: number;
+}
+
+export interface Reporte {
+  id: number;
+  numero: string;
+  turno: Turno;
+  fecha: string;
+  personas: number;
+  horasTrabajadas: number | null;
+  notas: string | null;
+  estado: "pendiente" | "aplicado" | "cancelado";
+  aplicadoAt: string | null;
+  manufacturingOrder: string | null;
+  lineas: number;
+  secciones: string[];
+  totalFinal: number;
+  totalConsumo: number;
+}
+
+export interface ReporteDetalle {
+  id: number;
+  numero: string;
+  turno: Turno;
+  fecha: string;
+  personas: number;
+  horasTrabajadas: number | null;
+  notas: string | null;
+  estado: "pendiente" | "aplicado" | "cancelado";
+  aplicadoAt: string | null;
+  manufacturingOrder: { numero: string; estado: string } | null;
+  lines: ReporteLinea[];
+}
+
+export interface LoteUbicar {
+  lineaId: number;
+  reporte: string;
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  aplicado: number;
+  ubicado: number;
+  pendiente: number;
+}
+
+export interface StatsSeccion {
+  seccion: string;
+  unidades: number;
+  unidadesPorPersonaHora: number;
+}
+
+export interface StatsConsumo {
+  variantId: number;
+  nombre: string;
+  producto: string;
+  unidades: number;
+}
+
+export interface PassoOption {
+  valueId: number;
+  valor: string;
+  variantId: number;
+  sku: string;
+  enStock: boolean;
+}
+
+export interface Passo {
+  sortOrder: number;
+  pregunta: string;
+  attributeId: number | null;
+  isQtyStep: boolean;
+  opciones: PassoOption[];
+}
+
+export interface ConfiguracionLinea {
+  pasos?: { pregunta: string; opciones: string[]; seleccion: string }[];
+  resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
+}
+
+export interface StatsReporte {
+  desde: string;
+  hasta: string;
+  reportesAplicados: number;
+  totalFinal: number;
+  totalConsumo: number;
+  porSeccion: StatsSeccion[];
+  consumo: StatsConsumo[];
 }

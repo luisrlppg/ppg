@@ -53,25 +53,84 @@ a:hover {
 }
 
 .nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: var(--brand);
-  color: #fff;
-  padding: 10px 24px;
-  font-size: 1.1rem;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  padding: 8px 20px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
 .nav .brand {
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--brand);
+  font-size: 1.2rem;
+  white-space: nowrap;
 }
 
-.nav .user {
+.nav .mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
+
+.user-chip {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.user-meta {
+  line-height: 1.15;
+  text-align: right;
+}
+
+.user-meta strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.user-meta span {
+  font-size: 0.75rem;
+  color: #777;
+  text-transform: capitalize;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex: none;
 }
 
 .card {
@@ -141,6 +200,15 @@ select:focus {
   border: 2px solid var(--brand);
 }
 
+.btn.ghost:hover {
+  background: rgba(179, 15, 46, 0.06);
+}
+
+.btn.sm {
+  padding: 8px 14px;
+  font-size: 0.95rem;
+}
+
 .btn.block {
   display: block;
   width: 100%;
@@ -177,19 +245,27 @@ select:focus {
 /* ---- Navegación ---- */
 .nav-links {
   display: flex;
-  gap: 16px;
-  margin-left: 24px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
 .nav-links a {
-  color: #fff;
+  color: #333;
   font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  background: #f0f0f0;
+  text-decoration: none;
 }
 
 .nav-links a.active {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  background: var(--brand);
+  color: #fff;
 }
 
 .subnav {

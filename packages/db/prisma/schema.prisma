@@ -58,6 +58,7 @@ model Attribute {
   nombre            String                 @unique
   values            AttributeValue[]
   productLines      ProductAttributeLine[]
+  productPassos     ProductPasso[]
   variantAttributes VariantAttribute[]
   createdAt         DateTime               @default(now())
 }
@@ -99,6 +100,7 @@ model Product {
 
   variants        ProductVariant[]
   attributeLines  ProductAttributeLine[]
+  passos          ProductPasso[]
   components      ProductComponent[]    @relation("ComponentParent") // BOM de este producto
   componentOf     ProductComponent[]    @relation("ComponentChild") // dónde se usa este producto
 
@@ -129,6 +131,7 @@ model ProductVariant {
   salesLines          SalesOrderLine[]
   manufacturingOrders ManufacturingOrder[]
   moLines             ManufacturingOrderLine[]
+  reportLines         ProductionReportLine[]
 
   @@index([productId])
 }
@@ -143,6 +146,20 @@ model ProductAttributeLine {
   sortOrder   Int       @default(0)
 
   @@unique([productId, attributeId])
+  @@index([productId])
+}
+
+/// Pasos de selección guiada para el storefront (E3)
+model ProductPasso {
+  id           Int     @id @default(autoincrement())
+  productId    Int
+  product      Product @relation(fields: [productId], references: [id])
+  sortOrder    Int     @default(0)
+  pregunta     String
+  attributeId  Int?
+  attribute    Attribute? @relation(fields: [attributeId], references: [id])
+  isQtyStep    Boolean @default(false)
+
   @@index([productId])
 }
 
@@ -266,6 +283,7 @@ enum MotivoStock {
   despacho
   produccion
   consumo
+  ubicacion // lote del "Recibo de Producción" → compartimento (§8.3)
 }
 
 /// Bitácora de movimientos. qty con signo respecto a la ubicación (lugar por moverse).
@@ -364,6 +382,9 @@ model SalesOrderLine {
   precioUnitario Decimal
   qtyDelivered   Decimal       @default(0)
   estadoEntrega  EstadoEntrega @default(pendiente)
+  configuracion  Json?         // respuestas de las 5 preguntas (atributos seleccionados)
+
+  manufacturingOrders ManufacturingOrder[]
 
   @@index([orderId])
   @@index([variantId])
@@ -392,16 +413,19 @@ model ManufacturingOrder {
   estado        EstadoOF     @default(confirmada)
   fecha         DateTime     @default(now())
   notas         String?
-  generatedFrom String?      // trazabilidad: número del pedido que la originó
+  generatedFrom String?
   finalizadoAt  DateTime?
   userId        Int?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  configuracion Json?
+  salesOrderLineId Int?
 
+  salesOrderLine SalesOrderLine? @relation(fields: [salesOrderLineId], references: [id])
   lines ManufacturingOrderLine[]
+  reports ProductionReport[]
 
   @@index([variantId])
   @@index([estado])
+  @@index([salesOrderLineId])
 }
 
 model ManufacturingOrderLine {
@@ -415,6 +439,76 @@ model ManufacturingOrderLine {
 
   @@index([orderId])
   @@index([componentVariantId])
+}
+
+// ---------------------------------------------------------------------------
+// E3 — Producción y Reportes
+// ---------------------------------------------------------------------------
+
+enum Turno {
+  matutino // 8 h
+  vespertino // 7.5 h
+  nocturno // 8 h
+}
+
+enum SeccionProduccion {
+  maquina1
+  maquina2
+  maquina3
+  ensamble
+  ensartado
+  pegado
+  perforado
+}
+
+enum TipoLineaReporte {
+  final // producto terminado → incrementa inventario al aplicarse (§8.1)
+  consumo // consumible (ej. cerda en metros) → decrementa stock al aplicarse
+}
+
+enum EstadoReporte {
+  pendiente // no toca inventario (§8.2)
+  aplicado // movimientos ya aplicados
+  cancelado
+}
+
+model ProductionReport {
+  id                  Int                  @id @default(autoincrement())
+  numero              String               @unique
+  turno               Turno
+  fecha               DateTime             @default(now())
+  personas            Int                  @default(1)
+  horasTrabajadas     Decimal?             // si vacío, se usan las del turno (8 / 7.5 / 8)
+  notas               String?
+  estado              EstadoReporte        @default(pendiente)
+  aplicadoAt          DateTime?
+  userId              Int?
+  manufacturingOrderId Int?                // OF en ejecución (§8.5); al aplicar pasa a hecha
+  manufacturingOrder  ManufacturingOrder?  @relation(fields: [manufacturingOrderId], references: [id])
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  lines ProductionReportLine[]
+
+  @@index([estado])
+  @@index([fecha])
+  @@index([turno])
+}
+
+model ProductionReportLine {
+  id         Int              @id @default(autoincrement())
+  reportId   Int
+  report     ProductionReport @relation(fields: [reportId], references: [id])
+  variantId  Int
+  variant    ProductVariant   @relation(fields: [variantId], references: [id])
+  seccion    SeccionProduccion
+  tipo       TipoLineaReporte
+  ok         Decimal          // conteo registrado (§8.1)
+  qtyAplicada Decimal         @default(0) // lo que ya entró/consumió al aplicarse
+  qtyUbicada  Decimal         @default(0) // lo ya movido del Recibo a compartimentos
+
+  @@index([reportId])
+  @@index([variantId])
 }
 
 // ---------------------------------------------------------------------------

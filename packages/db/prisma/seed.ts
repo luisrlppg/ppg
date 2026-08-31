@@ -54,6 +54,9 @@ async function main() {
   const ubicaciones = [
     { nombre: "Almacén principal", tipo: "almacen" as const },
     { nombre: "Recibo de Producción", tipo: "temporal" as const },
+    { nombre: "Compartimento 1", tipo: "almacen" as const },
+    { nombre: "Compartimento 2", tipo: "almacen" as const },
+    { nombre: "Compartimento 3", tipo: "almacen" as const },
   ];
   for (const u of ubicaciones) {
     await prisma.location.upsert({

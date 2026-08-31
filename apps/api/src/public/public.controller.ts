@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
 import { Type } from "class-transformer";
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { PublicService } from "./public.service";
@@ -6,6 +6,7 @@ import { PublicService } from "./public.service";
 class LineaPublicDto {
   @IsNumber() variantId!: number;
   @IsNumber() cantidad!: number;
+  @IsOptional() @IsString() configuracion?: string;
 }
 
 class CrearPedidoDto {
@@ -19,11 +20,20 @@ class CrearPedidoDto {
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
+  @Get("productos/:id/pasos")
+  getPasos(@Param("id", ParseIntPipe) id: number) {
+    return this.publicService.getPasos(id);
+  }
+
   @Post("orders")
   crearPedido(@Body() dto: CrearPedidoDto) {
     return this.publicService.crearPedido({
       ...dto,
-      lines: dto.lines.map((l) => ({ variantId: l.variantId, cantidad: Number(l.cantidad) })),
+      lines: dto.lines.map((l) => ({
+        variantId: l.variantId,
+        cantidad: Number(l.cantidad),
+        configuracion: l.configuracion,
+      })),
     });
   }
 

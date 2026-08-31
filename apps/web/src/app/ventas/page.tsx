@@ -229,8 +229,8 @@ export default function VentasPage() {
                 <button
                   key={r.id}
                   type="button"
-                  className="row gh s"
-                  style={{ width: "100%", textAlign: "left", marginBottom: 2, background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: "8px 12px" }}
+                  className="btn ghost"
+                  style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 2, background: "#fff", padding: "8px 12px" }}
                   onClick={() => agregarLinea(r)}
                 >
                   <span>
@@ -328,7 +328,7 @@ export default function VentasPage() {
             </thead>
             <tbody>
               {d.lines.map((l) => {
-                const pendiente = Math.max(0, l.cantidad - l.qtyDelivered);
+                const pendiente = Math.max(0, l.cantidad - (l.qtyDelivered ?? 0));
                 return (
                   <tr key={l.id}>
                     <td>
@@ -336,17 +336,17 @@ export default function VentasPage() {
                       <div className="small muted">{l.nombre} · {l.sku}</div>
                     </td>
                     <td>{l.cantidad} {l.uom}</td>
-                    <td>${l.precioUnitario.toFixed(2)}</td>
-                    <td>${l.subtotal.toFixed(2)}</td>
+                    <td>${(l.precioUnitario ?? 0).toFixed(2)}</td>
+                    <td>${(l.subtotal ?? 0).toFixed(2)}</td>
                     <td>
-                      {l.qtyDelivered}/{l.cantidad}
+                      {l.qtyDelivered ?? 0}/{l.cantidad}
                     </td>
                     <td>
                       <span className={`badge ${badgeEntrega(l.estadoEntrega)}`}>{l.estadoEntrega}</span>
                     </td>
                     <td>
                       {d.estado === "abierta" && pendiente > 0 && (
-                        <button className="btn s" disabled={cargando} onClick={() => despachar(d.id, l.id, pendiente)}>
+                        <button className="btn ghost sm" disabled={cargando} onClick={() => despachar(d.id, l.id, pendiente)}>
                           Despachar
                         </button>
                       )}
@@ -370,9 +370,9 @@ export default function VentasPage() {
             <div className="grid-2">
               <div className="card">
                 <h4 style={{ marginTop: 0 }}>Fabricar / Ensamblar</h4>
-                {d.resumen?.fabricar.length ? (
+                {(d.resumen?.fabricar ?? []).length ? (
                   <ul className="step-list">
-                    {d.resumen.fabricar.map((f) => (
+                    {d.resumen!.fabricar.map((f) => (
                       <li key={`F${f.variantId}`}>
                         <span className={`badge ${f.tipo === "ensamble" ? "bajo" : "normal"}`}>{f.tipo}</span>{" "}
                         <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {f.cantidad}
@@ -385,9 +385,9 @@ export default function VentasPage() {
               </div>
               <div className="card">
                 <h4 style={{ marginTop: 0 }}>Pendientes de compra</h4>
-                {d.resumen?.comprar.length ? (
+                {(d.resumen?.comprar ?? []).length ? (
                   <ul className="step-list">
-                    {d.resumen.comprar.map((c) => (
+                    {d.resumen!.comprar.map((c) => (
                       <li key={`C${c.variantId}`}>
                         <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {c.cantidad}
                       </li>
@@ -399,7 +399,7 @@ export default function VentasPage() {
               </div>
             </div>
 
-            {d.ordenesFabricacion.length > 0 && (
+            {((d.ordenesFabricacion ?? []).length > 0 && (
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
                 <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación generadas</h4>
                 <table className="table">
@@ -425,13 +425,13 @@ export default function VentasPage() {
                           <span className={`badge ${of.tipo === "ensamble" ? "bajo" : "normal"}`}>{of.tipo}</span>
                         </td>
                         <td>{of.estado}</td>
-                        <td className="small muted">{of.lines.map((l) => `${l.nombre} ×${l.cantidadRequerida}`).join(" · ")}</td>
+                        <td className="small muted">{(of.lines ?? []).map((l) => `${l.nombre} ×${l.cantidadRequerida}`).join(" · ")}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
+            ))}
           </>
         )}
       </AppShell>

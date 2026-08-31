@@ -8,14 +8,24 @@ import type { PublicUser } from "@ppg/shared";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
+  { href: "/reportes", label: "Reportes" },
   { href: "/ventas", label: "Ventas" },
   { href: "/fabricacion", label: "Fabricación" },
   { href: "/productos", label: "Productos" },
   { href: "/inventario", label: "Inventario" },
   { href: "/clientes", label: "Clientes" },
   { href: "/monitor", label: "Monitor" },
-  { href: "/catalogos", label: "Catálogos" },
 ];
+
+function iniciales(nombre: string): string {
+  return nombre
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -58,8 +68,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <header className="nav">
-        <div className="row" style={{ gap: 0, justifyContent: "flex-start" }}>
-          <span className="brand">PPG</span>
+        <div className="nav-left">
+          <span className="brand">
+            <span className="mark">P</span>PPG
+          </span>
           <nav className="nav-links">
             {LINKS.map((l) => (
               <Link
@@ -72,19 +84,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
         </div>
-        <span className="user">
-          <span>
-            {user.nombre} · {user.role}
-          </span>
+        <div className="user-chip">
+          <div className="user-meta">
+            <strong>{user.nombre}</strong>
+            <span>{user.role}</span>
+          </div>
+          <span className="avatar">{iniciales(user.nombre)}</span>
           <button
-            className="btn ghost"
-            style={{ color: "#fff", borderColor: "#fff" }}
+            className="btn ghost sm"
             type="button"
             onClick={() => api("/auth/logout", { method: "POST" }).then(() => location.reload())}
           >
             Salir
           </button>
-        </span>
+        </div>
       </header>
       <main className="screen">{children}</main>
     </>
