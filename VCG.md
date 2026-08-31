@@ -161,7 +161,7 @@ local + `fetch` manual.
 
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
-| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **937** — la más compleja | datos base 82‑93/371‑414 · atributos 96‑176/416‑497 · modales atributo 499‑666 · ejes 178‑196 · combinaciones/grid 198‑216/668‑713 · variantes 218‑265/774‑866 · BOM 267‑297/715‑772 · empaques 299‑361/868‑934 |
+| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **814** (antes 937) | datos base · atributos · ejes · combinaciones/grid · variantes · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas) |
 | Reportes de producción | `app/reportes/page.tsx` | **852** (4 tabs) | form 99‑238/406‑548 · bandeja 240‑326/550‑652 · ubicar lotes 328‑383/654‑697 · stats 385‑403/699‑816 |
 | Ventas | `app/ventas/page.tsx` | **508** (lista/nueva/detalle) | lista 29‑49/441‑507 · alta 59‑129/187‑273 · detalle+confirmar+despachar 131‑184/275‑438 |
 | Catálogos | `app/catalogos/page.tsx` | **439** | atributos 66‑129/206‑326 · categorías 131‑164/330‑379 · empaques 166‑199/383‑436 |
@@ -226,7 +226,7 @@ local + `fetch` manual.
 ## 7. Tareas pendientes / próximos pasos (contexto)
 
 - **Modularización** (prioridad actual del equipo): los archivos masivos a dividir son
-  en web `productos/[id]/page.tsx` (937), `reportes/page.tsx` (852), `ventas/page.tsx` (508),
+  en web `productos/[id]/page.tsx` (814), `reportes/page.tsx` (852), `ventas/page.tsx` (508),
   `catalogos/page.tsx` (439). *(La API ya quedó modularizada: vendría revisar
   `fabricacion.service.ts` que es pequeño.)*
   *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.ofs.ts` + `ventas.types.ts`;
@@ -234,7 +234,8 @@ local + `fetch` manual.
   `reportes.constants.ts` + `reportes.stats.ts` + `reportes.export.ts`;
   `catalogos.controller.ts` → `catalogos.atributos-producto.ts`;
   `monitor.service.ts` → `monitor.notificadores.ts`;
-  `inventario.service.ts` → `inventario.ensamble.ts`.)*
+  `inventario.service.ts` → `inventario.ensamble.ts`.
+  Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`.)*
 - **Candidatos a refactor cross‑cutting:** recursión BOM (3 copias), disparo de monitor,
   helpers `common/util.ts` (mezclados).
 - Probar flujo E3 completo: storefront → confirmación → OFs recursivas.
