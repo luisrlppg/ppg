@@ -94,6 +94,36 @@ export class PublicService {
   }
 
   // Para consumidores externos futuros (catálogo público) — E5/tienda.
+  async productosPublicos() {
+    const rows = await this.prisma.product.findMany({
+      where: {
+        activo: true,
+        variants: { some: { activo: true, published: true } },
+      },
+      include: {
+        variants: {
+          where: { activo: true, published: true },
+          orderBy: { nombre: "asc" },
+        },
+      },
+      orderBy: { nombre: "asc" },
+    });
+    return rows.map((p) => ({
+      productId: p.id,
+      nombre: p.nombre,
+      skuBase: p.skuBase,
+      uom: p.uom,
+      basePrice: dec(p.basePrice),
+      hasVariants: p.hasVariants,
+      variantesPublicadas: p.variants.map((v) => ({
+        id: v.id,
+        nombre: v.nombre,
+        sku: v.sku,
+        precio: v.price === null ? dec(p.basePrice) : dec(v.price),
+      })),
+    }));
+  }
+
   async catalogo() {
     const rows = await this.prisma.productVariant.findMany({
       where: { activo: true, published: true },

@@ -20,6 +20,11 @@ class CrearPedidoDto {
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
+  @Get("productos")
+  productosPublicos() {
+    return this.publicService.productosPublicos();
+  }
+
   @Get("productos/:id/pasos")
   getPasos(@Param("id", ParseIntPipe) id: number) {
     return this.publicService.getPasos(id);

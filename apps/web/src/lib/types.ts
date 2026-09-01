@@ -162,6 +162,23 @@ export interface VarianteBuscada {
   precio: number;
 }
 
+export interface VariantePublica {
+  id: number;
+  nombre: string;
+  sku: string;
+  precio: number;
+}
+
+export interface ProductoPublico {
+  productId: number;
+  nombre: string;
+  skuBase: string;
+  uom: string;
+  basePrice: number;
+  hasVariants: boolean;
+  variantesPublicadas: VariantePublica[];
+}
+
 export interface VentaLinea {
   id: number;
   variantId: number;

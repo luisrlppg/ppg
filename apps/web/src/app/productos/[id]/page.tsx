@@ -179,7 +179,6 @@ export default function ProductoDetallePage() {
   // ------------------------------------------------------------------ Ejes (para grid legacy)
   const [ejesSel, setEjesSel] = useState<number[]>([]);
   const [nuevoEje, setNuevoEje] = useState("");
-  const [showMasCombinaciones, setShowMasCombinaciones] = useState(false);
 
   useEffect(() => {
     if (d && grid) {
@@ -208,15 +207,8 @@ export default function ProductoDetallePage() {
     } catch (e) { notify(e as Error, ""); }
   }
 
-  async function generarTodas() {
-    try {
-      const r = await api<{ creadas: number }>(`/productos/${prodId}/generar`, { method: "POST" });
-      await cargar();
-      notify(null, `Se crearon ${r.creadas} variante(s) con empaques heredados.`);
-    } catch (e) { notify(e as Error, ""); }
-  }
-
   // Combinación materializable según el valor elegido por atributo (dropdown por eje)
+  const [selValores, setSelValores] = useState<Record<number, number>>({});
   const ejesGrid = grid?.ejes ?? [];
   const faltantesGrid = ejesGrid.filter((e) => !(selValores[e.attributeId] !== undefined)).length;
   const comboSeleccionado: GridCombo | null = (() => {
@@ -232,7 +224,6 @@ export default function ProductoDetallePage() {
   const [nuevaVarNombre, setNuevaVarNombre] = useState("");
   const [nuevaVarSku, setNuevaVarSku] = useState("");
   const [guardandoVar, setGuardandoVar] = useState(false);
-  const [selValores, setSelValores] = useState<Record<number, number>>({});
 
   function iniciarEditNombre(v: Variante) {
     setEditNombreVid(v.id);
@@ -365,12 +356,6 @@ export default function ProductoDetallePage() {
         <div className="card">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>Atributos</h3>
-            <button
-              className="btn ghost sm"
-              onClick={() => setShowMasCombinaciones(!showMasCombinaciones)}
-            >
-              {showMasCombinaciones ? "Ocultar combinaciones" : "Ver combinaciones"}
-            </button>
           </div>
           <p className="muted small" style={{ margin: "4px 0 12px" }}>
             Los atributos definen las opciones de venta. Los valores se usan para filtrar variantes.
@@ -612,79 +597,6 @@ export default function ProductoDetallePage() {
         </div>
       )}
 
-      {/* --- Más combinaciones (expandible) --- */}
-      {d.hasVariants && showMasCombinaciones && grid && grid.ejes.length > 0 && (
-        <div className="card">
-          <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ marginTop: 0, marginBottom: 0 }}>
-              Materializar variante ({grid.ejes.length} atributos)
-            </h3>
-            <button type="button" className="btn primary sm" style={{ flex: 0 }} onClick={generarTodas}>
-              Materializar todas
-            </button>
-          </div>
-          <p className="muted small" style={{ margin: "4px 0 12px" }}>
-            Elige un valor por atributo para materializar esa combinación específica.
-          </p>
-
-          <div className="grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 16 }}>
-            {ejesGrid.map((eje) => (
-              <label key={eje.attributeId} style={{ display: "block" }}>
-                {eje.nombre}
-                <select
-                  style={{ width: "100%", marginTop: 4 }}
-                  value={selValores[eje.attributeId] ?? ""}
-                  onChange={(ev) =>
-                    setSelValores((prev) => {
-                      const next = { ...prev };
-                      const vid = ev.target.value === "" ? undefined : Number(ev.target.value);
-                      if (vid === undefined) delete next[eje.attributeId];
-                      else next[eje.attributeId] = vid;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">— Elegir —</option>
-                  {eje.valores.map((v) => (
-                    <option key={v.id} value={v.id}>{v.valor}</option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
-
-          {faltantesGrid > 0 ? (
-            <p className="muted small">
-              Faltan {faltantesGrid} atributo(s) por elegir para formar una combinación.
-            </p>
-          ) : comboSeleccionado ? (
-            <div className="card" style={{ margin: 0, background: "#fafafa" }}>
-              <div className="row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <div>
-                  <strong>{comboSeleccionado.valoracion.join(" · ")}</strong>
-                  <div className="muted-2 small" style={{ fontFamily: "monospace" }}>{comboSeleccionado.sku}</div>
-                </div>
-                <div style={{ flex: 1 }} />
-                {comboSeleccionado.varianteId ? (
-                  <span className="badge normal">creada</span>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn primary sm"
-                    style={{ flex: 0 }}
-                    onClick={() => materializar(comboSeleccionado)}
-                  >
-                    Materializar esta variante
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="muted small">No se encontró esa combinación.</p>
-          )}
-        </div>
-      )}
-
       {/* --- Lista de materiales (BOM) --- */}
       <div className="card">
         <h3 style={{ marginTop: 0 }}>Lista de materiales (BOM)</h3>
@@ -769,6 +681,67 @@ export default function ProductoDetallePage() {
               </button>
             </div>
           </form>
+        )}
+
+        {d.hasVariants && grid && grid.ejes.length > 0 && (
+          <div className="card" style={{ marginTop: 12, background: "#fafafa" }}>
+            <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Materializar combinación</p>
+            <p className="muted small" style={{ margin: "0 0 12px" }}>
+              Elige un valor por atributo para materializar esa variante específica.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 12 }}>
+              {ejesGrid.map((eje) => (
+                <label key={eje.attributeId} style={{ display: "block" }}>
+                  {eje.nombre}
+                  <select
+                    style={{ width: "100%", marginTop: 4 }}
+                    value={selValores[eje.attributeId] ?? ""}
+                    onChange={(ev) =>
+                      setSelValores((prev) => {
+                        const next = { ...prev };
+                        const vid = ev.target.value === "" ? undefined : Number(ev.target.value);
+                        if (vid === undefined) delete next[eje.attributeId];
+                        else next[eje.attributeId] = vid;
+                        return next;
+                      })
+                    }
+                  >
+                    <option value="">— Elegir —</option>
+                    {eje.valores.map((v) => (
+                      <option key={v.id} value={v.id}>{v.valor}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            {faltantesGrid > 0 ? (
+              <p className="muted small">
+                Faltan {faltantesGrid} atributo(s) por elegir para formar una combinación.
+              </p>
+            ) : comboSeleccionado ? (
+              <div className="row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <strong>{comboSeleccionado.valoracion.join(" · ")}</strong>
+                  <div className="muted-2 small" style={{ fontFamily: "monospace" }}>{comboSeleccionado.sku}</div>
+                </div>
+                <div style={{ flex: 1 }} />
+                {comboSeleccionado.varianteId ? (
+                  <span className="badge normal">creada</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn primary sm"
+                    style={{ flex: 0 }}
+                    onClick={() => materializar(comboSeleccionado)}
+                  >
+                    Materializar esta variante
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="muted small">No se encontró esa combinación.</p>
+            )}
+          </div>
         )}
 
         <div className="spacer" />
