@@ -51,21 +51,25 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
   function opcionesDelPaso(pasoIdx: number): PassoOption[] {
     const paso = passos[pasoIdx];
     if (!paso) return [];
-    const ejes = passos.slice(0, pasoIdx).map((p) => p.attributeId).filter((a): a is number => a != null);
-    const prevSel = ejes
-      .map((a) => ({ attrId: a, valueId: selValores[a] }))
-      .filter((s) => s.valueId !== undefined && s.valueId !== null);
+    if (pasoIdx === 0) return paso.opciones;
 
-    if (prevSel.length === 0) return paso.opciones;
-
-    return paso.opciones.filter((opt) => {
-      for (const prev of prevSel) {
-        if (prev.valueId === undefined) continue;
-        const compatible = paso.opciones.some((o) => o.variantId === opt.variantId && o.valueId === prev.valueId);
-        if (!compatible) return false;
+    let compatibles: Set<number> | undefined;
+    for (let i = 0; i < pasoIdx; i++) {
+      const attrId = passos[i].attributeId;
+      if (attrId == null) continue;
+      const selValueId = selValores[attrId];
+      if (selValueId === undefined) continue;
+      const variantesDeEsteValor = new Set(
+        passos[i].opciones.filter((o) => o.valueId === selValueId).map((o) => o.variantId),
+      );
+      if (compatibles === undefined) {
+        compatibles = variantesDeEsteValor;
+      } else {
+        compatibles = new Set(Array.from(compatibles).filter((v) => variantesDeEsteValor.has(v)));
       }
-      return true;
-    });
+    }
+    if (compatibles === undefined) return paso.opciones;
+    return paso.opciones.filter((o) => compatibles.has(o.variantId));
   }
 
   function elegirOpcion(pasoIdx: number, opt: PassoOption) {

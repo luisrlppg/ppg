@@ -256,7 +256,7 @@ Ejemplo multi-nivel resolviendo la venta de "taparrosca con pincel":
 
 ### 6.2 Web (una sola app)
 - **Dashboard** de inventario con badges `normal` / `bajo` / `crítico` (long_lead + bajo) y stock por ubicación.
-- **Página de producto**: atributos y grid de combos, variantes, empaques (con copiar), BOM (con tipo), precios (base + override) e historial, `uom`, stock por ubicación.
+- **Página de producto**: atributos, variantes (combinaciones y variantes **unificadas** en una sola vista, con selector "Materializar combinación" para crear UNA variante puntual desde los ejes), empaques (con copiar), BOM (con tipo), precios (base + override) e historial, `uom`, stock por ubicación.
 - **Ajuste de stock** con motivo; **Registrar ensamble**.
 - **Alerta manual** y estado del monitor.
 
@@ -292,20 +292,23 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 
 ### 7.6 Web
 - **Órdenes de venta**: crear, ver, editar; desglose visible y resultado del neteo (fabricar vs existencia).
+- **Alta de venta** (2026-08-31): parte de un **grid de productos públicos** (`/public/productos`) y cada producto se configura desde un **modal guiado paso a paso** (reusa `getPasos` del storefront). Sin búsqueda libre de variantes; la configuración debe resolver a una variante **publicada existente** del producto (para más opciones, se materializan y publican variantes en el admin).
 - **Órdenes de fabricación**: lista con estado y componentes requeridos; confirmada→en progreso→hecha (ejecución real se registra en E3 con los reportes).
 - **Resumen de faltantes** y pendientes de compra.
 
-### 7.7 Tienda pública (storefront) — futura, después de E2
-- App separada `apps/storefront` (Next.js) en su propio dominio; **es la única pieza expuesta a internet**.
+### 7.7 Tienda pública (storefront) — tras E2
+- **Estado actual (2026-08-31):** existe la tienda guiada dentro de `apps/web` en la ruta **`/tienda/[productId]`** (pública, sin login). Una app separada `apps/storefront` en dominio propio **sigue siendo futura**; hoy la tienda convive en el panel web pero se sirve sin AppShell.
 - **NO se conecta a la DB**: consume solo `/api/public/*` de `apps/api` (se mantiene §2: DB propiedad exclusiva de la API).
-- Endpoints públicos:
-  - `GET /api/public/catalog` → productos/variantes con `published=true`, precio efectivo y empaques.
-  - `GET /api/public/products/:id` → detalle para ficha del producto.
+- Endpoints públicos (implementados en `apps/api`):
+  - `GET /api/public/productos` → productos con ≥1 variante `published=true` (grid de tienda/venta).
+  - `GET /api/public/productos/:id/pasos` → pasos guiados con opciones (variantes **publicadas** del producto navegado) → alimenta la tienda y el modal de venta.
+  - `GET /api/public/catalog` → variantes `published=true` con precio efectivo y empaques.
   - `POST /api/public/orders` → alta de orden **pendiente**, `origen='web'`, datos de invitado (nombre, teléfono, email).
   - `GET /api/public/orders/:numero` → el cliente consulta el estado de su pedido.
 - Reglas: los **precios se recalculan en servidor** (nunca se confía en el precio que manda el cliente); límite de peticiones/rate-limit; **sin** inventario, usuarios, reportes ni datos internos.
 - La orden web entra a la **misma tubería** `sales_orders` (§7.1–7.5): al confirmar el equipo se aplica neteo, venta mínima y órdenes de fabricación con cascada.
 - Pago: `sales_orders.payment_method` queda **nullable** como punto de extensión; hoy la tienda solo registra el pedido y se cobra por teléfono/WhatsApp. Una pasarela (Stripe/MercadoPago…) se integra después sin cambiar la estructura.
+- **Pendiente (2026-08-31):** `apps/storefront` separada + pasarela de pago + **imágenes** de opciones en el wizard (hoy placeholders/iconos) + **precios** en la UI (ocultos a propósito, los revisa el equipo).
 
 ## 8. Módulo Producción y Reportes (E3) — alcance funcional
 
@@ -375,7 +378,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
 | **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), registrar ensamble | ✅ entregado |
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática. **Flujo venta→confirmación→neteo→cascada de OFs→despacho verificado end-to-end (2026-08-31)** | ✅ entregado |
-| **Tienda (futura)** | Storefront público: `/api/public` + `apps/storefront` (catálogo de publicados, pedido invitado, misma tubería E2, pago futuro) — entrega propia después de E2. **La tubería de pedido web (`origen=web`, invitado, precio recalculado en servidor, consulta por número) está operativa**; falta la app `apps/storefront` separada + pasarela de pago + marcar variantes `published`. | 🟡 tubería operativa |
+| **Tienda (futura)** | Storefront público: `/api/public` + (futuro) `apps/storefront`. **Ya está operativa la tubería completa**: `GET /public/productos`, `getPasos` (variantes publicadas), pedido invitado (`origen=web`, precio recalculado en servidor, consulta por número), y tienda guiada integrada en `apps/web/tienda/[productId]`. Falta la app `apps/storefront` separada + pasarela de pago + **imágenes** de opciones (hoy placeholders) + **precios** en la UI (ocultos a propósito). | 🟡 tubería + tienda guiada operativas |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV. **Flujo verificado end-to-end (2026-08-31)** | ✅ entregado |
 | **E4** | Signage: pantallas TV leyendo de nuestras ventas/fabricación/stock (ya no de Odoo) | ⏳ pendiente |
 | **E5** | Etiquetas + ventas consolidadas + facturación/IVA + pricing updater; desconexión progresiva de Odoo (queda como respaldo) | ⏳ pendiente |

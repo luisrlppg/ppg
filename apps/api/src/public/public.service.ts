@@ -170,9 +170,9 @@ export class PublicService {
       for (const v of values) {
         const variants = await this.prisma.productVariant.findMany({
           where: {
-            productId: vpId,
+            productId: product.id,
             variantAttributes: { some: { attributeId: passo.attributeId, valueId: v.id } },
-            activo: true,
+            published: true,
           },
           include: { stockLevels: true, product: { select: { uom: true } } },
         });

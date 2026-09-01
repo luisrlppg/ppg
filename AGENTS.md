@@ -37,25 +37,32 @@ scripts/      # Scripts de utilidad
 - Color tapa (Negro, Blanco, Transparente, Personalizado)
 
 ### Pasos del storefront (ProductPasso)
-6 pasos para Taparrosca con Pincel (pasos 1-3 → Vástago, paso 4 → Pincel, pasos 5-6 → Taparrosca)
+6 pasos para Taparrosca con Pincel (pasos 1-3 → Vástago, paso 4 → Pincel, pasos 5-6 → Taparrosca).
+**Nota (2026-08-31):** aunque el `variantProductId` apunta a los componentes, `getPasos` arma las opciones
+de cada paso desde las **variantes publicadas del producto navegado** (producto 4), porque los componentes
+(Vástago/Pincel) no siempre tienen variantes reconvertidas por atributo. `variantProductId` solo se conserva
+por compatibilidad en la respuesta.
 
 ## API endpoints relevantes
 - `GET /api/productos` — lista de productos
 - `GET /api/productos/:id` — detalle con componentes
-- `GET /api/productos/:id/grid` — combinaciones posibles
+- `GET /api/productos/:id/grid` — combinaciones posibles (materializable puntual)
 - `GET /api/catalogos/atributos` — todos los atributos globales
 - `GET /api/catalogos/atributos/producto/:id` — propios + heredados
 - `POST /catalogos/atributos` — crear atributo global
 - `POST /catalogos/atributos/:id/asignar/:productoId` — asignar
 - `DELETE /catalogos/atributos/:id/desasignar/:productoId` — desasignar
 - `PUT /productos/:id/ejes` — asignar atributos al producto
+- `GET /public/productos` — productos con ≥1 variante activa y publicada (grid de Nueva venta)
+- `GET /public/productos/:id/pasos` — pasos guiados con opciones (variantes publicadas del producto navegado)
+- `GET /public/catalog` — variantes publicadas con precios/empaques
 
 ## UI pages
 - `/productos` — lista de productos admin
-- `/productos/[id]` — editar producto (atributos, BOM, variantes)
+- `/productos/[id]` — editar producto (atributos, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo)
 - `/catalogos` — atributos globales, categorías, empaques
-- `/tienda/[productId]` — storefront con pasos guiados
-- `/ventas` — confirmación de venta con neteo y OFs
+- `/tienda/[productId]` — storefront público con pasos guiados
+- `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs
 - `/fabricacion` — órdenes de fabricación
 
 ## Scripts útiles
@@ -74,6 +81,13 @@ scripts/      # Scripts de utilidad
 > - DTO de ventas internas no aceptaba `configuracion` (el service sí la leía, pero `whitelist: true` la descartaba).
 > - Doble bucle en `confirmar` generaba cada OF dos veces (neteo + `crearOFS`); se eliminó el bucle redundante y el archivo `ventas.ofs.ts`.
 > - `despacharLinea` no hacía `await` del `$transaction`, lo que tumbaba el proceso (unhandled rejection) al lanzar errores de stock; ahora devuelve 400 limpio.
+
+> **Nueva venta (2026-08-31):** el alta de venta ya no usa búsqueda libre de variantes; ahora parte de un
+> **grid de productos públicos** (`GET /public/productos`) y cada producto se configura por un **modal guiado
+> de pasos** (estilo storefront). El modal y `/tienda` reusan `getPasos` (opciones = variantes **publicadas**
+> del producto navegado, filtradas por conjunto de variantes compatibles). En `/productos/[id]` se unificaron
+> combinaciones y variantes en una sola vista con el selector "Materializar combinación". Pendiente:
+> **imágenes** de opciones (hoy placeholders) y **precios** (ocultos a propósito, los revisa el equipo).
 
 ## Credenciales
 - Admin: `admin` / `admin123`

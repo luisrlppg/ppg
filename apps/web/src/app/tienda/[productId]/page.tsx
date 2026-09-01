@@ -79,20 +79,21 @@ export default function TiendaPage() {
 
     if (pasoIdx === 0) return paso.opciones;
 
-    const prevSelections = selecciones.slice(0, pasoIdx);
-
-    return paso.opciones.filter((opt) => {
-      for (const prev of prevSelections) {
-        if (!prev.seleccionVariantId) continue;
-        const prevOpt = prev.passo.opciones.find((o) => o.variantId === prev.seleccionVariantId);
-        if (!prevOpt) continue;
-        const sameValue = paso.opciones.some(
-          (o) => o.variantId === opt.variantId && o.valueId === prevOpt.valueId,
-        );
-        if (!sameValue) return false;
+    let compatibles: Set<number> | undefined;
+    for (let i = 0; i < pasoIdx; i++) {
+      const selVid = selecciones[i]?.seleccionVariantId;
+      if (selVid === null || selVid === undefined) continue;
+      const variantesDeEsteValor = new Set(
+        passosAtributo[i].opciones.filter((o) => o.variantId === selVid).map((o) => o.variantId),
+      );
+      if (compatibles === undefined) {
+        compatibles = variantesDeEsteValor;
+      } else {
+        compatibles = new Set(Array.from(compatibles).filter((v) => variantesDeEsteValor.has(v)));
       }
-      return true;
-    });
+    }
+    if (compatibles === undefined) return paso.opciones;
+    return paso.opciones.filter((o) => compatibles.has(o.variantId));
   }
 
   function puedeAvanzar(): boolean {

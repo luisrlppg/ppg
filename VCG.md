@@ -122,9 +122,10 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
 
 ### 3.7 Storefront público  → `public/`
 - **Controller `public.controller.ts`** — `@Controller("public")` **público**
-- **Service `public.service.ts`** (170 líneas):
-  - `crearPedido` (precio recalculado en servidor, §7.7) 30‑69 · `consultarPedido` 72‑94 · `catalogo` 97‑113
-  - **`getPasos`** (arma pasos guiados con opciones/stock) 115‑169
+  - Rutas: `GET public/productos` (productos públicos) · `GET public/productos/:id/pasos` (pasos guiados) · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
+- **Service `public.service.ts`** (**199 líneas**):
+  - `crearPedido` (precio recalculado en servidor, §7.7) · `consultarPedido` · `productosPublicos` (productos con ≥1 variante activa y publicada; agrupados por producto, sin precios en la UI) · `catalogo` (variantes publicadas)
+  - **`getPasos`** (arma pasos guiados con opciones/stock): las opciones de cada paso se resuelven desde las **variantes publicadas del producto navegado** (`productId`), **no** del `variantProductId` (los componentes pueden no tener variantes). `variantProductId` solo se conserva en la respuesta. Compartido por tienda y modal de ventas.
 
 ### 3.8 Monitor de stock bajo + notificaciones  → `monitor/`
 - **Controller `monitor.controller.ts`** — rutas `/api/monitor...`
@@ -161,12 +162,12 @@ local + `fetch` manual.
 
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
-| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **814** (antes 937) | datos base · atributos · ejes · combinaciones/grid · variantes · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas) |
+| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **823** | datos base · atributos · variantes (incluye selector "Materializar combinación" para crear UNA variante puntual desde los ejes) · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Combinaciones y variantes unificadas en una sola vista (sin grid cartesiano masivo ni "Materializar todas") |
 | Reportes de producción | `app/reportes/page.tsx` | **714** (antes 852) | form · bandeja · ubicar lotes — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
-| Ventas | `app/ventas/page.tsx` | **359** (antes 508) | lista · detalle+confirmar+despachar — alta extraída en `components/ventas/nueva-venta.tsx` (169 líneas) |
+| Ventas | `app/ventas/page.tsx` | **~360** | lista · detalle+confirmar+despachar — alta en `components/ventas/nueva-venta.tsx` (**167**) que ahora parte de un **grid de productos públicos** + **modal guiado** `components/ventas/modal-config-variante.tsx` (**261**). Ya no hay búsqueda libre de variantes: todo se configura por el modal |
 | Catálogos | `app/catalogos/page.tsx` | **234** (antes 439) | categorías · empaques — atributos globales extraídos en `components/catalogos/atributos-globales.tsx` (212 líneas) |
 | Lista productos | `app/productos/page.tsx` | **400** (tabs productos/catálogos) | alta 59‑117/276‑397 · catálogos base 119‑186/203‑274 |
-| Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | **328** — público, sin AppShell | carga 42‑61 · selección/cascada (`opcionesDelPaso`) 66‑115 · envío de pedido 117‑148 · UI pasos 192‑298 |
+| Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | **329** — público, sin AppShell | carga 42‑61 · selección (filtrado por conjunto de variantes en `opcionesDelPaso` 76‑101) · envío de pedido 117‑148 · UI pasos 192‑299 |
 | Inventario | `app/inventario/page.tsx` | **301** | acciones (ajustar/mover/ensamblar) 44‑98/113‑230 · movimientos 232‑246 · existencias 249‑298 |
 | Clientes | `app/clientes/page.tsx` | **226** | CRUD 38‑101/129‑222 · import CSV |
 | Fabricación (OFs) | `app/fabricacion/page.tsx` | **183** | listar 10‑55 · acciones iniciar/cancelar 57‑84 · detalle inline 95‑129 · faltantes 167‑179 |
@@ -184,15 +185,16 @@ local + `fetch` manual.
 
 | Si quieres trabajar en… | Archivo(s) principal(es) |
 |---|---|
-| Nuevo atributo/variante/grid de producto | `productos.service.ts:381‑471`, `productos.controller.ts`, `productos/[id]/page.tsx:198‑216` |
-| Editar BOM / componentes | `productos.service.ts:236‑254`, `productos/[id]/page.tsx:267‑297` |
+| Nuevo atributo/variante/grid de producto | `productos.service.ts` (`materializar` ~362), `productos.controller.ts`, `productos/[id]/page.tsx` (sección Variantes, "Materializar combinación") |
+| Editar BOM / componentes | `productos.service.ts:236‑254`, `productos/[id]/page.tsx` (Lista de materiales) |
 | Neteo de materiales / generar OFs | `ventas.service.ts:291‑420` (+ `crearOFS` 518‑623) |
 | Despachar línea / consumo de stock | `ventas.service.ts:422‑500` |
 | Reporte de producción / aplicar | `reportes.service.ts:224‑296` |
 | Ensamble con BOM | `inventario.ensamble.ts` (`ensamblar`) |
 | Atributos globales / heredados | `catalogos.controller.ts:224‑278` (público, sin service) |
-| Storefront guiado | `public.service.ts:115‑169` + `tienda/[productId]/page.tsx` |
-| Precios / catálogo público | `public.service.ts:97‑113`, `productos.service.ts:329‑350` |
+| Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`) + `tienda/[productId]/page.tsx` + `components/ventas/modal-config-variante.tsx` (reutiliza el mismo endpoint) |
+| Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos`) + `public.controller.ts` (`GET public/productos`) |
+| Precios / catálogo público | `public.service.ts` (`catalogo`, `productosPublicos`), `productos.service.ts:329‑350` |
 | Alertas stock bajo / canales | `monitor.service.ts` (94‑292) |
 | Login / roles / JWT | `auth/` |
 | Tipos shared | `web/src/lib/types.ts` |
@@ -226,7 +228,7 @@ local + `fetch` manual.
 ## 7. Tareas pendientes / próximos pasos (contexto)
 
 - **Modularización** (prioridad actual del equipo): los archivos masivos a dividir son
-  en web `productos/[id]/page.tsx` (814), `reportes/page.tsx` (714), `ventas/page.tsx` (359),
+  en web `productos/[id]/page.tsx` (**823**), `reportes/page.tsx` (714), `ventas/page.tsx` (359),
   `catalogos/page.tsx` (234). *(La API ya quedó modularizada: vendría revisar
   `fabricacion.service.ts` que es pequeño.)*
   *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.ofs.ts` + `ventas.types.ts`;
@@ -237,10 +239,17 @@ local + `fetch` manual.
   `inventario.service.ts` → `inventario.ensamble.ts`.
   Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`;
   `reportes/page.tsx` → `components/reportes/stats-produccion.tsx`;
-  `ventas/page.tsx` → `components/ventas/nueva-venta.tsx`;
+  `ventas/page.tsx` → `components/ventas/nueva-venta.tsx` + `components/ventas/modal-config-variante.tsx`;
   `catalogos/page.tsx` → `components/catalogos/atributos-globales.tsx`.)*
 - **Candidatos a refactor cross‑cutting:** recursión BOM (3 copias), disparo de monitor,
   helpers `common/util.ts` (mezclados).
+- **Nueva venta (2026-08-31):** flujo rediseñado basado en **productos públicos** (grid de cards) +
+  **modal guiado paso a paso** (estilo storefront) en vez de búsqueda libre de variantes. El modal y el
+  storefront reusan `getPasos` (opciones = variantes **publicadas** del producto navegado) y filtran por
+  **conjunto de variantes compatibles** (intersección por `variantId`), no por `valueId`. En `/productos/[id]`
+  se unificaron combinaciones y variantes en una sola vista con selector "Materializar combinación" (sin
+  generador masivo). **Pendiente:** imágenes de opciones (hoy placeholders/iconos) y precios (ocultos a
+  propósito, los revisa el equipo).
 - Probar flujo E3 completo (reportes → confirmación → ubicar): **verificado end-to-end 2026-08-31** con `scripts/seed-demo.ts`. Flujo E2 (venta → confirmación → neteo → cascada de OFs multi-nivel → despacho/consumo → `despachada`) **verificado end-to-end 2026-08-31** con `scripts/seed-demo-ventas.ts`; se corrigieron 3 bugs (DTO `configuracion` en ventas internas, OFs duplicadas por doble bucle en `confirmar` eliminando `crearOFS`/`ventas.ofs.ts`, y `await` perdido del `$transaction` en `despacharLinea` que tumbaba el proceso).
 
 ---
