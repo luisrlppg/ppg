@@ -79,6 +79,7 @@ async function main() {
     { nombre: "Vástago", sku: "VAST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
     { nombre: "Cerda", sku: "CERD", categoria: "Cerda", uom: Uom.kg, basePrice: 80, hasVariants: false },
     { nombre: "Pincel", sku: "PIN", categoria: "Pinceles", uom: Uom.pieza, basePrice: 20, hasVariants: true },
+    { nombre: "Taparrosca", sku: "TPR", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 0, hasVariants: false },
     { nombre: "Taparrosca con Pincel", sku: "TP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 40, hasVariants: true },
   ];
   for (const p of productosBase) {

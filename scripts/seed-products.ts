@@ -10,18 +10,20 @@ async function setupProducts() {
   // ------------------------------------------------------------------
   const vastago = await prisma.product.findUnique({ where: { skuBase: "VAST" } });
   const pincel = await prisma.product.findUnique({ where: { skuBase: "PIN" } });
-  const taparrosca = await prisma.product.findUnique({ where: { skuBase: "TP" } });
+  const taparroscaConPincel = await prisma.product.findUnique({ where: { skuBase: "TP" } });
+  const taparrosca = await prisma.product.findUnique({ where: { skuBase: "TPR" } });
   const cerda = await prisma.product.findUnique({ where: { skuBase: "CERD" } });
 
-  if (!vastago || !pincel || !taparrosca || !cerda) {
+  if (!vastago || !pincel || !taparroscaConPincel || !taparrosca || !cerda) {
     console.error("ERROR: No se encontraron todos los productos. Ejecuta el seed primero.");
-    console.log({ vastago: !!vastago, pincel: !!pincel, taparrosca: !!taparrosca, cerda: !!cerda });
+    console.log({ vastago: !!vastago, pincel: !!pincel, taparroscaConPincel: !!taparroscaConPincel, taparrosca: !!taparrosca, cerda: !!cerda });
     process.exit(1);
   }
   console.log("Productos encontrados:");
   console.log(`  Vástago:  ID=${vastago.id}`);
   console.log(`  Pincel:   ID=${pincel.id}`);
   console.log(`  Taparrosca: ID=${taparrosca.id}`);
+  console.log(`  Taparrosca con Pincel: ID=${taparroscaConPincel.id}`);
   console.log(`  Cerda:    ID=${cerda.id}`);
 
   // ------------------------------------------------------------------
@@ -50,17 +52,17 @@ async function setupProducts() {
   // ------------------------------------------------------------------
   console.log("\n=== Configurando ejes (ProductAttributeLine) ===");
 
-  // Eliminar ejes existentes de Taparrosca
-  await prisma.productAttributeLine.deleteMany({ where: { productId: taparrosca.id } });
-  console.log("- Limpiados ejes existentes de Taparrosca");
+  // Eliminar ejes existentes de Taparrosca con Pincel
+  await prisma.productAttributeLine.deleteMany({ where: { productId: taparroscaConPincel.id } });
+  console.log("- Limpiados ejes existentes de Taparrosca con Pincel");
 
-  // Ejes de Taparrosca: los 5 atributos nuevos
+  // Ejes de Taparrosca con Pincel: los 5 atributos nuevos
   const taparroscaAxes = [
-    { productId: taparrosca.id, attributeId: attrTamanoRosca.id, sortOrder: 1 },
-    { productId: taparrosca.id, attributeId: attrAlturaVastago.id, sortOrder: 2 },
-    { productId: taparrosca.id, attributeId: attrAgujeroVastago.id, sortOrder: 3 },
-    { productId: taparrosca.id, attributeId: attrFormaTapa.id, sortOrder: 4 },
-    { productId: taparrosca.id, attributeId: attrColorTapa.id, sortOrder: 5 },
+    { productId: taparroscaConPincel.id, attributeId: attrTamanoRosca.id, sortOrder: 1 },
+    { productId: taparroscaConPincel.id, attributeId: attrAlturaVastago.id, sortOrder: 2 },
+    { productId: taparroscaConPincel.id, attributeId: attrAgujeroVastago.id, sortOrder: 3 },
+    { productId: taparroscaConPincel.id, attributeId: attrFormaTapa.id, sortOrder: 4 },
+    { productId: taparroscaConPincel.id, attributeId: attrColorTapa.id, sortOrder: 5 },
   ];
   for (const axis of taparroscaAxes) {
     await prisma.productAttributeLine.upsert({
@@ -69,18 +71,18 @@ async function setupProducts() {
       create: axis,
     });
   }
-  console.log("- Ejes de Taparrosca creados (5 atributos)");
+  console.log("- Ejes de Taparrosca con Pincel creados (5 atributos)");
 
   // ------------------------------------------------------------------
   // 4. Configurar ProductPasso (pasos guiados para storefront)
   // ------------------------------------------------------------------
   console.log("\n=== Configurando passos (ProductPasso) ===");
 
-  await prisma.productPasso.deleteMany({ where: { productId: taparrosca.id } });
+  await prisma.productPasso.deleteMany({ where: { productId: taparroscaConPincel.id } });
 
   const passos = [
     {
-      productId: taparrosca.id,
+      productId: taparroscaConPincel.id,
       variantProductId: vastago.id,
       sortOrder: 1,
       pregunta: "¿Qué tamaño de rosca necesitas?",
@@ -88,7 +90,7 @@ async function setupProducts() {
       isQtyStep: false,
     },
     {
-      productId: taparrosca.id,
+      productId: taparroscaConPincel.id,
       variantProductId: vastago.id,
       sortOrder: 2,
       pregunta: "¿Qué altura de vastago prefieres?",
@@ -96,7 +98,7 @@ async function setupProducts() {
       isQtyStep: false,
     },
     {
-      productId: taparrosca.id,
+      productId: taparroscaConPincel.id,
       variantProductId: vastago.id,
       sortOrder: 3,
       pregunta: "¿Qué tipo de agujero tiene el vastago?",
@@ -104,7 +106,7 @@ async function setupProducts() {
       isQtyStep: false,
     },
     {
-      productId: taparrosca.id,
+      productId: taparroscaConPincel.id,
       variantProductId: pincel.id,
       sortOrder: 4,
       pregunta: "¿Qué forma de tapa prefieres?",
@@ -112,16 +114,16 @@ async function setupProducts() {
       isQtyStep: false,
     },
     {
-      productId: taparrosca.id,
-      variantProductId: taparrosca.id,
+      productId: taparroscaConPincel.id,
+      variantProductId: taparroscaConPincel.id,
       sortOrder: 5,
       pregunta: "¿De qué color quieres la tapa?",
       attributeId: attrColorTapa.id,
       isQtyStep: false,
     },
     {
-      productId: taparrosca.id,
-      variantProductId: taparrosca.id,
+      productId: taparroscaConPincel.id,
+      variantProductId: taparroscaConPincel.id,
       sortOrder: 6,
       pregunta: "¿Cuántas unidades necesitas?",
       attributeId: null,
@@ -132,7 +134,7 @@ async function setupProducts() {
   for (const passo of passos) {
     await prisma.productPasso.create({ data: passo });
   }
-  console.log("- 6 passos creados para Taparrosca");
+  console.log("- 6 passos creados para Taparrosca con Pincel");
 
   // ------------------------------------------------------------------
   // 5. Configurar ProductComponent (BOM)
@@ -140,12 +142,16 @@ async function setupProducts() {
   console.log("\n=== Configurando BOM (ProductComponent) ===");
 
   await prisma.productComponent.deleteMany({ where: { productId: vastago.id } });
-  await prisma.productComponent.deleteMany({ where: { productId: pincel.id } });
   await prisma.productComponent.deleteMany({ where: { productId: taparrosca.id } });
+  await prisma.productComponent.deleteMany({ where: { productId: pincel.id } });
+  await prisma.productComponent.deleteMany({ where: { productId: taparroscaConPincel.id } });
   console.log("- Limpiado BOM existente");
 
   // Vástago: sin componentes (producto base)
   console.log("- Vástago: sin BOM (producto base)");
+
+  // Taparrosca (tapa): sin componentes (producto base)
+  console.log("- Taparrosca: sin BOM (producto base)");
 
   // Pincel: Vástago (componente exacto) + Cerda (consumible)
   await prisma.productComponent.upsert({
@@ -160,18 +166,18 @@ async function setupProducts() {
   });
   console.log("- Pincel: Vástago (exacto) + Cerda (consumible)");
 
-  // Taparrosca: Pincel (exacto) + Vástago (exacto)
+  // Taparrosca con Pincel: Pincel (exacto) + Taparrosca (exacto)
   await prisma.productComponent.upsert({
-    where: { productId_componentId: { productId: taparrosca.id, componentId: pincel.id } },
+    where: { productId_componentId: { productId: taparroscaConPincel.id, componentId: pincel.id } },
     update: {},
-    create: { productId: taparrosca.id, componentId: pincel.id, cantidad: 1, tipo: "exacto" },
+    create: { productId: taparroscaConPincel.id, componentId: pincel.id, cantidad: 1, tipo: "exacto" },
   });
   await prisma.productComponent.upsert({
-    where: { productId_componentId: { productId: taparrosca.id, componentId: vastago.id } },
+    where: { productId_componentId: { productId: taparroscaConPincel.id, componentId: taparrosca.id } },
     update: {},
-    create: { productId: taparrosca.id, componentId: vastago.id, cantidad: 1, tipo: "exacto" },
+    create: { productId: taparroscaConPincel.id, componentId: taparrosca.id, cantidad: 1, tipo: "exacto" },
   });
-  console.log("- Taparrosca: Pincel (exacto) + Vástago (exacto)");
+  console.log("- Taparrosca con Pincel: Pincel (exacto) + Taparrosca (exacto)");
 
   console.log("\n=== Estructura de productos configurada ===");
   console.log("Ahora puedes materializar variantes manualmente desde el admin.");

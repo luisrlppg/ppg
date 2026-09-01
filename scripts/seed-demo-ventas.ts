@@ -10,7 +10,8 @@ const prisma = new PrismaClient();
  *   1. Variante única real de Vástago   (VAST-STD) sin stock
  *   2. Variante única real de Cerda      (CERD-STD, kg) con stock
  *   3. Variante única real de Pincel     (PIN-STD, ensamble: Vástago exacto + Cerda consumible) sin stock
- *   4. Variante combo de Taparrosca con Pincel materializada SIN stock
+ *   4. Variante única real de Taparrosca (TPR-STD, tapa sin BOM) sin stock
+ *   5. Variante combo de Taparrosca con Pincel materializada SIN stock
  *
  * Con stock insuficiente, al confirmar la venta el neteo genera OFs en cascada
  * y pendientes de compra.
@@ -55,8 +56,9 @@ async function main() {
   const vastago = await prisma.product.findUnique({ where: { skuBase: "VAST" } });
   const cerda = await prisma.product.findUnique({ where: { skuBase: "CERD" } });
   const pincel = await prisma.product.findUnique({ where: { skuBase: "PIN" } });
-  const taparrosca = await prisma.product.findUnique({ where: { skuBase: "TP" } });
-  if (!vastago || !cerda || !pincel || !taparrosca) {
+  const taparrosca = await prisma.product.findUnique({ where: { skuBase: "TPR" } });
+  const taparroscaConPincel = await prisma.product.findUnique({ where: { skuBase: "TP" } });
+  if (!vastago || !cerda || !pincel || !taparrosca || !taparroscaConPincel) {
     console.error("ERROR: faltan productos base. Ejecuta `pnpm db:seed` primero.");
     process.exit(1);
   }
@@ -65,13 +67,14 @@ async function main() {
   await crearVarianteUnica(vastago.id, "VAST-STD", "Vástago estándar", { stockMin: 0, stockMax: 0 });
   await crearVarianteUnica(cerda.id, "CERD-STD", "Cerda estándar", { stock: 20 });
   await crearVarianteUnica(pincel.id, "PIN-STD", "Pincel estándar", { stockMin: 0, stockMax: 0 });
+  await crearVarianteUnica(taparrosca.id, "TPR-STD", "Taparrosca estándar", { stockMin: 0, stockMax: 0 });
 
-  // 4. Materializar combo Taparrosca: TP-10mm-10mm-plano-hexagonal-negro (valueIds 20,23,31,33,37)
-  let combo = await prisma.productVariant.findFirst({ where: { productId: taparrosca.id, sku: "TP-10mm-10mm-plano-hexagonal-negro" } });
+  // 5. Materializar combo Taparrosca con Pincel: TP-10mm-10mm-plano-hexagonal-negro (valueIds 20,23,31,33,37)
+  let combo = await prisma.productVariant.findFirst({ where: { productId: taparroscaConPincel.id, sku: "TP-10mm-10mm-plano-hexagonal-negro" } });
   if (!combo) {
     combo = await prisma.productVariant.create({
       data: {
-        productId: taparrosca.id,
+        productId: taparroscaConPincel.id,
         nombre: "10mm 10mm Plano Hexagonal Negro",
         sku: "TP-10mm-10mm-plano-hexagonal-negro",
         activo: true,
@@ -86,14 +89,14 @@ async function main() {
         },
       },
     });
-    console.log("- Combo Taparrosca TP-10mm-10mm-plano-hexagonal-negro creado (sin stock)");
+    console.log("- Combo Taparrosca con Pincel TP-10mm-10mm-plano-hexagonal-negro creado (sin stock)");
   } else {
-    console.log("- Combo Taparrosca ya existía");
+    console.log("- Combo Taparrosca con Pincel ya existía");
   }
 
   console.log("\n=== Listo para la prueba ===");
-  console.log("Vende la Taparrosca combo (variantId " + combo.id + ") con configuración y confirma la venta.");
-  console.log("Esperado: neteo + OFs en cascada (ensamble taparrosca, fabricacion pincel) + compra de vástago.");
+  console.log("Vende la Taparrosca con Pincel combo (variantId " + combo.id + ") con configuración y confirma la venta.");
+  console.log("Esperado: neteo + OFs en cascada (ensamble taparrosca con pincel, fabricacion pincel) + compra de vástago y de taparrosca.");
 }
 
 main()
