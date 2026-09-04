@@ -22,7 +22,10 @@ load_env() {
 
 load_env
 
-DATABASE_URL="${DATABASE_URL:-postgresql://ppg:ppg@localhost:5433/ppg?schema=public}"
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME/bin:$PATH"
+
+DATABASE_URL="${DATABASE_URL:-postgresql://ppg:ppg@localhost:5432/ppg?schema=public}"
 JWT_SECRET="${JWT_SECRET:-dev-secret-change-me}"
 COOKIE_NAME="${COOKIE_NAME:-ppg_session}"
 API_PORT="${API_PORT:-3001}"
@@ -30,14 +33,33 @@ WEB_PORT="${WEB_PORT:-3000}"
 
 # --- Helpers ---
 pid_on_port() {
-  lsof -ti :"$1" 2>/dev/null | head -1
+  lsof -ti :"$1" 2>/dev/null | head -1 || true
+}
+
+# PostgreSQL local reachable? (no docker)
+pg_local_ready() {
+  local url="$DATABASE_URL"
+  local host port user db pass
+  host=$(echo "$url" | sed -E 's|postgresql://.*@([^:/]+).*|\1|')
+  port=$(echo "$url" | sed -E 's|postgresql://.*@[^:]+:([0-9]+)/.*|\1|')
+  user=$(echo "$url" | sed -E 's|postgresql://([^:]+):.*@.*|\1|')
+  db=$(echo "$url" | sed -E 's|postgresql://.*/([^?]+).*|\1|')
+  pass=$(echo "$url" | sed -E 's|postgresql://[^:]+:([^@]+)@.*|\1|')
+  [ -z "$host" ] && host="localhost"
+  [ -z "$port" ] && port="5432"
+  PGPASSWORD="$pass" pg_isready -h "$host" -p "$port" -U "$user" -d "$db" >/dev/null 2>&1
 }
 
 # --- Actions ---
 do_up() {
   echo "==> PostgreSQL"
-  docker compose -f "$ROOT/docker-compose.yml" up -d postgres
-
+  if pg_local_ready; then
+    echo "PostgreSQL local disponible."
+  else
+    echo "ERROR: PostgreSQL no disponible en $DATABASE_URL"
+    echo "Asegurate de que PostgreSQL esté corriendo localmente."
+    exit 1
+  fi
   local api_dir="$ROOT/apps/api"
   local web_dir="$ROOT/apps/web"
 
@@ -48,8 +70,8 @@ do_up() {
   else
     echo "==> API en :$API_PORT"
     if [ ! -f "$api_dir/dist/main.js" ]; then
-      echo "Falta dist/main.js. Compila primero: pnpm --filter @ppg/api build"
-      exit 1
+      echo "Compilando API..."
+      (cd "$api_dir" && pnpm build)
     fi
     DATABASE_URL="$DATABASE_URL" JWT_SECRET="$JWT_SECRET" COOKIE_NAME="$COOKIE_NAME" API_PORT="$API_PORT" \
       nohup node "$api_dir/dist/main.js" > "$ROOT/api.log" 2>&1 &
