@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
@@ -19,6 +19,30 @@ interface PasoUI {
   seleccionVariantId: number | null;
 }
 
+// Panel = conjunto de passos mostrados juntos (característica + color de un componente)
+type Panel = { charIdx: number | null; colorIdx: number | null };
+
+function esPasoColor(passo: Passo): boolean {
+  return /¿de qué color/i.test(passo.pregunta);
+}
+
+function buildPaneles(passos: Passo[]): Panel[] {
+  const result: Panel[] = [];
+  for (let i = 0; i < passos.length; i++) {
+    if (esPasoColor(passos[i])) {
+      const prev = result[result.length - 1];
+      if (prev && prev.charIdx !== null && prev.colorIdx === null) {
+        prev.colorIdx = i;
+      } else {
+        result.push({ charIdx: null, colorIdx: i });
+      }
+    } else {
+      result.push({ charIdx: i, colorIdx: null });
+    }
+  }
+  return result;
+}
+
 export default function TiendaPage() {
   const { productId } = useParams<{ productId: string }>();
   const pid = Number(productId);
@@ -29,7 +53,7 @@ export default function TiendaPage() {
   const [error, setError] = useState("");
 
   const [selecciones, setSelecciones] = useState<PasoUI[]>([]);
-  const [pasoActual, setPasoActual] = useState(0);
+  const [panelActual, setPanelActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoNumero, setPedidoNumero] = useState<string | null>(null);
@@ -63,7 +87,9 @@ export default function TiendaPage() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const passosAtributo = passos;
-  const totalPasos = passosAtributo.length + 1;
+  const paneles = useMemo(() => buildPaneles(passosAtributo), [passosAtributo]);
+  // totalPasos = paneles + 1 (la revisión final)
+  const totalPasos = paneles.length + 1;
 
   function seleccionarOpcion(pasoIdx: number, opt: PassoOption) {
     setSelecciones((prev) => {
@@ -96,9 +122,39 @@ export default function TiendaPage() {
     return paso.opciones.filter((o) => compatibles.has(o.variantId));
   }
 
+  // Auto-selecciona cualquier paso que quede con una sola variante compatible
+  // (p. ej. colores de un solo valor: no se muestran y se eligen automáticamente).
+  useEffect(() => {
+    setSelecciones((prev) => {
+      let changed = false;
+      const next = prev.map((s) => ({ ...s }));
+      for (let i = 0; i < passosAtributo.length; i++) {
+        if (next[i]?.seleccionVariantId) continue;
+        const opts = opcionesDelPaso(i);
+        const unique = [...new Set(opts.map((o) => o.variantId))];
+        if (unique.length === 1 && opts.length > 0) {
+          const opt = opts[0];
+          next[i] = { passo: passosAtributo[i], seleccion: opt.valor, seleccionVariantId: opt.variantId };
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  });
+
+  function panelResuelto(p: Panel): boolean {
+    if (p.charIdx !== null) {
+      if (!selecciones[p.charIdx]?.seleccionVariantId) return false;
+    }
+    if (p.colorIdx !== null) {
+      if (!selecciones[p.colorIdx]?.seleccionVariantId) return false;
+    }
+    return true;
+  }
+
   function puedeAvanzar(): boolean {
-    if (pasoActual < passosAtributo.length) {
-      return !!selecciones[pasoActual]?.seleccion;
+    if (panelActual < paneles.length) {
+      return panelResuelto(paneles[panelActual]);
     }
     return cantidad > 0;
   }
@@ -177,9 +233,70 @@ export default function TiendaPage() {
     );
   }
 
-  const pasoIdx = pasoActual;
-  const paso = passosAtributo[pasoIdx];
-  const esRevision = pasoActual === passosAtributo.length;
+  const panel = paneles[panelActual];
+  const esRevision = panelActual >= paneles.length;
+
+  const renderOpciones = (stepIdx: number, onSelect: (o: PassoOption) => void) => {
+    const opts = opcionesDelPaso(stepIdx);
+    if (opts.length === 0) {
+      return null;
+    }
+    // Se oculta el selector cuando solo queda 1 opción (se auto-selecciona)
+    const unique = new Set(opts.map((o) => o.variantId));
+    if (unique.size === 1) return null;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {opts.map((opt) => {
+          const sel = selecciones[stepIdx]?.seleccionVariantId === opt.variantId;
+          return (
+            <button
+              key={`${opt.variantId}-${opt.valueId}`}
+              onClick={() => onSelect(opt)}
+              style={{
+                padding: "12px 16px",
+                border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
+                borderRadius: 8,
+                background: sel ? "#eff6ff" : "white",
+                cursor: "pointer",
+                textAlign: "left",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {opt.enStock ? (
+                  <span style={{ fontSize: "0.8em", color: "var(--success)" }}>En stock</span>
+                ) : (
+                  <span style={{ fontSize: "0.8em", color: "var(--warning)" }}>Sin stock</span>
+                )}
+                <span className="muted small">{opt.sku}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderSubPaso = (stepIdx: number) => {
+    if (stepIdx === null || stepIdx === undefined) return null;
+    const paso = passosAtributo[stepIdx];
+    if (!paso) return null;
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <h4 style={{ margin: "0 0 8px", fontSize: "0.95em" }}>{paso.pregunta}</h4>
+        {renderOpciones(stepIdx, (o) => seleccionarOpcion(stepIdx, o))}
+      </div>
+    );
+  };
+
+  const panelTitle = (() => {
+    const firstIdx = panel?.charIdx ?? panel?.colorIdx;
+    const firstPaso = firstIdx != null ? passosAtributo[firstIdx] : undefined;
+    return firstPaso?.pregunta ?? "";
+  })();
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
@@ -201,54 +318,29 @@ export default function TiendaPage() {
             {Array.from({ length: totalPasos }).map((_, i) => (
               <div key={i} style={{
                 flex: 1, height: 4, borderRadius: 2,
-                background: i <= pasoActual ? "var(--primary)" : "#ddd",
+                background: i <= panelActual ? "var(--primary)" : "#ddd",
               }} />
             ))}
           </div>
           <p className="muted small" style={{ marginTop: 6 }}>
-            Paso {Math.min(pasoActual + 1, totalPasos)} de {totalPasos}
-            {esRevision ? " — Revisar" : ` — ${paso?.pregunta ?? ""}`}
+            Paso {Math.min(panelActual + 1, totalPasos)} de {totalPasos}
+            {esRevision ? " — Revisar" : panel ? ` — ${panelTitle}` : ""}
           </p>
         </div>
 
         <div className="card">
-          {!esRevision && paso && (
+          {!esRevision && panel && (
             <>
-              <h3 style={{ marginTop: 0 }}>{paso.pregunta}</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {opcionesDelPaso(pasoIdx).length === 0 && (
+              <h3 style={{ marginTop: 0 }}>{panelTitle}</h3>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {panel.charIdx !== null && renderSubPaso(panel.charIdx)}
+                {panel.charIdx !== null && panel.colorIdx !== null && (
+                  <div style={{ margin: "4px 0", fontSize: "0.85em", color: "#666" }}>Colócalo de color:</div>
+                )}
+                {panel.colorIdx !== null && renderSubPaso(panel.colorIdx)}
+                {((panel.charIdx === null || !opcionesDelPaso(panel.charIdx).length) && (panel.colorIdx === null || !opcionesDelPaso(panel.colorIdx).length)) && (
                   <p className="muted">Completa el paso anterior primero.</p>
                 )}
-                {opcionesDelPaso(pasoIdx).map((opt) => {
-                  const sel = selecciones[pasoIdx]?.seleccionVariantId === opt.variantId;
-                  return (
-                    <button
-                      key={`${opt.variantId}-${opt.valueId}`}
-                      onClick={() => seleccionarOpcion(pasoIdx, opt)}
-                      style={{
-                        padding: "12px 16px",
-                        border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
-                        borderRadius: 8,
-                        background: sel ? "#eff6ff" : "white",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
-                      <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        {opt.enStock ? (
-                          <span style={{ fontSize: "0.8em", color: "var(--success)" }}>En stock</span>
-                        ) : (
-                          <span style={{ fontSize: "0.8em", color: "var(--warning)" }}>Sin stock</span>
-                        )}
-                        <span className="muted small">{opt.sku}</span>
-                      </span>
-                    </button>
-                  );
-                })}
               </div>
             </>
           )}
@@ -299,18 +391,18 @@ export default function TiendaPage() {
           )}
 
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-            {pasoActual > 0 ? (
-              <button className="btn ghost" onClick={() => setPasoActual(pasoActual - 1)}>
+            {panelActual > 0 ? (
+              <button className="btn ghost" onClick={() => setPanelActual(panelActual - 1)}>
                 ← Atrás
               </button>
             ) : <span />}
             {!esRevision ? (
               <button
                 className="btn primary"
-                onClick={() => setPasoActual(pasoActual + 1)}
+                onClick={() => setPanelActual(panelActual + 1)}
                 disabled={!puedeAvanzar()}
               >
-                {pasoActual === passosAtributo.length - 1 ? "Revisar →" : "Siguiente →"}
+                {panelActual === paneles.length - 1 ? "Revisar →" : "Siguiente →"}
               </button>
             ) : (
               <button

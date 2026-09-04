@@ -67,7 +67,7 @@ async function main() {
   }
 
   // --- Categorías y empaques de arranque (E1) ---
-  const categorias = ["Cepillos", "Vástagos", "Taparroscas", "Pinceles", "Cerda", "Empaques"];
+  const categorias = ["Cepillos", "Vástagos", "Taparroscas", "Pinceles", "Cerda", "Empaques", "Envases"];
   for (const nombre of categorias) {
     await prisma.category.upsert({ where: { nombre }, update: {}, create: { nombre } });
   }
@@ -76,11 +76,28 @@ async function main() {
   // Vástago: producto base sin BOM. Cerda: consumible por kg.
   // Pincel: ensamble (Vástago + Cerda). Taparrosca: ensamble (Pincel + Vástago).
   const productosBase: Array<{ nombre: string; sku: string; categoria: string; uom: Uom; basePrice: number; hasVariants: boolean }> = [
-    { nombre: "Vástago", sku: "VAST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
+    // Taparrosca con pincel (existente, renombrar Vástago → Mango)
+    { nombre: "Mango", sku: "VAST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
     { nombre: "Cerda", sku: "CERD", categoria: "Cerda", uom: Uom.kg, basePrice: 80, hasVariants: false },
     { nombre: "Pincel", sku: "PIN", categoria: "Pinceles", uom: Uom.pieza, basePrice: 20, hasVariants: true },
     { nombre: "Taparrosca", sku: "TPR", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 0, hasVariants: false },
     { nombre: "Taparrosca con Pincel", sku: "TP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 40, hasVariants: true },
+    // BTVPE: componentes
+    { nombre: "Botella", sku: "BOT", categoria: "Envases", uom: Uom.pieza, basePrice: 8, hasVariants: true },
+    { nombre: "Vástago", sku: "VST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
+    { nombre: "Sobretapa", sku: "STP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 3, hasVariants: false },
+    { nombre: "Escurridor", sku: "ESC", categoria: "Envases", uom: Uom.pieza, basePrice: 2, hasVariants: false },
+    { nombre: "Cepillo Silicon", sku: "CSI", categoria: "Cepillos", uom: Uom.pieza, basePrice: 6, hasVariants: false },
+    { nombre: "Cepillo Nylon", sku: "CNI", categoria: "Cepillos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
+    { nombre: "Delineador", sku: "DPL", categoria: "Cepillos", uom: Uom.pieza, basePrice: 4, hasVariants: false },
+    { nombre: "Tratamiento Noche", sku: "TRN", categoria: "Cepillos", uom: Uom.pieza, basePrice: 4, hasVariants: false },
+    { nombre: "Lip Gloss", sku: "LGL", categoria: "Cepillos", uom: Uom.pieza, basePrice: 6, hasVariants: false },
+    // BTVPE: productos vendidos
+    { nombre: "Rimel Silicon", sku: "BTVPE-S", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
+    { nombre: "Rimel Nylon", sku: "BTVPE-N", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
+    { nombre: "Delineador", sku: "BTVPE-D", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
+    { nombre: "Tratamiento de Noche", sku: "BTVPE-TN", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
+    { nombre: "Lip Gloss", sku: "BTVPE-LG", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
   ];
   for (const p of productosBase) {
     const category = await prisma.category.findUnique({ where: { nombre: p.categoria } });
@@ -138,6 +155,16 @@ async function main() {
     "Agujero vastago": { values: ["Plano", "Normal"] },
     "Forma tapa": { values: ["Hexagonal", "Bala", "Rebeca", "Yadis"] },
     "Color tapa": { values: ["Negro", "Blanco", "Transparente", "Personalizado"] },
+    // BTVPE: atributos de selección
+    "Botella": { values: ["10mL", "15mL", "30mL"] },
+    "Forma": { values: ["Recto", "Espiral", "Pino", "Cacahuate", "Globo", "Balita", "Redondo"] },
+    "Diámetro": { values: ["3mm", "4mm", "5mm", "6mm", "7mm", "8mm"] },
+    // BTVPE: atributos de color por componente (Opción X)
+    "Color Botella": { values: ["Negro", "Transparente", "Blanco"] },
+    "Color Vástago": { values: ["Negro", "Transparente", "Blanco"] },
+    "Color Sobretapa": { values: ["Negro", "Transparente", "Blanco"] },
+    "Color Escurridor": { values: ["Negro", "Transparente", "Blanco"] },
+    "Color Cepillo": { values: ["Negro", "Transparente", "Blanco"] },
   };
   for (const [nombre, config] of Object.entries(newAttributes)) {
     const attribute = await prisma.attribute.upsert({
