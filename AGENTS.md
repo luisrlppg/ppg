@@ -70,8 +70,7 @@ por compatibilidad en la respuesta.
 - `scripts/seed-products.ts` — configura estructura BOM + ProductAttributeLine + ProductPasso
 - `scripts/seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3 (reportes/producción); idempotente
 - `scripts/seed-demo-ventas.ts` — siembra variantes únicas + combo taparrosca SIN stock para probar el flujo ventas → confirmación → neteo → cascada de OFs (E2); idempotente
-- `scripts/dev.sh` — gestor de servidores: `./scripts/dev.sh <up|stop|status|logs>`
-- `start-dev.sh` — iniciar servidores (build API + arranque rápido)
+- `scripts/ppg.sh` — único gestor de servidores (alias `ppg` en `~/.bashrc`): `ppg start|stop|restart|reload|status|logs|db`. `start` hace bootstrap completo (Postgres + deps + migraciones) y arranca api+web con hot-reload en background; `reload` aplica migraciones y reinicia; `db <native|docker|auto|stop>` elige el motor de Postgres (persistido como `PPG_DB_MODE` en `.env`). **No siembra.**
 
 ## Pendiente
 1. **Modularización** — separar código en módulos (Catálogos, Manufactura, etc.)
@@ -91,5 +90,5 @@ por compatibilidad en la respuesta.
 
 ## Credenciales
 - Admin: `admin` / `admin123`
-- PostgreSQL: `postgresql://ppg:ppg@localhost:5433/ppg`
+- PostgreSQL: `postgresql://ppg:ppg@localhost:5432/ppg` (native o Docker, mismo puerto; elige motor con `ppg db <native|docker>`)
 - Docker Desktop (Windows) accesible via `host.docker.internal`

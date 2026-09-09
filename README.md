@@ -31,10 +31,29 @@ infra/        # Dockerfiles + Caddyfile (perfil full)
 
 ## Puesta en marcha (dev local)
 
+Forma recomendada — un solo comando (bootstrap + hot-reload en background):
+
+```bash
+cp .env.example .env
+./scripts/ppg.sh start      # levanta Postgres (nativo o docker), instala deps,
+                            # aplica migraciones y arranca api :3001 + web :3000
+```
+
+Gestión con `ppg` (alias en `~/.bashrc` → `scripts/ppg.sh`):
+
+```bash
+ppg start|restart|reload    # arrancar / reiniciar / aplicar migraciones + reiniciar
+ppg stop|status|logs        # detener / estado / últimos logs
+ppg db <native|docker|auto> # elegir motor de PostgreSQL (persistido en .env)
+pnpm dev                    # alternativa: hot-reload en primer plano (Ctrl+C)
+```
+
+Manual (sin script):
+
 ```bash
 pnpm install
 pnpm db:up          # docker compose up -d postgres
-pnpm db:migrate     # prisma migrate dev (crea tablas base)
+pnpm db:deploy      # aplicar migraciones (no interactivo)
 pnpm db:seed        # usuarios iniciales
 pnpm dev            # API en :3001 + web en :3000 (web proxya /api → api)
 ```
@@ -66,12 +85,6 @@ pnpm dev:api     # solo API
 pnpm dev:web     # solo web
 ```
 
-## Servidores en Windows (PowerShell, sin bloquear la terminal)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File start-dev.ps1
-```
-
 ## WSL2 (Ubuntu) - Desarrollo Recomendado
 
 WSL2 ofrece mejor experiencia de desarrollo que PowerShell en Windows.
@@ -80,7 +93,7 @@ WSL2 ofrece mejor experiencia de desarrollo que PowerShell en Windows.
 
 ```powershell
 # Ejecutar como Administrador
-powershell -ExecutionPolicy Bypass -File scripts\wsl2-setup.ps1
+wsl --install -d Ubuntu-22.04
 ```
 
 ### Paso 2: Configurar Ubuntu (primer inicio)
@@ -93,11 +106,11 @@ wsl -d Ubuntu-22.04
 ### Paso 3: Setup de desarrollo en Ubuntu
 
 ```bash
-# Dentro de Ubuntu, ejecutar:
-curl -sL https://raw.githubusercontent.com/anomalyco/ppg-erp/main/scripts/wsl2-dev-setup.sh | bash
-
-# O copia scripts/wsl2-dev-setup.sh desde el repo y ejecuta:
-bash ~/wsl2-dev-setup.sh
+# Dentro de Ubuntu, instalar Node.js ≥ 20 y pnpm ≥ 9:
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs postgresql
+npm install -g corepack && corepack enable
+corepack prepare pnpm@latest --activate
 ```
 
 ### Paso 4: Copiar proyecto a WSL2
@@ -126,21 +139,26 @@ cp .env.example .env
 ```bash
 cd ~/ppg-erp
 
-# Opción A: Script de inicio
-bash scripts/wsl2-start-dev.sh
+# Opción A: Un solo comando (recomendado)
+./scripts/ppg.sh start
 
 # Opción B: Manual
-export DATABASE_URL="postgresql://ppg:ppg@host.docker.internal:5433/ppg"
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME/bin:$PATH"
 pnpm install
+pnpm db:deploy
 pnpm dev
 ```
+
+> PostgreSQL: el motor se elige con `ppg db <native|docker>` (persistido como `PPG_DB_MODE`
+> en `.env`). `native` usa `localhost:5432` (cluster Linux); `docker` levanta `docker compose`
+> (pública en `localhost:5432`).
 
 ### Comandos útiles en WSL2
 
 ```bash
-pnpm dev              # API + Web
-pnpm --filter @ppg/api dev   # Solo API (puerto 3001)
-pnpm --filter @ppg/web dev   # Solo Web (puerto 3000)
+ppg start|stop|restart|reload|status|logs   # gestión api+web (hot-reload)
+ppg db <native|docker|auto|stop>            # motor de PostgreSQL
 pnpm db:studio        # Prisma Studio
 docker ps             # Ver contenedores Docker de Windows
 wsl -l -v            # Ver distribuciones WSL
@@ -149,17 +167,6 @@ wsl -l -v            # Ver distribuciones WSL
 ### Notas importantes
 
 - **Docker**: Usa Docker Desktop for Windows, accesible desde WSL2 via `docker` CLI
-- **PostgreSQL**: La base corre en Docker de Windows, se accede desde WSL2 via `host.docker.internal`
+- **PostgreSQL**: corre en `localhost:5432` (nativo o contenedor Docker Compose del repo)
 - **Archivos**: Accede desde Windows via `\\wsl$\Ubuntu-22.04\...` o desde Ubuntu via `/mnt/d/...`
 - **Git**: Puedes usar Git desde Windows o WSL2 indistintamente
-
-## Servidores en Windows (PowerShell, alternativa)
-
-`scripts/dev.ps1` arranca/detiene api y web **desacoplados** (no bloquean el chat/terminal):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 up      # postgres + api + web
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 stop    # detiene api y web
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 status  # puertos 3000/3001
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 logs    # tail api.log / web.log
-```
