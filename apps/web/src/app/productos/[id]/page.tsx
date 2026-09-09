@@ -94,6 +94,23 @@ export default function ProductoDetallePage() {
   }
 
   // ------------------------------------------------------------------ Atributos locales
+  async function guardarValoresPermitidos(attr: Atributo, valueIds: number[]) {
+    try {
+      await api(`/productos/${prodId}/ejes/${attr.id}/valores`, {
+        method: "PUT",
+        body: JSON.stringify({ valueIds }),
+      });
+      await cargar();
+      notify(null, "Valores del eje actualizados.");
+    } catch (e) { notify(e as Error, ""); }
+  }
+
+  function toggleValorPermitido(attr: Atributo, valueId: number, checked: boolean) {
+    const current = new Set(attr.permitidos ?? attr.valores.map((v) => v.id));
+    if (checked) current.add(valueId);
+    else current.delete(valueId);
+    guardarValoresPermitidos(attr, [...current]);
+  }
   async function crearAtributo() {
     if (!createAttrNombre.trim()) return;
     setSavingAttr(true);
@@ -368,12 +385,27 @@ export default function ProductoDetallePage() {
                   {propios.map((attr) => (
                     <tr key={attr.id}>
                       <td><strong>{attr.nombre}</strong></td>
-                      <td className="muted-2">
-                        {attr.valores.length === 0 ? (
-                          <span className="muted small">sin valores</span>
-                        ) : (
-                          attr.valores.map((v) => v.valor).join(", ")
-                        )}
+                      <td>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {attr.valores.map((v) => {
+                            const activo = (attr.permitidos ?? attr.valores.map((x) => x.id)).includes(v.id);
+                            return (
+                              <label key={v.id} className="kbd-chip" style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={activo}
+                                  style={{ width: "auto", margin: 0 }}
+                                  onChange={(e) => toggleValorPermitido(attr, v.id, e.target.checked)}
+                                />
+                                {v.valor}
+                              </label>
+                            );
+                          })}
+                          {attr.valores.length === 0 && <span className="muted small">sin valores</span>}
+                        </div>
+                        <p className="muted small" style={{ margin: "4px 0 0" }}>
+                          Ejes = valores seleccionados. Las variantes se materializan solo con estas combinaciones.
+                        </p>
                       </td>
                       <td style={{ width: 200 }}>
                         <button type="button" className="btn ghost sm" onClick={() => abrirEditarAttr(attr)}>Editar</button>

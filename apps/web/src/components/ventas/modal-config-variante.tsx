@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { getPasosCached } from "@/lib/pasos-cache";
 import type { ConfiguracionLinea, Passo, PassoOption, ProductoPublico } from "@/lib/types";
 
 export interface LineaConfigurada {
@@ -57,7 +58,7 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<Passo[]>(`/public/productos/${producto.productId}/pasos`)
+    getPasosCached(producto.productId)
       .then((ps) => {
         const attrs = ps.filter((s) => !s.isQtyStep);
         setPassos(attrs);

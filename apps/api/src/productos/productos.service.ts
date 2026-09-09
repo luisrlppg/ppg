@@ -206,8 +206,42 @@ export class ProductosService {
           data: { productId, attributeId: e.attributeId, sortOrder: e.sortOrder ?? i },
         });
       }
+      // Limpia valores permitidos de atributos que ya no son ejes del producto.
+      await tx.productAttributeValue.deleteMany({
+        where: { productId, attributeId: { notIn: ejes.map((e) => e.attributeId) } },
+      });
     });
     return { ok: true };
+  }
+
+  /** Restringe los ejes: subconjunto de valores del atributo válidos para el producto. */
+  async setValoresPermitidos(productId: number, attributeId: number, valueIds: number[]) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException("Producto no encontrado");
+
+    const eje = await this.prisma.productAttributeLine.findUnique({
+      where: { productId_attributeId: { productId, attributeId } },
+    });
+    if (!eje) {
+      throw new BadRequestException("El atributo no está asignado como eje de este producto");
+    }
+
+    const validas = await this.prisma.attributeValue.count({
+      where: { attributeId, id: { in: valueIds } },
+    });
+    if (validas !== valueIds.length) {
+      throw new BadRequestException("Algunos valores no pertenecen al atributo");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.productAttributeValue.deleteMany({ where: { productId, attributeId } });
+      if (valueIds.length > 0) {
+        await tx.productAttributeValue.createMany({
+          data: valueIds.map((valueId) => ({ productId, attributeId, valueId })),
+        });
+      }
+    });
+    return { ok: true, permitidos: valueIds };
   }
 
   async setComponentes(

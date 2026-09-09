@@ -54,25 +54,43 @@ model Packaging {
 }
 
 model Attribute {
-  id                Int                    @id @default(autoincrement())
-  nombre            String                 @unique
-  values            AttributeValue[]
-  productLines      ProductAttributeLine[]
-  productPassos     ProductPasso[]
-  variantAttributes VariantAttribute[]
-  createdAt         DateTime               @default(now())
+  id                    Int                    @id @default(autoincrement())
+  nombre                String                 @unique
+  values                AttributeValue[]
+  productLines          ProductAttributeLine[]
+  productPassos         ProductPasso[]
+  variantAttributes     VariantAttribute[]
+  productAttributeValues ProductAttributeValue[]
+  createdAt             DateTime               @default(now())
 }
 
 model AttributeValue {
-  id                Int                    @id @default(autoincrement())
-  attributeId       Int
-  attribute         Attribute             @relation(fields: [attributeId], references: [id])
-  valor             String
-  variantAttributes VariantAttribute[]
-  createdAt         DateTime               @default(now())
+  id                    Int                    @id @default(autoincrement())
+  attributeId           Int
+  attribute             Attribute             @relation(fields: [attributeId], references: [id])
+  valor                 String
+  variantAttributes     VariantAttribute[]
+  productAttributeValues ProductAttributeValue[]
+  createdAt             DateTime               @default(now())
 
   @@unique([attributeId, valor])
   @@index([attributeId])
+}
+
+/// Valores permitidos del atributo para un producto (los "ejes" = atributo +
+/// subconjunto de valores). Si no hay filas para un (producto, atributo), se
+/// asume que todos los valores del atributo son válidos.
+model ProductAttributeValue {
+  id          Int            @id @default(autoincrement())
+  productId   Int
+  product     Product        @relation(fields: [productId], references: [id])
+  attributeId Int
+  attribute   Attribute      @relation(fields: [attributeId], references: [id])
+  valueId     Int
+  value       AttributeValue @relation(fields: [valueId], references: [id])
+
+  @@unique([productId, attributeId, valueId])
+  @@index([productId, attributeId])
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +119,7 @@ model Product {
 
   variants        ProductVariant[]
   attributeLines  ProductAttributeLine[]
+  attributeValues ProductAttributeValue[]
   passos          ProductPasso[]
   components      ProductComponent[]    @relation("ComponentParent") // BOM de este producto
   componentOf     ProductComponent[]    @relation("ComponentChild") // dónde se usa este producto
@@ -179,6 +198,7 @@ model VariantAttribute {
 
   @@unique([variantId, attributeId])
   @@index([variantId])
+  @@index([valueId])
 }
 
 /// BOM a nivel producto. componente = products. exacto entra al neteo; consumible (cerda) NO (§5.7)

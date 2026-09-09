@@ -21,6 +21,7 @@ export interface Atributo {
   nombre: string;
   valores: AtributoValor[];
   productIds?: number[];
+  permitidos?: number[];
 }
 
 export interface AtributosProducto {

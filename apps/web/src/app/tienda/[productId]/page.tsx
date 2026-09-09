@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { getPasosCached } from "@/lib/pasos-cache";
 import type { Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
 
 interface ProductoBasico {
@@ -67,7 +68,7 @@ export default function TiendaPage() {
     try {
       const [p, ps] = await Promise.all([
         api<ProductoBasico>(`/productos/${pid}`),
-        api<Passo[]>(`/public/productos/${pid}/pasos`),
+        getPasosCached(pid),
       ]);
       setProducto(p);
       const attrSteps = ps.filter((s) => !s.isQtyStep);

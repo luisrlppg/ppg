@@ -64,11 +64,15 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
   - `list` ~50‑86 · `get` (detalle + componentes + variantes) ~88‑135 · `create` ~137‑170
   - `update` (registra cambio de precio en `PriceChange`) ~172‑215 · `deactivate`
   - `setEjes` (atributos del grid) · `setComponentes` (BOM)
+  - `setValoresPermitidos` — restringe los **ejes**: subconjunto de valores del atributo válidos para el producto (tabla `ProductAttributeValue`). Lo consume `PUT /productos/:id/ejes/:attributeId/valores`
   - `createVariant` · `updateVariant` · `setVariantPrice`
   - `materializar` (crea variante de un combo) · `generar`
   - **`resolveComponentVariant`** (resuelve variante de componente BOM; lo consumen ventas e inventario)
 - **`productos.grid.ts`** (nuevo): lógica del **grid cartesiano** (`gridProducto`, `slugify`) +
   tipos `Grid`, `MaterializableCombo`. A él delegan `grid`/`materializar`/`generar`; los tipos se re-exportan desde `productos.service`.
+  - **Ejes con subconjunto de valores:** `gridProducto` usa `valoresPermitidosLote` (`common/valores-permitidos.ts`), batcheado (sin N+1 por eje).
+    Si no hay filas en `ProductAttributeValue` para el par (producto, atributo) → se asumen **todos** los valores del atributo (fallback).
+    El storefront (`getPasos`) y `atributos/producto` (con `permitidos`) usan el mismo helper.
 
 ### 3.2 Ventas / neteo / OFs  → `ventas/`
 - **Controller `ventas.controller.ts`** — rutas `/api/ventas...`
@@ -125,7 +129,7 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
   - Rutas: `GET public/productos` (productos públicos) · `GET public/productos/:id/pasos` (pasos guiados) · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
 - **Service `public.service.ts`** (**199 líneas**):
   - `crearPedido` (precio recalculado en servidor, §7.7) · `consultarPedido` · `productosPublicos` (productos con ≥1 variante activa y publicada; agrupados por producto, sin precios en la UI) · `catalogo` (variantes publicadas)
-  - **`getPasos`** (arma pasos guiados con opciones/stock): las opciones de cada paso se resuelven desde las **variantes publicadas del producto navegado** (`productId`), **no** del `variantProductId` (los componentes pueden no tener variantes). `variantProductId` solo se conserva en la respuesta. Compartido por tienda y modal de ventas.
+  - **`getPasos`** (arma pasos guiados con opciones/stock): las opciones de cada paso se resuelven desde las **variantes publicadas del producto navegado** (`productId`), **no** del `variantProductId` (los componentes pueden no tener variantes). `variantProductId` solo se conserva en la respuesta. Compartido por tienda y modal de ventas. **Batcheado sin N+1:** 1 query de valores + 1 de variantes publicadas (con `variantAttributes`+`stockLevels`) agrupadas en memoria; los valores permitidos usan `valoresPermitidosLote` (`common/valores-permitidos.ts`). En web, `lib/pasos-cache.ts` cachea el resultado 30s por productId.
 
 ### 3.8 Monitor de stock bajo + notificaciones  → `monitor/`
 - **Controller `monitor.controller.ts`** — rutas `/api/monitor...`

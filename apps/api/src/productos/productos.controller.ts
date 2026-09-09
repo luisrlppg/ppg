@@ -45,6 +45,10 @@ class EjeDto {
   @IsOptional() @IsNumber() sortOrder?: number;
 }
 
+class ValoresPermitidosDto {
+  @IsArray() @IsInt({ each: true }) valueIds!: number[];
+}
+
 class ComponenteDto {
   @IsNumber() componentId!: number;
   @IsNumber() cantidad!: number;
@@ -134,6 +138,16 @@ export class ProductosController {
   @Put(":id/ejes")
   ejes(@Param("id", ParseIntPipe) id: number, @Body() dto: { ejes: EjeDto[] }) {
     return this.productos.setEjes(id, dto.ejes);
+  }
+
+  @Roles("admin", "supervisor")
+  @Put(":id/ejes/:attributeId/valores")
+  valoresPermitidos(
+    @Param("id", ParseIntPipe) id: number,
+    @Param("attributeId", ParseIntPipe) attributeId: number,
+    @Body() dto: ValoresPermitidosDto,
+  ) {
+    return this.productos.setValoresPermitidos(id, attributeId, dto.valueIds.map(Number));
   }
 
   @Roles("admin", "supervisor")

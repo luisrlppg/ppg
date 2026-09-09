@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
+import { valoresPermitidosLote } from "../common/valores-permitidos";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface PassoOption {
@@ -151,34 +152,44 @@ export class PublicService {
       orderBy: { sortOrder: "asc" },
     });
 
+    // Carga "en lote" para evitar el N+1: 1 query de valores + 1 de variantes,
+    // y se agrupa en memoria por (atributo, valor).
+    const attrIds = [...new Set(passos.filter((p) => p.attributeId != null).map((p) => p.attributeId!))];
+    const permitidos = await valoresPermitidosLote(this.prisma, product.id, attrIds);
+    const values = await this.prisma.attributeValue.findMany({
+      where: { attributeId: { in: attrIds } },
+      orderBy: { valor: "asc" },
+    });
+
+    const variantesPublicadas = await this.prisma.productVariant.findMany({
+      where: { productId: product.id, published: true },
+      include: { variantAttributes: true, stockLevels: true, product: { select: { uom: true } } },
+    });
+    const porValor = new Map<number, { variantId: number; sku: string; enStock: boolean; uom: string }[]>();
+    for (const variant of variantesPublicadas) {
+      const enStock = variant.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
+      const uom = variant.product.uom as string;
+      for (const va of variant.variantAttributes) {
+        const arr = porValor.get(va.valueId) ?? [];
+        arr.push({ variantId: variant.id, sku: variant.sku, enStock, uom });
+        porValor.set(va.valueId, arr);
+      }
+    }
+
     const result: Passo[] = [];
     for (const passo of passos) {
       const vpId = passo.variantProductId ?? passo.productId;
-      if (passo.isQtyStep) {
-        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: true, opciones: [] });
+      if (passo.isQtyStep || !passo.attributeId) {
+        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: passo.isQtyStep, opciones: [] });
         continue;
       }
-      if (!passo.attributeId) {
-        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: false, opciones: [] });
-        continue;
-      }
-      const values = await this.prisma.attributeValue.findMany({
-        where: { attributeId: passo.attributeId },
-        orderBy: { valor: "asc" },
-      });
+      const permitidosSet = new Set(permitidos.get(passo.attributeId) ?? []);
       const opciones: PassoOption[] = [];
       for (const v of values) {
-        const variants = await this.prisma.productVariant.findMany({
-          where: {
-            productId: product.id,
-            variantAttributes: { some: { attributeId: passo.attributeId, valueId: v.id } },
-            published: true,
-          },
-          include: { stockLevels: true, product: { select: { uom: true } } },
-        });
-        for (const variant of variants) {
-          const enStock = variant.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
-          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.id, sku: variant.sku, enStock, uom: variant.product.uom as string });
+        if (v.attributeId !== passo.attributeId) continue;
+        if (!permitidosSet.has(v.id)) continue;
+        for (const variant of porValor.get(v.id) ?? []) {
+          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.variantId, sku: variant.sku, enStock: variant.enStock, uom: variant.uom });
         }
       }
       const seen = new Map<string, PassoOption>();

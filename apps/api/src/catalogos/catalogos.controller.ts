@@ -219,6 +219,8 @@ export class CatalogosController {
         `No se puede eliminar. Este valor está usado en ${inUse} variante(s) materializada(s).`,
       );
     }
+    // Elimina también las referencias como valor permitido de ejes.
+    await this.prisma.productAttributeValue.deleteMany({ where: { valueId: valorId } });
     await this.prisma.attributeValue.delete({ where: { id: valorId } });
   }
 
@@ -260,6 +262,10 @@ export class CatalogosController {
   ) {
     await this.prisma.productAttributeLine.delete({
       where: { productId_attributeId: { productId: productoId, attributeId } },
+    });
+    // Al quitar el eje se eliminan sus valores permitidos.
+    await this.prisma.productAttributeValue.deleteMany({
+      where: { productId: productoId, attributeId },
     });
   }
 }

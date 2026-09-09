@@ -1,5 +1,6 @@
 import { NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { valoresPermitidosLote } from "../common/valores-permitidos";
 
 function slugify(valores: string[]): string {
   return valores
@@ -41,12 +42,21 @@ export async function gridProducto(prisma: PrismaService, productId: number): Pr
   });
   if (!p) throw new NotFoundException("Producto no encontrado");
 
-  const ejes = p.attributeLines.map((l) => ({
-    attributeId: l.attributeId,
-    nombre: l.attribute.nombre,
-    sortOrder: l.sortOrder,
-    valores: l.attribute.values.map((v) => ({ id: v.id, valor: v.valor })),
-  }));
+  // Valores permitidos de cada eje en 1-2 queries (sin N+1).
+  const ejeIds = p.attributeLines.map((l) => l.attributeId);
+  const permitidos = await valoresPermitidosLote(prisma, productId, ejeIds);
+
+  const ejes: Grid["ejes"] = [];
+  for (const l of p.attributeLines) {
+    const ids = new Set(permitidos.get(l.attributeId) ?? []);
+    // Los valores completos ya vienen cargados en el include; se filtran a los permitidos.
+    ejes.push({
+      attributeId: l.attributeId,
+      nombre: l.attribute.nombre,
+      sortOrder: l.sortOrder,
+      valores: l.attribute.values.map((v) => ({ id: v.id, valor: v.valor })).filter((v) => ids.has(v.id)),
+    });
+  }
 
   const existing = p.variants.filter((v) => v.variantAttributes.length === ejes.length);
   const combinaciones: MaterializableCombo[] = [];
