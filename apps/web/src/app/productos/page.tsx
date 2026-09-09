@@ -57,6 +57,7 @@ export default function ProductosPage() {
   }, []);
 
   // --------------------------------------------------------------- Alta
+  const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState("");
   const [sku, setSku] = useState("");
   const [uom, setUom] = useState("pieza");
@@ -67,6 +68,16 @@ export default function ProductosPage() {
   const [showNuevaCat, setShowNuevaCat] = useState(false);
   const [creandoCat, setCreandoCat] = useState(false);
   const [guardando, setGuardando] = useState(false);
+
+  function resetForm() {
+    setNombre("");
+    setSku("");
+    setBasePrice("");
+    setHasVariants(false);
+    setCatAlta("");
+    setNuevaCat("");
+    setShowNuevaCat(false);
+  }
 
   async function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -85,11 +96,8 @@ export default function ProductosPage() {
           hasVariants,
         }),
       });
-      setNombre("");
-      setSku("");
-      setBasePrice("");
-      setHasVariants(false);
-      setCatAlta("");
+      resetForm();
+      setShowModal(false);
       router.push(`/productos/${p.id}`);
     } catch (e) {
       setError((e as Error).message);
@@ -274,86 +282,25 @@ export default function ProductosPage() {
         </>
       ) : (
         <>
-          <div className="grid-2">
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Alta de producto</h3>
-              <form onSubmit={crear}>
-                <label>
-                  Nombre
-                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-                </label>
-                <div className="row">
-                  <label>
-                    SKU base
-                    <input value={sku} onChange={(e) => setSku(e.target.value)} required placeholder="EJ: CEP45" />
-                  </label>
-                  <label>
-                    UOM
-                    <select value={uom} onChange={(e) => setUom(e.target.value)}>
-                      <option value="pieza">pieza</option>
-                      <option value="metro">metro</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="row">
-                  <label>
-                    Precio base (neto)
-                    <input type="number" step="0.01" min="0" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} />
-                  </label>
-                  <label style={{ marginTop: 28 }}>
-                    <input type="checkbox" checked={hasVariants} onChange={(e) => setHasVariants(e.target.checked)} style={{ width: "auto", margin: 0 }} />
-                    {" "}
-                    Tiene variantes (grid de combos)
-                  </label>
-                </div>
-                <div className="row" style={{ alignItems: "flex-end" }}>
-                  <label style={{ flex: 2 }}>
-                    Categoría
-                    <select value={catAlta} onChange={(e) => setCatAlta(e.target.value)}>
-                      <option value="">— Sin categoría —</option>
-                      {categorias.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button type="button" className="btn ghost sm" style={{ flex: 0 }} onClick={() => setShowNuevaCat(!showNuevaCat)}>
-                    {showNuevaCat ? "Cerrar" : "Nueva…"}
-                  </button>
-                </div>
-                {showNuevaCat && (
-                  <div className="inline-form" style={{ marginTop: 8 }}>
-                    <input value={nuevaCat} onChange={(e) => setNuevaCat(e.target.value)} placeholder="Nombre de la categoría…" />
-                    <button type="button" className="btn primary sm" style={{ flex: 0 }} disabled={creandoCat} onClick={crearNuevaCat}>
-                      {creandoCat ? "Creando…" : "Crear"}
-                    </button>
-                  </div>
-                )}
-                <button className="btn primary block" disabled={guardando} style={{ marginTop: 8 }}>
-                  {guardando ? "Guardando…" : "Crear producto"}
-                </button>
-              </form>
-            </div>
-
-            <div className="card">
-              <h3 style={{ marginTop: 0 }}>Filtrar</h3>
-              <label>
-                Buscar
-                <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Nombre o SKU…" />
-              </label>
-              <label>
-                Categoría
-                <select value={filtroCat} onChange={(e) => setFiltroCat(e.target.value)}>
-                  <option value="">Todas</option>
-                  {categorias.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          <div className="card" style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <label style={{ flex: 2, minWidth: 180 }}>
+              Buscar
+              <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Nombre o SKU…" />
+            </label>
+            <label style={{ flex: 1, minWidth: 150 }}>
+              Categoría
+              <select value={filtroCat} onChange={(e) => setFiltroCat(e.target.value)}>
+                <option value="">Todas</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="btn primary" style={{ flex: 0 }} onClick={() => setShowModal(true)}>
+              Nuevo
+            </button>
           </div>
 
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -393,6 +340,76 @@ export default function ProductosPage() {
               </tbody>
             </table>
           </div>
+
+          {showModal && (
+            <div className="modal-overlay" onClick={() => { setShowModal(false); resetForm(); }}>
+              <div className="modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: 480, maxWidth: 640 }}>
+                <h3 style={{ marginTop: 0 }}>Nuevo producto</h3>
+                <form onSubmit={crear}>
+                  <label>
+                    Nombre
+                    <input value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+                  </label>
+                  <div className="row">
+                    <label>
+                      SKU base
+                      <input value={sku} onChange={(e) => setSku(e.target.value)} required placeholder="EJ: CEP45" />
+                    </label>
+                    <label>
+                      UOM
+                      <select value={uom} onChange={(e) => setUom(e.target.value)}>
+                        <option value="pieza">pieza</option>
+                        <option value="metro">metro</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="row">
+                    <label>
+                      Precio base (neto)
+                      <input type="number" step="0.01" min="0" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} />
+                    </label>
+                    <label style={{ marginTop: 28 }}>
+                      <input type="checkbox" checked={hasVariants} onChange={(e) => setHasVariants(e.target.checked)} style={{ width: "auto", margin: 0 }} />
+                      {" "}
+                      Tiene variantes (grid de combos)
+                    </label>
+                  </div>
+                  <div className="row" style={{ alignItems: "flex-end" }}>
+                    <label style={{ flex: 2 }}>
+                      Categoría
+                      <select value={catAlta} onChange={(e) => setCatAlta(e.target.value)}>
+                        <option value="">— Sin categoría —</option>
+                        {categorias.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="button" className="btn ghost sm" style={{ flex: 0 }} onClick={() => setShowNuevaCat(!showNuevaCat)}>
+                      {showNuevaCat ? "Cerrar" : "Nueva…"}
+                    </button>
+                  </div>
+                  {showNuevaCat && (
+                    <div className="inline-form" style={{ marginTop: 8 }}>
+                      <input value={nuevaCat} onChange={(e) => setNuevaCat(e.target.value)} placeholder="Nombre de la categoría…" />
+                      <button type="button" className="btn primary sm" style={{ flex: 0 }} disabled={creandoCat} onClick={crearNuevaCat}>
+                        {creandoCat ? "Creando…" : "Crear"}
+                      </button>
+                    </div>
+                  )}
+                  <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+                    <button type="button" className="btn ghost" onClick={() => { setShowModal(false); resetForm(); }}>
+                      Cancelar
+                    </button>
+                    <button className="btn primary" disabled={guardando}>
+                      {guardando ? "Guardando…" : "Crear producto"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </>
       )}
     </AppShell>
