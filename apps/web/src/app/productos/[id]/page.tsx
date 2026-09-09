@@ -351,9 +351,8 @@ export default function ProductoDetallePage() {
         </div>
       </div>
 
-      {/* --- Atributos y valores (solo si tiene variantes) --- */}
-      {d.hasVariants && (
-        <div className="card">
+      {/* --- Atributos y valores --- */}
+      <div className="card">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>Atributos</h3>
           </div>
@@ -426,7 +425,6 @@ export default function ProductoDetallePage() {
             + Agregar atributo global ▾
           </button>
         </div>
-      )}
 
       {/* --- Modal: Crear atributo --- */}
       {showCreateAttrModal && (
