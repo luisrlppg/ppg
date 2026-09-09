@@ -659,7 +659,7 @@ export default function ProductoDetallePage() {
           </form>
         )}
 
-        {d.hasVariants && grid && grid.ejes.length > 0 && (
+        {grid && grid.ejes.length > 0 && (
           <div className="card" style={{ marginTop: 12, background: "#fafafa" }}>
             <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Materializar combinación</p>
             <p className="muted small" style={{ margin: "0 0 12px" }}>
