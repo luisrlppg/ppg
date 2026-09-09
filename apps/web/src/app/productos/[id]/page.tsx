@@ -30,16 +30,16 @@ export default function ProductoDetallePage() {
   // --- Atributos propios y heredados del producto ---
   const [propios, setPropios] = useState<Atributo[]>([]);
   const [heredados, setHeredados] = useState<Atributo[]>([]);
-  const [showCreateAttrModal, setShowCreateAttrModal] = useState(false);
   const [createAttrNombre, setCreateAttrNombre] = useState("");
   const [createAttrValores, setCreateAttrValores] = useState("");
-  const [editingAttr, setEditingAttr] = useState<Atributo | null>(null);
-  const [editAttrValores, setEditAttrValores] = useState<string[]>([]);
-  const [newValor, setNewValor] = useState("");
   const [savingAttr, setSavingAttr] = useState(false);
-  const [showAddGlobalModal, setShowAddGlobalModal] = useState(false);
-  const [globalAttrSearch, setGlobalAttrSearch] = useState("");
   const [asigningAttr, setAsigningAttr] = useState(false);
+  // --- Editor compacto inline de atributos / valores / ejes ---
+  const [expandedAttr, setExpandedAttr] = useState<number | null>(null);
+  const [newValor, setNewValor] = useState("");
+  const [showInlineCreate, setShowInlineCreate] = useState(false);
+  const [showAddAttrDropdown, setShowAddAttrDropdown] = useState(false);
+  const [addAttrSearch, setAddAttrSearch] = useState("");
 
   const cargarAtributosProducto = useCallback(async () => {
     try {
@@ -135,39 +135,43 @@ export default function ProductoDetallePage() {
       }
       setCreateAttrNombre("");
       setCreateAttrValores("");
-      setShowCreateAttrModal(false);
+      setShowInlineCreate(false);
       await cargarAtributosProducto();
+      if (created) setExpandedAttr(created.id);
       notify(null, "Atributo creado y asignado.");
     } catch (e) { notify(e as Error, e instanceof Error ? e.message : "Error"); }
     finally { setSavingAttr(false); }
   }
 
-  function abrirEditarAttr(attr: Atributo) {
-    setEditingAttr(attr);
-    setEditAttrValores(attr.valores.map((v) => v.valor));
+  function abrirValores(attr: Atributo) {
+    setExpandedAttr(expandedAttr === attr.id ? null : attr.id);
     setNewValor("");
   }
 
-  async function agregarValor() {
-    if (!newValor.trim() || !editingAttr) return;
+  async function agregarValor(attr: Atributo) {
+    if (!newValor.trim() || !attr) return;
+    const nombre = newValor.trim();
     try {
-      await api(`/catalogos/atributos/${editingAttr.id}/valores`, {
+      await api(`/catalogos/atributos/${attr.id}/valores`, {
         method: "POST",
-        body: JSON.stringify({ valor: newValor.trim() }),
+        body: JSON.stringify({ valor: nombre }),
       });
       setNewValor("");
       await cargarAtributosProducto();
-      const updated = [...propios, ...heredados].find((a) => a.id === editingAttr.id);
-      if (updated) setEditAttrValores(updated.valores.map((v) => v.valor));
+      const updated = [...propios, ...heredados].find((a) => a.id === attr.id);
+      if (updated && attr.permitidos !== undefined) {
+        // Si el eje ya tenía valores explícitos, el nuevo valor se agrega como permitido.
+        const nuevo = updated.valores.find((v) => v.valor === nombre);
+        if (nuevo) await guardarValoresPermitidos(updated, [...attr.permitidos, nuevo.id]);
+      }
+      notify(null, "Valor agregado.");
     } catch (e) { notify(e as Error, ""); }
   }
 
-  async function eliminarValor(attrId: number, valorId: number) {
+  async function eliminarValor(attr: Atributo, valorId: number) {
     try {
-      await api(`/catalogos/atributos/${attrId}/valores/${valorId}`, { method: "DELETE" });
+      await api(`/catalogos/atributos/${attr.id}/valores/${valorId}`, { method: "DELETE" });
       await cargarAtributosProducto();
-      const updated = [...propios, ...heredados].find((a) => a.id === attrId);
-      if (updated) setEditAttrValores(updated.valores.map((v) => v.valor));
       notify(null, "Valor eliminado.");
     } catch (e) { notify(e as Error, ""); }
   }
@@ -175,7 +179,7 @@ export default function ProductoDetallePage() {
   async function desasignarAtributo(attrId: number) {
     try {
       await api(`/catalogos/atributos/${attrId}/desasignar/${prodId}`, { method: "DELETE" });
-      setEditingAttr(null);
+      if (expandedAttr === attrId) setExpandedAttr(null);
       await cargarAtributosProducto();
       notify(null, "Atributo desasignado del producto.");
     } catch (e) { notify(e as Error, ""); }
@@ -185,8 +189,9 @@ export default function ProductoDetallePage() {
     setAsigningAttr(true);
     try {
       await api(`/catalogos/atributos/${attrId}/asignar/${prodId}`, { method: "POST" });
-      setShowAddGlobalModal(false);
-      setGlobalAttrSearch("");
+      setAddAttrSearch("");
+      setShowAddAttrDropdown(false);
+      setExpandedAttr(attrId);
       await cargarAtributosProducto();
       notify(null, "Atributo asignado.");
     } catch (e) { notify(e as Error, ""); }
@@ -380,252 +385,193 @@ export default function ProductoDetallePage() {
           {propios.length > 0 && (
             <>
               <p className="muted small" style={{ margin: "0 0 8px", fontWeight: 600 }}>PROPIOS</p>
-              <table className="table" style={{ marginBottom: 12 }}>
-                <tbody>
-                  {propios.map((attr) => (
-                    <tr key={attr.id}>
-                      <td><strong>{attr.nombre}</strong></td>
-                      <td>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {propios.map((attr) => {
+                const permitidos = attr.permitidos ?? attr.valores.map((v) => v.id);
+                const seleccionados = attr.valores.filter((v) => permitidos.includes(v.id));
+                const exp = expandedAttr === attr.id;
+                return (
+                  <div key={attr.id} style={{ border: "1px solid var(--line)", borderRadius: 8, padding: "8px 10px", marginBottom: 8 }}>
+                    <div className="row" style={{ alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                      <strong style={{ minWidth: 140 }}>{attr.nombre}</strong>
+                      <div className="row" style={{ flex: 1, flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                        {seleccionados.map((v) => (
+                          <span key={v.id} className="kbd-chip" style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>
+                            {v.valor}
+                            <button
+                              type="button"
+                              title="Quitar valor del eje"
+                              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, color: "#999", fontWeight: 700, fontSize: "0.9rem" }}
+                              onClick={() => toggleValorPermitido(attr, v.id, false)}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        {seleccionados.length === 0 && <span className="muted small">Sin valores</span>}
+                      </div>
+                      <div className="row" style={{ gap: 4 }}>
+                        <button type="button" className="btn ghost sm" onClick={() => abrirValores(attr)}>
+                          {exp ? "Cerrar" : "+ Valor"}
+                        </button>
+                        <button type="button" className="btn ghost sm" style={{ color: "red", borderColor: "red" }} title="Desasignar atributo" onClick={() => desasignarAtributo(attr.id)}>
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+
+                    {exp && (
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--line)" }}>
+                        <p className="muted small" style={{ margin: "0 0 6px" }}>
+                          Marca los valores disponibles para este producto (ejes). Las variantes se materializan solo con estos valores.
+                        </p>
+                        <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
                           {attr.valores.map((v) => {
-                            const activo = (attr.permitidos ?? attr.valores.map((x) => x.id)).includes(v.id);
+                            const on = permitidos.includes(v.id);
                             return (
-                              <label key={v.id} className="kbd-chip" style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                              <label
+                                key={v.id}
+                                className="kbd-chip"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  cursor: "pointer",
+                                  background: on ? "#dceaf5" : "#eee",
+                                  color: "inherit",
+                                }}
+                              >
                                 <input
                                   type="checkbox"
-                                  checked={activo}
+                                  checked={on}
                                   style={{ width: "auto", margin: 0 }}
                                   onChange={(e) => toggleValorPermitido(attr, v.id, e.target.checked)}
                                 />
                                 {v.valor}
+                                <button
+                                  type="button"
+                                  title="Eliminar valor del catálogo"
+                                  style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, fontWeight: 700, color: "#999" }}
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarValor(attr, v.id); }}
+                                >
+                                  ×
+                                </button>
                               </label>
                             );
                           })}
-                          {attr.valores.length === 0 && <span className="muted small">sin valores</span>}
+                          {attr.valores.length === 0 && <span className="muted small">Sin valores. Agrega uno abajo.</span>}
                         </div>
-                        <p className="muted small" style={{ margin: "4px 0 0" }}>
-                          Ejes = valores seleccionados. Las variantes se materializan solo con estas combinaciones.
-                        </p>
-                      </td>
-                      <td style={{ width: 200 }}>
-                        <button type="button" className="btn ghost sm" onClick={() => abrirEditarAttr(attr)}>Editar</button>
-                        <button type="button" className="btn ghost sm" style={{ color: "red" }} onClick={() => desasignarAtributo(attr.id)}>Desasignar</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <div className="inline-form" style={{ marginTop: 8 }}>
+                          <input
+                            value={newValor}
+                            onChange={(e) => setNewValor(e.target.value)}
+                            placeholder="Nuevo valor"
+                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarValor(attr))}
+                          />
+                          <button type="button" className="btn ghost sm" onClick={() => agregarValor(attr)} disabled={!newValor.trim()}>
+                            Agregar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </>
           )}
 
           {heredados.length > 0 && (
             <>
               <p className="muted small" style={{ margin: "8px 0 8px", fontWeight: 600 }}>HEREDADOS (de componentes del BOM)</p>
-              <table className="table" style={{ marginBottom: 12 }}>
-                <tbody>
-                  {heredados.map((attr) => (
-                    <tr key={attr.id}>
-                      <td><span className="muted">{attr.nombre}</span></td>
-                      <td className="muted-2">
-                        {attr.valores.length === 0 ? (
-                          <span className="muted small">sin valores</span>
-                        ) : (
-                          attr.valores.map((v) => v.valor).join(", ")
-                        )}
-                      </td>
-                      <td style={{ width: 200 }}></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {heredados.map((attr) => (
+                <div key={attr.id} className="row" style={{ alignItems: "center", padding: "4px 0" }}>
+                  <span className="muted small" style={{ minWidth: 140 }}>{attr.nombre}</span>
+                  <span className="muted-2 small">
+                    {attr.valores.length === 0 ? "sin valores" : attr.valores.map((v) => v.valor).join(", ")}
+                  </span>
+                </div>
+              ))}
             </>
           )}
 
-          <button
-            type="button"
-            className="btn primary sm"
-            onClick={() => { setShowCreateAttrModal(true); setCreateAttrNombre(""); setCreateAttrValores(""); }}
-          >
-            + Crear nuevo atributo
-          </button>
-          <span style={{ margin: "0 8px" }} />
-          <button
-            type="button"
-            className="btn ghost sm"
-            onClick={() => { setShowAddGlobalModal(true); setGlobalAttrSearch(""); }}
-          >
-            + Agregar atributo global ▾
-          </button>
-        </div>
+          {propios.length === 0 && heredados.length === 0 && (
+            <p className="muted small" style={{ margin: "0 0 12px" }}>Sin atributos asignados.</p>
+          )}
 
-      {/* --- Modal: Crear atributo --- */}
-      {showCreateAttrModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateAttrModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Crear atributo</h3>
-            <label style={{ display: "block", marginBottom: 12 }}>
-              Nombre del atributo
-              <input
-                value={createAttrNombre}
-                onChange={(e) => setCreateAttrNombre(e.target.value)}
-                placeholder="ej. Color tapa"
-                autoFocus
-              />
-            </label>
-            <label style={{ display: "block", marginBottom: 12 }}>
-              Valores (separados por coma)
-              <input
-                value={createAttrValores}
-                onChange={(e) => setCreateAttrValores(e.target.value)}
-                placeholder="Negro, Blanco, Transparente"
-              />
-            </label>
-            <div className="row" style={{ gap: 8 }}>
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => setShowCreateAttrModal(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={crearAtributo}
-                disabled={savingAttr || !createAttrNombre.trim()}
-              >
-                {savingAttr ? "Creando…" : "Crear atributo"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- Modal: Editar atributo --- */}
-      {editingAttr && (
-        <div className="modal-overlay" onClick={() => setEditingAttr(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Editar atributo: {editingAttr.nombre}</h3>
-            <p className="muted small" style={{ margin: "0 0 12px" }}>
-              Los valores definen las opciones disponibles en el storefront.
-            </p>
-
-            <div style={{ marginBottom: 12 }}>
-              {editAttrValores.map((valor, i) => {
-                const original = editingAttr.valores[i];
-                return (
-                  <div key={original?.id ?? i} className="row" style={{ marginBottom: 6 }}>
-                    <span style={{ flex: 1 }}>{valor}</span>
-                    <button
-                      type="button"
-                      className="btn ghost sm"
-                      style={{ color: "red" }}
-                      onClick={() => original && eliminarValor(editingAttr.id, original.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                );
-              })}
-              {editAttrValores.length === 0 && (
-                <p className="muted small">Sin valores. Agrega uno abajo.</p>
-              )}
-            </div>
-
-            <div className="inline-form" style={{ marginBottom: 12 }}>
-              <input
-                value={newValor}
-                onChange={(e) => setNewValor(e.target.value)}
-                placeholder="Nuevo valor"
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarValor())}
-              />
-              <button type="button" className="btn ghost sm" onClick={agregarValor} disabled={!newValor.trim()}>
-                Agregar
-              </button>
-            </div>
-
-            <div className="row" style={{ gap: 8 }}>
-              <button
-                type="button"
-                className="btn"
-                style={{ color: "red" }}
-                onClick={() => { desasignarAtributo(editingAttr.id); setEditingAttr(null); }}
-              >
-                Desasignar del producto
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setEditingAttr(null)}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- Modal: Agregar atributo global --- */}
-      {showAddGlobalModal && (
-        <div className="modal-overlay" onClick={() => setShowAddGlobalModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: 400 }}>
-            <h3>Agregar atributo global</h3>
-            <p className="muted small" style={{ margin: "0 0 12px" }}>
-              Solo se muestran atributos no asignados a este producto.
-            </p>
-            <input
-              value={globalAttrSearch}
-              onChange={(e) => setGlobalAttrSearch(e.target.value)}
-              placeholder="Buscar atributo..."
-              autoFocus
-              style={{ marginBottom: 12 }}
-            />
-            <div style={{ maxHeight: 300, overflowY: "auto", border: "1px solid var(--line)", borderRadius: 4, padding: 8 }}>
-              {atributos
-                .filter((a) => {
-                  const assignedIds = [...propios, ...heredados].map((p) => p.id);
-                  if (assignedIds.includes(a.id)) return false;
-                  if (!globalAttrSearch) return true;
-                  return a.nombre.toLowerCase().includes(globalAttrSearch.toLowerCase());
-                })
-                .map((attr) => (
-                  <div key={attr.id} className="row" style={{ marginBottom: 8, alignItems: "center" }}>
-                    <span style={{ flex: 1 }}>
-                      <strong>{attr.nombre}</strong>
-                      <span className="muted"> — {attr.valores.length} valores</span>
-                    </span>
-                    <button
-                      type="button"
-                      className="btn ghost sm"
-                      onClick={() => asignarAtributoGlobal(attr.id)}
-                      disabled={asigningAttr}
-                    >
-                      Asignar
-                    </button>
-                  </div>
-                ))}
-              {atributos.filter((a) => {
-                const assignedIds = [...propios, ...heredados].map((p) => p.id);
-                if (assignedIds.includes(a.id)) return false;
-                if (!globalAttrSearch) return true;
-                return a.nombre.toLowerCase().includes(globalAttrSearch.toLowerCase());
-              }).length === 0 && (
-                <p className="muted small" style={{ textAlign: "center", padding: 16 }}>
-                  No hay atributos disponibles para asignar.
-                </p>
-              )}
-            </div>
+          <div className="row" style={{ gap: 8, marginTop: 8 }}>
             <button
               type="button"
-              className="btn"
-              style={{ marginTop: 12 }}
-              onClick={() => setShowAddGlobalModal(false)}
+              className="btn primary sm"
+              onClick={() => { setShowInlineCreate(!showInlineCreate); setShowAddAttrDropdown(false); }}
             >
-              Cerrar
+              + Crear atributo
+            </button>
+            <button
+              type="button"
+              className="btn ghost sm"
+              onClick={() => { setShowAddAttrDropdown(!showAddAttrDropdown); setShowInlineCreate(false); }}
+            >
+              + Agregar atributo global ▾
             </button>
           </div>
+
+          {showInlineCreate && (
+            <div className="inline-form" style={{ marginTop: 10 }}>
+              <input value={createAttrNombre} onChange={(e) => setCreateAttrNombre(e.target.value)} placeholder="Nombre del atributo" />
+              <input value={createAttrValores} onChange={(e) => setCreateAttrValores(e.target.value)} placeholder="Valores (separados por coma)" style={{ flex: 2, minWidth: 220 }} />
+              <button type="button" className="btn ghost sm" onClick={() => setShowInlineCreate(false)}>Cancelar</button>
+              <button type="button" className="btn primary sm" onClick={crearAtributo} disabled={savingAttr || !createAttrNombre.trim()}>
+                {savingAttr ? "Creando…" : "Crear"}
+              </button>
+            </div>
+          )}
+
+          {showAddAttrDropdown && (
+            <div style={{ marginTop: 10 }}>
+              <input
+                value={addAttrSearch}
+                onChange={(e) => setAddAttrSearch(e.target.value)}
+                placeholder="Buscar atributo…"
+                style={{ maxWidth: 280 }}
+                autoFocus
+              />
+              <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid var(--line)", borderRadius: 4, padding: 8, marginTop: 8 }}>
+                {atributos
+                  .filter((a) => {
+                    const assignedIds = [...propios, ...heredados].map((p) => p.id);
+                    if (assignedIds.includes(a.id)) return false;
+                    if (!addAttrSearch) return true;
+                    return a.nombre.toLowerCase().includes(addAttrSearch.toLowerCase());
+                  })
+                  .map((attr) => (
+                    <div key={attr.id} className="row" style={{ marginBottom: 8, alignItems: "center" }}>
+                      <span style={{ flex: 1 }}>
+                        <strong>{attr.nombre}</strong>
+                        <span className="muted"> — {attr.valores.length} valores</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() => asignarAtributoGlobal(attr.id)}
+                        disabled={asigningAttr}
+                      >
+                        Asignar
+                      </button>
+                    </div>
+                  ))}
+                {atributos.filter((a) => {
+                  const assignedIds = [...propios, ...heredados].map((p) => p.id);
+                  if (assignedIds.includes(a.id)) return false;
+                  if (!addAttrSearch) return true;
+                  return a.nombre.toLowerCase().includes(addAttrSearch.toLowerCase());
+                }).length === 0 && (
+                  <p className="muted small" style={{ textAlign: "center", padding: 8 }}>
+                    No hay atributos disponibles para asignar.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
       {/* --- Lista de materiales (BOM) --- */}
       <div className="card">

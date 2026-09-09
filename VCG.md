@@ -166,7 +166,7 @@ local + `fetch` manual.
 
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
-| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **823** | datos base · atributos · variantes (incluye selector "Materializar combinación" para crear UNA variante puntual desde los ejes) · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Combinaciones y variantes unificadas en una sola vista (sin grid cartesiano masivo ni "Materializar todas") |
+| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **799** | datos base · atributos · variantes (incluye selector "Materializar combinación" para crear UNA variante puntual desde los ejes) · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Combinaciones y variantes unificadas en una sola vista (sin grid cartesiano masivo ni "Materializar todas"). **Atributos (2026-09-08):** editor **inline compacto** — cada atributo propio es una fila colapsable con solo los valores seleccionados como chips (× para quitar del eje) y botón "+ Valor" que expande todos los valores con checkboxes + input inline para agregar valor. Crear atributo y asignar global son formularios inline (sin modales). Heredados en una línea de solo lectura. Se eliminaron los modales Crear/Editar/Agregar-global |
 | Reportes de producción | `app/reportes/page.tsx` | **714** (antes 852) | form · bandeja · ubicar lotes — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
 | Ventas | `app/ventas/page.tsx` | **~360** | lista · detalle+confirmar+despachar — alta en `components/ventas/nueva-venta.tsx` (**167**) que ahora parte de un **grid de productos públicos** + **modal guiado** `components/ventas/modal-config-variante.tsx` (**261**). Ya no hay búsqueda libre de variantes: todo se configura por el modal |
 | Catálogos | `app/catalogos/page.tsx` | **234** (antes 439) | categorías · empaques — atributos globales extraídos en `components/catalogos/atributos-globales.tsx` (212 líneas) |
@@ -232,7 +232,7 @@ local + `fetch` manual.
 ## 7. Tareas pendientes / próximos pasos (contexto)
 
 - **Modularización** (prioridad actual del equipo): los archivos masivos a dividir son
-  en web `productos/[id]/page.tsx` (**823**), `reportes/page.tsx` (714), `ventas/page.tsx` (359),
+  en web `productos/[id]/page.tsx` (**799**), `reportes/page.tsx` (714), `ventas/page.tsx` (359),
   `catalogos/page.tsx` (234). *(La API ya quedó modularizada: vendría revisar
   `fabricacion.service.ts` que es pequeño.)*
   *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.ofs.ts` + `ventas.types.ts`;
