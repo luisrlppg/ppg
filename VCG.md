@@ -59,99 +59,98 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
 `admin`, `supervisor`, `operador`. Solo `auth` (login), `catalogos` y `public` son **públicos**.
 
 ### 3.1 Productos / variantes / grid / BOM  → `productos/`
-- **Controller `productos.controller.ts`** — rutas `/api/productos...`
-- **Service `productos.service.ts`** (~438 líneas), secciones:
-  - `list` ~50‑86 · `get` (detalle + componentes + variantes) ~88‑135 · `create` ~137‑170
-  - `update` (registra cambio de precio en `PriceChange`) ~172‑215 · `deactivate`
-  - `setEjes` (atributos del grid) · `setComponentes` (BOM)
-  - `setValoresPermitidos` — restringe los **ejes**: subconjunto de valores del atributo válidos para el producto (tabla `ProductAttributeValue`). Lo consume `PUT /productos/:id/ejes/:attributeId/valores`
-  - `createVariant` · `updateVariant` · `setVariantPrice`
-  - `materializar` (crea variante de un combo) · `generar`
-  - **`resolveComponentVariant`** (resuelve variante de componente BOM; lo consumen ventas e inventario)
-- **`productos.grid.ts`** (nuevo): lógica del **grid cartesiano** (`gridProducto`, `slugify`) +
+- **Controller `productos.controller.ts`** (207 líneas) — rutas `/api/productos...`
+- **Service `productos.service.ts`** (**472 líneas**), secciones:
+  - `list` 27‑64 · `get` (detalle + componentes + variantes) 65‑113 · `create` 114‑148
+  - `update` (registra cambio de precio en `PriceChange`) 149‑193 · `deactivate` 194‑199
+  - `setEjes` 201‑217 · `setComponentes` (BOM) 247‑266
+  - `setValoresPermitidos` 218‑246 — restringe los **ejes**: subconjunto de valores del atributo válidos para el producto (tabla `ProductAttributeValue`). Lo consume `PUT /productos/:id/ejes/:attributeId/valores`
+  - Variantes: `variantesDeProducto` 268‑283 · `buscarVariantes` 284‑315 · `createVariant` 316‑332 · `updateVariant` 333‑339 · `setVariantPrice` 340‑362 · `setPackagings` 363‑374 · `inheritPackagingsToVariant` 375‑390
+  - **`grid` 392‑395 · `materializar` 396‑424 · `generar` 425‑436** (delegan en `productos.grid.ts`)
+  - **`resolveComponentVariant`** 442‑ (resuelve variante de componente BOM; lo consumen ventas e inventario)
+- **`productos.grid.ts`** (93 líneas): lógica del **grid cartesiano** (`gridProducto`, `slugify`) +
   tipos `Grid`, `MaterializableCombo`. A él delegan `grid`/`materializar`/`generar`; los tipos se re-exportan desde `productos.service`.
   - **Ejes con subconjunto de valores:** `gridProducto` usa `valoresPermitidosLote` (`common/valores-permitidos.ts`), batcheado (sin N+1 por eje).
     Si no hay filas en `ProductAttributeValue` para el par (producto, atributo) → se asumen **todos** los valores del atributo (fallback).
     El storefront (`getPasos`) y `atributos/producto` (con `permitidos`) usan el mismo helper.
 
 ### 3.2 Ventas / neteo / OFs  → `ventas/`
-- **Controller `ventas.controller.ts`** — rutas `/api/ventas...`
-- **Service `ventas.service.ts`** (~525 líneas), secciones:
-  - `list` 59‑97 · `get` (con OFs asociados) 100‑171 · `create` 174‑234 · `update` 237‑289
-  - **`confirmar` = NETEO + CASCADA DE OFs** 291‑~400 (lo más crítico):
-    - transacción + carga de BOM `exacto` con caché
-    - demanda neta recursiva multi‑nivel + detección de ciclos
-    - generación de OFs `fabricacion`/`ensamble`
-    - persiste `resumen` + dispara `crearOFS`
-  - `despacharLinea` (consume stock, dispara monitor) · `cancelar`
-  - método delegador `crearOFS` (llama a la función externa)
-- **`ventas.ofs.ts`** (nuevo, ~129 líneas): **lógica recursiva de OFs** (`crearOFS`),
-  con detección de ciclos, para configuraciones del storefront. Recibe un contexto
-  `{ tx, resolveComponentVariant }`.
-- **`ventas.types.ts`** (nuevo): tipos compartidos `ResumenItem`, `ResumenNeteo`,
+- **Controller `ventas.controller.ts`** (107 líneas) — rutas `/api/ventas...`
+- **Service `ventas.service.ts`** (**497 líneas**), secciones:
+  - `list` 43‑82 · `get` (con OFs asociados) 84‑156 · `create` 158‑219 · `update` 221‑274
+  - **`confirmar` = NETEO + CASCADA DE OFs** 281‑402 (lo más crítico):
+    - `$transaction` + `load` (carga de BOM `exacto` con caché) ~292
+    - `netear` = demanda neta recursiva multi‑nivel con detección de ciclos ~319
+    - **generación de OFs `fabricacion`/`ensamble` inline** (con `configuracion` + ensamble) ~343
+    - persiste `resumen` (neteo) en la venta
+  - `despacharLinea` (consume stock, dispara monitor) 404‑482 · `cancelar` 484‑
+- **`ventas.types.ts`** (18 líneas): tipos compartidos `ResumenItem`, `ResumenNeteo`,
   `ConfiguracionLinea` (re-exportados desde `ventas.service` para no romper `fabricacion.service`).
+- **Nota (2026‑09‑30):** `ventas.ofs.ts` **ya no existe**: la recursión de OFs quedó **inline en
+  `confirmar`** tras corregir el doble bucle (ver §7). No busques un archivo `ventas.ofs.ts`.
 - **Acoplamientos:** inyecta `productos.service` (`resolveComponentVariant`) y `monitor.service`. El tipo `ResumenItem` lo importa `fabricacion.service`.
 
 ### 3.3 Reportes de producción  → `reportes/`
-- **Controller `reportes.controller.ts`** — rutas `/api/reportes...`
-- **Service `reportes.service.ts`** (~414 líneas):
-  - `list` · `ultimo` (prefill) · `get` · `crear` · `editar`
-  - **`aplicar`** (mueve stock final/consumo, cierra OF) · `cancelar` · `lotes` · `ubicar`
-  - `validar` (helper) · `stats` y `exportar` delegan a módulos externos
-- **`reportes.constants.ts`** (nuevo): constantes `TURNOS`, `SECCIONES`, `HORAS_TURNO` + tipos `Turno`, `Seccion` (re-exportados desde `reportes.service`).
-- **`reportes.stats.ts`** (nuevo): métricas de productividad (`estadisticas`).
-- **`reportes.export.ts`** (nuevo): exportación CSV (`exportarReportes`).
+- **Controller `reportes.controller.ts`** (127 líneas) — rutas `/api/reportes...`
+- **Service `reportes.service.ts`** (**414 líneas**):
+  - `list` 53‑103 · `ultimo` (prefill) 104‑137 · `get` 139‑169 · `crear` 171‑195 · `editar` 197‑220
+  - **`aplicar`** (mueve stock final/consumo, cierra OF) 222‑295 · `cancelar` 297‑306 · `lotes` 307‑331 · `ubicar` 333‑392
+  - `validar` (helpers) ~403 · `stats` 394‑397 y `exportar` 399‑402 delegan en módulos externos
+- **`reportes.constants.ts`** (11 líneas): constantes `TURNOS`, `SECCIONES`, `HORAS_TURNO` + tipos `Turno`, `Seccion` (re-exportados desde `reportes.service`).
+- **`reportes.stats.ts`** (72 líneas): métricas de productividad (`estadisticas`).
+- **`reportes.export.ts`** (55 líneas): exportación CSV (`exportarReportes`).
 
 ### 3.4 Inventario / stock / ensamble BOM  → `inventario/`
-- **Controller `inventario.controller.ts`** — rutas `/api/inventario...` (OJO: rutas estáticas antes de las `:param`)
-- **Service `inventario.service.ts`** (~246 líneas):
-  - ubicaciones 16‑37 · `existencia` 40‑72 · `existenciaDe` 74‑102 · `movimientos` 104‑111
-  - `movimiento` (upsert stock + StockMove + monitor) 114‑161 · `mover` (transferencia) 164‑211
-  - **`ensamble`** — delegador a `ensamblar` (en `inventario.ensamble.ts`)
-  - `exportarCSV`
-- **`inventario.ensamble.ts`** (nuevo, 181 líneas): función `ensamblar` (BOM recursivo multi‑nivel) — `expandir` recursivo, detecta ciclos, resuelve hojas con `resolveComponentVariant`, consume hojas + suma terminado, notifica por monitor.
+- **Controller `inventario.controller.ts`** (141 líneas) — rutas `/api/inventario...` (OJO: rutas estáticas antes de las `:param`)
+- **Service `inventario.service.ts`** (**246 líneas**):
+  - ubicaciones 17‑39 · `existencia` 41‑74 · `existenciaDe` 75‑113
+  - `movimiento` (upsert stock + StockMove + monitor) 115‑163 · `mover` (transferencia) 165‑213
+  - **`ensamble`** 220‑230 — delegador a `ensamblar` (en `inventario.ensamble.ts`)
+  - `exportarCSV` 232‑
+- **`inventario.ensamble.ts`** (181 líneas): función `ensamblar` (BOM recursivo multi‑nivel) — `expandir` recursivo, detecta ciclos, resuelve hojas con `resolveComponentVariant`, consume hojas + suma terminado, notifica por monitor.
 
 ### 3.5 Órdenes de fabricación  → `fabricacion/`
-- **Controller `fabricacion.controller.ts`** ; **Service `fabricacion.service.ts`** (pequeño, 125 líneas)
-  - `list` 11‑49 · `get` 51‑74 · `iniciar` 76‑86 · `cancelar` 88‑95 · `faltantes` (pendientes de compra agregadas) 99‑124
+- **Controller `fabricacion.controller.ts`** (40 líneas); **Service `fabricacion.service.ts`** (**124 líneas**)
+  - `list` 11‑50 · `get` 51‑74 · `iniciar` 76‑86 · `cancelar` 88‑97 · `faltantes` (pendientes de compra agregadas) 99‑124
 - Nota: el **cierre de OF a "hecha"** ocurre desde `reportes.service` (`aplicar`), no aquí.
 
 ### 3.6 Catálogos (atributos / categorías / empaques)  → `catalogos/`
-- **Controller `catalogos.controller.ts` (314 líneas)** — `@Controller("catalogos")` **público, sin guards**.
+- **Controller `catalogos.controller.ts` (271 líneas)** — `@Controller("catalogos")` **público, sin guards**.
 - **NO tiene service**: usa `PrismaService` directo.
-  - categorías CRUD · empaques CRUD · atributos listar/crear · editar · eliminar
-  - valores add/del · asignar/desasignar atributo
-  - **`atributos/producto/:id`** (propios + heredados) delega a `catalogos.atributos-producto.ts`
-- **`catalogos.atributos-producto.ts`** (nuevo): atributos propios + **heredados por recursión BOM** (`atributosPorProducto`).
+  - categorías CRUD 56‑89 · empaques CRUD 90‑111 · atributos listar/crear 112‑154 · editar/eliminar 155‑191
+  - valores add/del 192‑227 · asignar/desasignar atributo 234‑270
+  - **`atributos/producto/:id`** (propios + heredados) 228‑233 delega a `catalogos.atributos-producto.ts`
+- **`catalogos.atributos-producto.ts`** (87 líneas): atributos propios + **heredados por recursión BOM** (`atributosPorProducto`).
 
 ### 3.7 Storefront público  → `public/`
-- **Controller `public.controller.ts`** — `@Controller("public")` **público**
+- **Controller `public.controller.ts`** (53 líneas) — `@Controller("public")` **público**
   - Rutas: `GET public/productos` (productos públicos) · `GET public/productos/:id/pasos` (pasos guiados) · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
-- **Service `public.service.ts`** (**199 líneas**):
-  - `crearPedido` (precio recalculado en servidor, §7.7) · `consultarPedido` · `productosPublicos` (productos con ≥1 variante activa y publicada; agrupados por producto, sin precios en la UI) · `catalogo` (variantes publicadas)
-  - **`getPasos`** (arma pasos guiados con opciones/stock): las opciones de cada paso se resuelven desde las **variantes publicadas del producto navegado** (`productId`), **no** del `variantProductId` (los componentes pueden no tener variantes). `variantProductId` solo se conserva en la respuesta. Compartido por tienda y modal de ventas. **Batcheado sin N+1:** 1 query de valores + 1 de variantes publicadas (con `variantAttributes`+`stockLevels`) agrupadas en memoria; los valores permitidos usan `valoresPermitidosLote` (`common/valores-permitidos.ts`). En web, `lib/pasos-cache.ts` cachea el resultado 30s por productId.
+- **Service `public.service.ts`** (**210 líneas**):
+  - `crearPedido` 31‑72 (precio recalculado en servidor, §7.7) · `consultarPedido` 73‑97 · `productosPublicos` 98‑127 (productos con ≥1 variante activa y publicada; agrupados por producto, sin precios en la UI) · `catalogo` 128‑145 (variantes publicadas)
+  - **`getPasos`** 146‑ (arma pasos guiados con opciones/stock): las opciones de cada paso se resuelven desde las **variantes publicadas del producto navegado** (`productId`), **no** del `variantProductId` (los componentes pueden no tener variantes). `variantProductId` solo se conserva en la respuesta. Compartido por tienda y modal de ventas. **Batcheado sin N+1:** 1 query de valores + 1 de variantes publicadas (con `variantAttributes`+`stockLevels`) agrupadas en memoria; los valores permitidos usan `valoresPermitidosLote` (`common/valores-permitidos.ts`). En web, `lib/pasos-cache.ts` cachea el resultado 30s por productId.
 
 ### 3.8 Monitor de stock bajo + notificaciones  → `monitor/`
-- **Controller `monitor.controller.ts`** — rutas `/api/monitor...`
-- **Service `monitor.service.ts`** (~240 líneas):
-  - getter `configs` de canales · `canalesConfigurados` · `listarBajo`
-  - **`afterStockChange`** (disparador post‑movimiento, notifica solo al pasar a bajo)
-  - `checkAll` · `enviarAlerta` · `enviar` (registra `NotificationEvent` y delega en `Notificadores`)
-- **`monitor.notificadores.ts`** (nuevo): clase `Notificadores` con `sendTelegram` / `sendCallMeBot` / `sendEmail` (envío a canales + configs).
+- **Controller `monitor.controller.ts`** (73 líneas) — rutas `/api/monitor...`
+- **Service `monitor.service.ts`** (**240 líneas**):
+  - getter `configs` de canales · `canalesConfigurados` · `listarBajo` 66‑98
+  - **`afterStockChange`** 104‑164 (disparador post‑movimiento, notifica solo al pasar a bajo)
+  - `checkAll` 165‑190 · `enviarAlerta` 192‑207 · `enviarPrueba` 208‑214 · `enviar` 215‑ (registra `NotificationEvent` y delega en `Notificadores`)
+- **`monitor.notificadores.ts`** (76 líneas): clase `Notificadores` con `sendTelegram` / `sendCallMeBot` / `sendEmail` (envío a canales + configs).
 
 ### 3.9 Clientes / partners  → `clientes/`
-- **Controller `clientes.controller.ts`** ; **Service `clientes.service.ts`** (110 líneas):
+- **Controller `clientes.controller.ts`** (79 líneas); **Service `clientes.service.ts`** (**109 líneas**):
   - `list` 9‑28 · `get` 30‑37 · `create` 39‑45 · `update` 47‑63 · `deactivate` 65‑70 · `importar` (CSV) 74‑109
 
 ### 3.10 Auth  → `auth/`
-- **Controller `auth.controller.ts`**: `login` (firma JWT + cookie httpOnly), `logout`, `me` (JwtAuthGuard)
-- **Service `auth.service.ts`**: `validate` (bcrypt) 28‑37 · `findById` 39‑52 · `sign` 54‑61 · `verify` 63‑69 · `toPublic` 71‑78
+- **Controller `auth.controller.ts`** (92 líneas): `login` (firma JWT + cookie httpOnly), `logout`, `me` (JwtAuthGuard)
+- **Service `auth.service.ts`** (78 líneas): `validate` (bcrypt) 28‑37 · `findById` 39‑52 · `sign` 54‑62 · `verify` 63‑69 · `toPublic` 71‑78
 - **Guards:** `guards/jwt-auth.guard.ts` (cookie → `req.user`), `guards/roles.guard.ts` (`@Roles()`)
 - **Decorator:** `decorators/roles.decorator.ts`
 
 ### 3.11 Soporte transversal
-- `prisma/prisma.service.ts` — wrapper Prisma
-- `common/util.ts` — helpers mezclados: `dec`, `isNumberOrStringNumber`, `toUom`, `toTipoComponente` (candidato a modularizar)
+- `prisma/prisma.service.ts` (15 líneas) — wrapper Prisma
+- `common/util.ts` (20 líneas) — helpers mezclados: `dec`, `isNumberOrStringNumber`, `toUom`, `toTipoComponente` (candidato a modularizar)
+- `common/valores-permitidos.ts` (81 líneas) — `valoresPermitidosLote` (subconjunto de valores por eje, batcheado, sin N+1)
 - `app.module.ts` — registra los 11 módulos
 
 ---
@@ -166,22 +165,35 @@ local + `fetch` manual.
 
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
-| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **799** | datos base · atributos · variantes (incluye selector "Materializar combinación" para crear UNA variante puntual desde los ejes) · BOM — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Combinaciones y variantes unificadas en una sola vista (sin grid cartesiano masivo ni "Materializar todas"). **Atributos (2026-09-08):** editor **inline compacto** — cada atributo propio es una fila colapsable con solo los valores seleccionados como chips (× para quitar del eje) y botón "+ Valor" que expande todos los valores con checkboxes + input inline para agregar valor. Crear atributo y asignar global son formularios inline (sin modales). Heredados en una línea de solo lectura. Se eliminaron los modales Crear/Editar/Agregar-global |
-| Reportes de producción | `app/reportes/page.tsx` | **714** (antes 852) | form · bandeja · ubicar lotes — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
-| Ventas | `app/ventas/page.tsx` | **~360** | lista · detalle+confirmar+despachar — alta en `components/ventas/nueva-venta.tsx` (**167**) que ahora parte de un **grid de productos públicos** + **modal guiado** `components/ventas/modal-config-variante.tsx` (**261**). Ya no hay búsqueda libre de variantes: todo se configura por el modal |
-| Catálogos | `app/catalogos/page.tsx` | **234** (antes 439) | categorías · empaques — atributos globales extraídos en `components/catalogos/atributos-globales.tsx` (212 líneas) |
-| Lista productos | `app/productos/page.tsx` | **400** (tabs productos/catálogos) | alta 59‑117/276‑397 · catálogos base 119‑186/203‑274 |
-| Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | **329** — público, sin AppShell | carga 42‑61 · selección (filtrado por conjunto de variantes en `opcionesDelPaso` 76‑101) · envío de pedido 117‑148 · UI pasos 192‑299 |
-| Inventario | `app/inventario/page.tsx` | **301** | acciones (ajustar/mover/ensamblar) 44‑98/113‑230 · movimientos 232‑246 · existencias 249‑298 |
-| Clientes | `app/clientes/page.tsx` | **226** | CRUD 38‑101/129‑222 · import CSV |
-| Fabricación (OFs) | `app/fabricacion/page.tsx` | **183** | listar 10‑55 · acciones iniciar/cancelar 57‑84 · detalle inline 95‑129 · faltantes 167‑179 |
-| Monitor stock | `app/monitor/page.tsx` | **157** | estado 15‑36 · acciones 38‑51 · UI 63‑154 |
+| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **816** | datos base 83‑95 · atributos inline 96‑200 · ejes legacy 201‑219 · grid 220‑241 · variantes 242‑290 (incluye "Materializar combinación") · BOM 291‑ — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Editor **inline compacto**: fila colapsable por atributo con chips de valores del eje (× para quitar) y "+ Valor" que expande checkboxes + input inline. Heredados en solo lectura. Sin modales Crear/Editar/Agregar-global |
+| Inicio (dashboard) | `app/page.tsx` | **89** | pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) en `stat-grid` + tarjetas de módulos. Usa `PageHeader` |
+| Reportes de producción | `app/reportes/page.tsx` | **718** | form 100‑240 · bandeja 241‑328 · ubicar lotes 329‑385 · UI 386‑ — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
+| Ventas | `app/ventas/page.tsx` | **472** | lista/detalle/confirmar/despachar 24‑123 · UI 124‑400 · lista 401‑. Alta en `components/ventas/nueva-venta.tsx` (167) desde **grid de productos públicos** + **modal guiado** `components/ventas/modal-config-variante.tsx` (**338**). Sin búsqueda libre de variantes |
+| Catálogos | `app/catalogos/page.tsx` | **332** | tabs por sección (categorías/empaques/atributos) con `HelpNote`; atributos globales extraídos en `components/catalogos/atributos-globales.tsx` (207 líneas) |
+| Lista productos | `app/productos/page.tsx` | **293** | grid de productos + alta en modal. Ya **no** tiene tabs de catálogos base (se movieron a `/catalogos`) |
+| Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | **422** — público, sin AppShell | `buildPaneles` 30‑66 · carga 67‑94 · selección/filtrado por conjunto de variantes `opcionesDelPaso` 103‑127 · paneles 146‑156 · envío 168‑. Iconos placeholder (sin imágenes) |
+| Inventario | `app/inventario/page.tsx` | **455** | toolbar de acciones 52‑117 (entrada/ajuste, transferir, ensamblar) · nueva ubicación 118‑130 · UI en **modales** + toggle matriz por ubicación/variante |
+| Clientes | `app/clientes/page.tsx` | **229** | CRUD 18‑80 · import CSV 81‑. Con `PageHeader` |
+| Fabricación (OFs) | `app/fabricacion/page.tsx` | **207** | listar 26‑56 · acciones iniciar/cancelar 61‑80 · detalle inline · faltantes. Leyenda de estados |
+| Monitor stock | `app/monitor/page.tsx` | **156** | estado 24‑38 · acciones 39‑. Con `PageHeader` |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
-| Shell | `components/app-shell.tsx` | 105 | layout auth‑gated: sidebar, `GET /auth/me`, logout |
+| Shell | `components/app-shell.tsx` | 106 | layout auth‑gated: sidebar, `GET /auth/me`, logout. El link "Productos" también marca activa `/catalogos` (`match`) |
 
 ### Librerías compartidas
-- `lib/api.ts` — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`
-- `lib/types.ts` — **353 líneas**, todos los tipos de dominio (API y tienda). Añade aquí los tipos nuevos de forma centralizada.
+- `lib/api.ts` (31 líneas) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`
+- `lib/types.ts` — **370 líneas**, todos los tipos de dominio (API y tienda). Añade aquí los tipos nuevos de forma centralizada.
+- `lib/pasos-cache.ts` (17 líneas) — cachea 30s el resultado de `getPasos` por productId (tienda y modal).
+- `app/globals.css` — tokens, utilidades y estilos de los componentes UI (`.modal`, `.modal-overlay`, `.page-header`, `.segmented`, `.help-note`, `.stat-grid`, `.breadcrumb`, etc.).
+
+### Componentes UI compartidos — `components/ui/`
+Creados el 2026‑09‑30 para unificar estilos (antes había modales sin estilos). Reutilízalos en
+vez de inventar clases nuevas:
+- `page-header.tsx` (37 líneas) — título + subtítulo + breadcrumb + acciones
+- `modal.tsx` (45 líneas) — modal con overlay, cierre por Escape/click, tamaños `sm|default|lg`
+- `confirm-dialog.tsx` (39 líneas) — confirmación sobre `Modal` (variante `danger`)
+- `segmented.tsx` (31 líneas) — toggle/tabs segmentados
+- `help-note.tsx` (8 líneas) — nota de ayuda inline
+- **Eliminados** (`5428bdd`): `badge.tsx`, `empty-state.tsx` (sin uso)
 
 ---
 
@@ -189,17 +201,18 @@ local + `fetch` manual.
 
 | Si quieres trabajar en… | Archivo(s) principal(es) |
 |---|---|
-| Nuevo atributo/variante/grid de producto | `productos.service.ts` (`materializar` ~362), `productos.controller.ts`, `productos/[id]/page.tsx` (sección Variantes, "Materializar combinación") |
-| Editar BOM / componentes | `productos.service.ts:236‑254`, `productos/[id]/page.tsx` (Lista de materiales) |
-| Neteo de materiales / generar OFs | `ventas.service.ts:291‑420` (+ `crearOFS` 518‑623) |
-| Despachar línea / consumo de stock | `ventas.service.ts:422‑500` |
-| Reporte de producción / aplicar | `reportes.service.ts:224‑296` |
+| Nuevo atributo/variante/grid de producto | `productos.service.ts` (`materializar` 396‑424, `grid` 392‑395), `productos.controller.ts`, `productos/[id]/page.tsx` (sección Variantes, "Materializar combinación") |
+| Editar BOM / componentes | `productos.service.ts:247‑266`, `productos/[id]/page.tsx` (Lista de materiales) |
+| Neteo de materiales / generar OFs | `ventas.service.ts:281‑402` (recursión **inline** en `confirmar`; `ventas.ofs.ts` ya no existe) |
+| Despachar línea / consumo de stock | `ventas.service.ts:404‑482` |
+| Reporte de producción / aplicar | `reportes.service.ts:222‑295` |
 | Ensamble con BOM | `inventario.ensamble.ts` (`ensamblar`) |
-| Atributos globales / heredados | `catalogos.controller.ts:224‑278` (público, sin service) |
-| Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`) + `tienda/[productId]/page.tsx` + `components/ventas/modal-config-variante.tsx` (reutiliza el mismo endpoint) |
-| Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos`) + `public.controller.ts` (`GET public/productos`) |
-| Precios / catálogo público | `public.service.ts` (`catalogo`, `productosPublicos`), `productos.service.ts:329‑350` |
-| Alertas stock bajo / canales | `monitor.service.ts` (94‑292) |
+| Atributos globales / heredados | `catalogos.controller.ts:112‑233` (público, sin service) |
+| Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos` 146‑) + `tienda/[productId]/page.tsx` + `components/ventas/modal-config-variante.tsx` (reutiliza el mismo endpoint) |
+| Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos` 98‑127) + `public.controller.ts` (`GET public/productos`) |
+| Precios / catálogo público | `public.service.ts` (`catalogo` 128‑145, `productosPublicos`), `productos.service.ts` (`setVariantPrice` 340‑362) |
+| Alertas stock bajo / canales | `monitor.service.ts` (66‑240) + `monitor.notificadores.ts` |
+| UI compartida (modales, headers, tabs) | `components/ui/` (`modal`, `page-header`, `confirm-dialog`, `segmented`, `help-note`) + `app/globals.css` |
 | Login / roles / JWT | `auth/` |
 | Tipos shared | `web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` |
@@ -232,10 +245,10 @@ local + `fetch` manual.
 ## 7. Tareas pendientes / próximos pasos (contexto)
 
 - **Modularización** (prioridad actual del equipo): los archivos masivos a dividir son
-  en web `productos/[id]/page.tsx` (**799**), `reportes/page.tsx` (714), `ventas/page.tsx` (359),
-  `catalogos/page.tsx` (234). *(La API ya quedó modularizada: vendría revisar
+  en web `productos/[id]/page.tsx` (**816**), `reportes/page.tsx` (718), `ventas/page.tsx` (472),
+  `catalogos/page.tsx` (332), `inventario/page.tsx` (455). *(La API ya quedó modularizada: vendría revisar
   `fabricacion.service.ts` que es pequeño.)*
-  *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.ofs.ts` + `ventas.types.ts`;
+  *(Archivos fuente API ya divididos: `ventas.service.ts` → `ventas.types.ts`;
   `productos.service.ts` → `productos.grid.ts`; `reportes.service.ts` →
   `reportes.constants.ts` + `reportes.stats.ts` + `reportes.export.ts`;
   `catalogos.controller.ts` → `catalogos.atributos-producto.ts`;
@@ -244,9 +257,18 @@ local + `fetch` manual.
   Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`;
   `reportes/page.tsx` → `components/reportes/stats-produccion.tsx`;
   `ventas/page.tsx` → `components/ventas/nueva-venta.tsx` + `components/ventas/modal-config-variante.tsx`;
-  `catalogos/page.tsx` → `components/catalogos/atributos-globales.tsx`.)*
+  `catalogos/page.tsx` → `components/catalogos/atributos-globales.tsx`;
+  UI compartida en `components/ui/`.)*
 - **Candidatos a refactor cross‑cutting:** recursión BOM (3 copias), disparo de monitor,
   helpers `common/util.ts` (mezclados).
+- **UI más clara de procesos (2026‑09‑30, commits `441c9d1` + `5428bdd`):** se arreglaron los modales
+  sin estilos y se crearon los componentes compartidos `components/ui/` (`PageHeader`, `Modal`,
+  `ConfirmDialog`, `HelpNote`, `Segmented`) + tokens/utilidades en `app/globals.css`. `/productos`
+  ya no duplica los tabs de catálogos base (se movieron a `/catalogos` con tabs por sección); el detalle
+  de producto tiene breadcrumb y navegación numerada por secciones; inventario usa toolbar con modales,
+  export CSV discreto y toggle de matriz por ubicación/variante; el Inicio muestra dashboard de
+  pendientes; se reemplazaron `confirm`/`prompt` por modales. Se eliminaron `ui/badge.tsx` y
+  `ui/empty-state.tsx` por no tener uso.
 - **Nueva venta (2026-08-31):** flujo rediseñado basado en **productos públicos** (grid de cards) +
   **modal guiado paso a paso** (estilo storefront) en vez de búsqueda libre de variantes. El modal y el
   storefront reusan `getPasos` (opciones = variantes **publicadas** del producto navegado) y filtran por
@@ -258,5 +280,6 @@ local + `fetch` manual.
 
 ---
 
-*Última actualización: 2026‑08‑31. Este mapa de líneas es una referencia viva: al refactorizar,
-actualiza este documento para que la herramienta de vibe coding siempre apunte al archivo/zona correcta.*
+*Última actualización: 2026‑09‑30 (mapa web + componentes UI + ventas `.ofs` eliminado). Este mapa de líneas
+es una referencia viva: al refactorizar, actualiza este documento para que la herramienta de vibe coding
+siempre apunte al archivo/zona correcta.*

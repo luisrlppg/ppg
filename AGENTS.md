@@ -7,7 +7,7 @@
 
 ## Estructura del proyecto
 ```
-/home/luisrlp/ppgapps/ppg/  (WSL2/Linux)
+/home/luisrlp/Documents/projects/plasticosplasa/ppg/  (WSL2/Linux)
 apps/
   api/        # NestJS API (puerto 3001)
   web/        # Next.js (puerto 3000, proxy /api → :3001)
@@ -58,12 +58,14 @@ por compatibilidad en la respuesta.
 - `GET /public/catalog` — variantes publicadas con precios/empaques
 
 ## UI pages
-- `/productos` — lista de productos admin
-- `/productos/[id]` — editar producto (atributos, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo)
-- `/catalogos` — atributos globales, categorías, empaques
+- `/` — Inicio: dashboard de pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos
+- `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base)
+- `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Empaques extraídos en `components/productos/empaques-por-variante.tsx`
+- `/catalogos` — atributos globales, categorías, empaques (tabs por sección; `components/catalogos/atributos-globales.tsx`)
 - `/tienda/[productId]` — storefront público con pasos guiados
 - `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs
 - `/fabricacion` — órdenes de fabricación
+- **UI compartida (`apps/web/src/components/ui/`)** — `PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`, `Segmented` (+ tokens/utilidades en `app/globals.css`). Úsalos en vez de inventar clases nuevas
 
 ## Scripts útiles
 - `scripts/reset-variants.ts` — limpia variantes, limpia atributos/valores
@@ -87,6 +89,15 @@ por compatibilidad en la respuesta.
 > del producto navegado, filtradas por conjunto de variantes compatibles). En `/productos/[id]` se unificaron
 > combinaciones y variantes en una sola vista con el selector "Materializar combinación". Pendiente:
 > **imágenes** de opciones (hoy placeholders) y **precios** (ocultos a propósito, los revisa el equipo).
+
+> **UI más clara de procesos (2026-09-30).** Se arreglaron los modales sin estilos y se crearon los
+> componentes compartidos `components/ui/` (`PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`,
+> `Segmented`) + tokens/utilidades en `app/globals.css`. `/productos` ya no duplica los tabs de
+> catálogos base (se movieron a `/catalogos` con tabs por sección); el detalle de producto tiene
+> breadcrumb y navegación numerada; inventario usa toolbar con modales, export CSV discreto y toggle
+> de matriz por ubicación/variante; el Inicio muestra dashboard de pendientes; se reemplazaron
+> `confirm`/`prompt` por modales. Se eliminó `ventas.ofs.ts` (la recursión de OFs quedó inline en
+> `confirmar`, ver VCG §3.2).
 
 ## Credenciales
 - Admin: `admin` / `admin123`
