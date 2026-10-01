@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import HelpNote from "@/components/ui/help-note";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import type { FaltanteCompra, OrdenFabricacion } from "@/lib/types";
 
@@ -18,6 +21,7 @@ export default function FabricacionPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [cancelId, setCancelId] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     const [o, f] = await Promise.all([
@@ -69,15 +73,16 @@ export default function FabricacionPage() {
   }
 
   async function cancelar(id: number) {
-    if (!window.confirm("¿Cancelar esta orden de fabricación?")) return;
     setCargando(true);
     setError("");
     try {
       await api(`/fabricacion/${id}/cancelar`, { method: "POST", body: "{}" });
       setMsg("Orden cancelada.");
+      setCancelId(null);
       cargar();
     } catch (e) {
       setError((e as Error).message);
+      setCancelId(null);
     } finally {
       setCargando(false);
     }
@@ -85,9 +90,17 @@ export default function FabricacionPage() {
 
   return (
     <AppShell>
-      <h2>Fabricación</h2>
+      <PageHeader
+        title="Fabricación"
+        subtitle="Órdenes de fabricación y ensamble generadas por las ventas confirmadas. Aquí se ejecutan y cierran."
+      />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
+
+      <HelpNote>
+        Estados: <strong>confirmada</strong> (lista para iniciar) → <strong>en progreso</strong> →{" "}
+        <strong>hecha</strong> (se cierra al confirmar reportes de producción, E3). Las OFs se crean al confirmar una venta.
+      </HelpNote>
 
       <div className="grid-2">
         <div className="card">
@@ -119,7 +132,7 @@ export default function FabricacionPage() {
                   </button>
                 )}
                 {(detalle.estado === "borrador" || detalle.estado === "confirmada" || detalle.estado === "en_progreso") && (
-                  <button className="btn ghost" style={{ flex: 0 }} disabled={cargando} onClick={() => cancelar(detalle.id)}>
+                  <button className="btn ghost" style={{ flex: 0 }} disabled={cargando} onClick={() => setCancelId(detalle.id)}>
                     Cancelar
                   </button>
                 )}
@@ -178,6 +191,18 @@ export default function FabricacionPage() {
           </ul>
         </div>
       </div>
+
+      {cancelId !== null && (
+        <ConfirmDialog
+          title="Cancelar orden de fabricación"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Cancelar orden"
+          danger
+          loading={cargando}
+          onConfirm={() => cancelar(cancelId)}
+          onClose={() => setCancelId(null)}
+        />
+      )}
     </AppShell>
   );
 }

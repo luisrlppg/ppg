@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useParams } from "next/navigation";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import HelpNote from "@/components/ui/help-note";
 import EmpaquesPorVariante from "@/components/productos/empaques-por-variante";
 import { api } from "@/lib/api";
 import type { Atributo, Categoria, Grid, GridCombo, Packaging, ProductoDetalle, Variante } from "@/lib/types";
@@ -17,7 +18,6 @@ interface BomRow {
 
 export default function ProductoDetallePage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const prodId = Number(id);
   const [d, setD] = useState<ProductoDetalle | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -330,29 +330,44 @@ export default function ProductoDetallePage() {
 
   return (
     <AppShell>
-      <p><Link href="/productos">← Productos</Link></p>
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
-      {/* --- Datos base --- */}
-      <h2>
-        {nombreEdit !== null ? (
-          <input
-            value={nombreEdit}
-            onChange={(e) => setNombreEdit(e.target.value)}
-            onBlur={guardarNombre}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            autoFocus
-          />
-        ) : (
-          <span onClick={() => setNombreEdit(d.nombre)} style={{ cursor: "pointer" }} title="Clic para editar">
-            {d.nombre}
-          </span>
-        )}
-      </h2>
-      <p className="muted small">SKU base: {d.skuBase} · UOM: {d.uom} · {d.hasVariants ? "Con variantes" : "Variante única"}</p>
+      <PageHeader
+        breadcrumb={[{ label: "Productos", href: "/productos" }, { label: d.nombre }]}
+        title={
+          nombreEdit !== null ? (
+            <input
+              value={nombreEdit}
+              onChange={(e) => setNombreEdit(e.target.value)}
+              onBlur={guardarNombre}
+              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              autoFocus
+            />
+          ) : (
+            <span onClick={() => setNombreEdit(d.nombre)} style={{ cursor: "pointer" }} title="Clic para editar">
+              {d.nombre}
+            </span>
+          )
+        }
+        subtitle={`SKU base: ${d.skuBase} · UOM: ${d.uom} · ${d.hasVariants ? "Con variantes" : "Variante única"}`}
+      />
 
-      <div className="card">
+      <HelpNote>
+        Sigue este orden: <strong>datos base</strong>, <strong>atributos</strong> (ejes de combinación),{" "}
+        <strong>lista de materiales (BOM)</strong>, materializa las <strong>variantes</strong> y, al final, configura
+        sus <strong>empaques</strong>.
+      </HelpNote>
+
+      <nav className="section-nav">
+        <a href="#datos">1 · Datos base</a>
+        <a href="#atributos">2 · Atributos</a>
+        <a href="#bom">3 · BOM</a>
+        <a href="#variantes">4 · Variantes</a>
+        <a href="#empaques">5 · Empaques</a>
+      </nav>
+
+      <div className="card section-anchor" id="datos">
         <div className="row" style={{ alignItems: "flex-end" }}>
           <label style={{ flex: 1 }}>
             Categoría
@@ -374,7 +389,7 @@ export default function ProductoDetallePage() {
       </div>
 
       {/* --- Atributos y valores --- */}
-      <div className="card">
+      <div className="card section-anchor" id="atributos">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ marginTop: 0, marginBottom: 0 }}>Atributos</h3>
           </div>
@@ -574,7 +589,7 @@ export default function ProductoDetallePage() {
         </div>
 
       {/* --- Lista de materiales (BOM) --- */}
-      <div className="card">
+      <div className="card section-anchor" id="bom">
         <h3 style={{ marginTop: 0 }}>Lista de materiales (BOM)</h3>
         <div className="inline-form">
           <label>
@@ -633,7 +648,7 @@ export default function ProductoDetallePage() {
       </div>
 
       {/* --- Variantes --- */}
-      <div className="card">
+      <div className="card section-anchor" id="variantes">
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ marginTop: 0, marginBottom: 0 }}>Variantes</h3>
           <button type="button" className="btn primary sm" onClick={() => setShowNuevaVariante(!showNuevaVariante)}>
@@ -788,13 +803,15 @@ export default function ProductoDetallePage() {
       </div>
 
       {/* --- Empaques por variante --- */}
-      <EmpaquesPorVariante
-        variantes={d.variantes}
-        empaques={empaques}
-        uom={d.uom}
-        notify={notify}
-        onEmpaqueCreado={refrescarEmpaques}
-      />
+      <div className="section-anchor" id="empaques">
+        <EmpaquesPorVariante
+          variantes={d.variantes}
+          empaques={empaques}
+          uom={d.uom}
+          notify={notify}
+          onEmpaqueCreado={refrescarEmpaques}
+        />
+      </div>
     </AppShell>
   );
 }

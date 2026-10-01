@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Modal from "@/components/ui/modal";
 import { api } from "@/lib/api";
 import type { Atributo } from "@/lib/types";
 
@@ -143,69 +144,63 @@ export default function AtributosGlobales({ onNotify }: Props) {
 
       {/* --- Modal: Crear atributo --- */}
       {showCreateAttr && (
-        <div className="modal-overlay" onClick={() => setShowCreateAttr(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Crear atributo global</h3>
-            <label style={{ display: "block", marginBottom: 12 }}>
-              Nombre del atributo
-              <input
-                value={createAttrNombre}
-                onChange={(e) => setCreateAttrNombre(e.target.value)}
-                placeholder="ej. Color tapa"
-                autoFocus
-              />
-            </label>
-            <label style={{ display: "block", marginBottom: 12 }}>
-              Valores (separados por coma)
-              <input
-                value={createAttrValores}
-                onChange={(e) => setCreateAttrValores(e.target.value)}
-                placeholder="Negro, Blanco, Transparente"
-              />
-            </label>
-            <div className="row" style={{ gap: 8 }}>
-              <button type="button" className="btn ghost" onClick={() => setShowCreateAttr(false)}>Cancelar</button>
-              <button type="button" className="btn primary" onClick={crearAtributo} disabled={savingAttr || !createAttrNombre.trim()}>
-                {savingAttr ? "Creando…" : "Crear atributo"}
-              </button>
-            </div>
+        <Modal title="Crear atributo global" onClose={() => setShowCreateAttr(false)}>
+          <label style={{ display: "block", marginBottom: 12 }}>
+            Nombre del atributo
+            <input
+              value={createAttrNombre}
+              onChange={(e) => setCreateAttrNombre(e.target.value)}
+              placeholder="ej. Color tapa"
+              autoFocus
+            />
+          </label>
+          <label style={{ display: "block", marginBottom: 12 }}>
+            Valores (separados por coma)
+            <input
+              value={createAttrValores}
+              onChange={(e) => setCreateAttrValores(e.target.value)}
+              placeholder="Negro, Blanco, Transparente"
+            />
+          </label>
+          <div className="row" style={{ gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" className="btn ghost" onClick={() => setShowCreateAttr(false)}>Cancelar</button>
+            <button type="button" className="btn primary" onClick={crearAtributo} disabled={savingAttr || !createAttrNombre.trim()}>
+              {savingAttr ? "Creando…" : "Crear atributo"}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* --- Modal: Editar atributo --- */}
       {editingAttr && (
-        <div className="modal-overlay" onClick={() => setEditingAttr(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Editar atributo: {editingAttr.nombre}</h3>
-            <div style={{ marginBottom: 12 }}>
-              {editAttrValores.map((valor, i) => {
-                const original = editingAttr.valores[i];
-                return (
-                  <div key={original?.id ?? i} className="row" style={{ marginBottom: 6 }}>
-                    <span style={{ flex: 1 }}>{valor}</span>
-                    <button type="button" className="btn ghost sm" style={{ color: "red" }}
-                      onClick={() => original && eliminarValor(editingAttr.id, original.id)}>
-                      Eliminar
-                    </button>
-                  </div>
-                );
-              })}
-              {editAttrValores.length === 0 && (
-                <p className="muted small">Sin valores. Agrega uno abajo.</p>
-              )}
-            </div>
-            <div className="inline-form" style={{ marginBottom: 12 }}>
-              <input value={newValor} onChange={(e) => setNewValor(e.target.value)} placeholder="Nuevo valor"
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarValor())} />
-              <button type="button" className="btn ghost sm" onClick={agregarValor} disabled={!newValor.trim()}>Agregar</button>
-            </div>
-            <div className="row" style={{ gap: 8 }}>
-              <button type="button" className="btn" style={{ color: "red" }} onClick={() => eliminarAtributo(editingAttr.id)}>Eliminar atributo global</button>
-              <button type="button" className="btn" onClick={() => setEditingAttr(null)}>Cerrar</button>
-            </div>
+        <Modal title={`Editar atributo: ${editingAttr.nombre}`} onClose={() => setEditingAttr(null)}>
+          <div style={{ marginBottom: 12 }}>
+            {editAttrValores.map((valor, i) => {
+              const original = editingAttr.valores[i];
+              return (
+                <div key={original?.id ?? i} className="row" style={{ marginBottom: 6 }}>
+                  <span style={{ flex: 1 }}>{valor}</span>
+                  <button type="button" className="btn ghost sm" style={{ color: "red" }}
+                    onClick={() => original && eliminarValor(editingAttr.id, original.id)}>
+                    Eliminar
+                  </button>
+                </div>
+              );
+            })}
+            {editAttrValores.length === 0 && (
+              <p className="muted small">Sin valores. Agrega uno abajo.</p>
+            )}
           </div>
-        </div>
+          <div className="inline-form" style={{ marginBottom: 12 }}>
+            <input value={newValor} onChange={(e) => setNewValor(e.target.value)} placeholder="Nuevo valor"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarValor())} />
+            <button type="button" className="btn ghost sm" onClick={agregarValor} disabled={!newValor.trim()}>Agregar</button>
+          </div>
+          <div className="row" style={{ gap: 8, justifyContent: "space-between" }}>
+            <button type="button" className="btn danger" onClick={() => eliminarAtributo(editingAttr.id)}>Eliminar atributo global</button>
+            <button type="button" className="btn secondary" onClick={() => setEditingAttr(null)}>Cerrar</button>
+          </div>
+        </Modal>
       )}
     </div>
   );

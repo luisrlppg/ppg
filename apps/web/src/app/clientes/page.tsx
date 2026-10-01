@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import type { Partner } from "@/lib/types";
 
@@ -106,25 +107,28 @@ export default function ClientesPage() {
 
   return (
     <AppShell>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <h2 style={{ margin: 0 }}>Clientes</h2>
-        <div className="row" style={{ flex: 0 }}>
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar…" />
+      <PageHeader
+        title="Clientes"
+        subtitle="Alta, edición e importación por CSV de los clientes."
+        actions={
           <button
-            className="btn ghost"
-            style={{ flex: 0 }}
+            className="btn primary"
             onClick={() => {
               setForm(vacio);
               setEditId(null);
               setError("");
             }}
           >
-            Nuevo cliente
+            + Nuevo cliente
           </button>
-        </div>
-      </div>
+        }
+      />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
+
+      <div className="toolbar">
+        <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, teléfono o email…" style={{ maxWidth: 320 }} />
+      </div>
 
       <div className="grid-2">
         <div>

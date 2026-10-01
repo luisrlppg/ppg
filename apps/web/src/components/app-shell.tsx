@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import type { PublicUser } from "@ppg/shared";
 
-const LINKS = [
+const LINKS: { href: string; label: string; match?: string[] }[] = [
   { href: "/", label: "Inicio" },
   { href: "/reportes", label: "Reportes" },
   { href: "/ventas", label: "Ventas" },
   { href: "/fabricacion", label: "Fabricación" },
-  { href: "/productos", label: "Productos" },
+  { href: "/productos", label: "Productos", match: ["/productos", "/catalogos"] },
   { href: "/inventario", label: "Inventario" },
   { href: "/clientes", label: "Clientes" },
   { href: "/monitor", label: "Monitor" },
@@ -73,15 +73,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="mark">P</span>PPG
           </span>
           <nav className="nav-links">
-            {LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href)) ? "active" : ""}
-              >
-                {l.label}
-              </Link>
-            ))}
+            {LINKS.map((l) => {
+              const active = (l.match ?? [l.href]).some((p) =>
+                p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
+              );
+              return (
+                <Link key={l.href} href={l.href} className={active ? "active" : ""}>
+                  {l.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         <div className="user-chip">

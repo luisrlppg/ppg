@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import type { EventoNotificacion, StockBajo } from "@/lib/types";
 
@@ -52,11 +53,10 @@ export default function MonitorPage() {
 
   return (
     <AppShell>
-      <h2>Monitor de stock</h2>
-      <p className="muted">
-        Sin temporizadores ni esperas: cada movimiento de inventario revisa el umbral y notifica de inmediato solo lo{" "}
-        <strong>nuevo</strong>. Aquí puedes revisar el estado y renotificar manualmente.
-      </p>
+      <PageHeader
+        title="Monitor de stock"
+        subtitle="Sin temporizadores ni esperas: cada movimiento de inventario revisa el umbral y notifica de inmediato solo lo nuevo. Aquí puedes revisar el estado y renotificar manualmente."
+      />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 

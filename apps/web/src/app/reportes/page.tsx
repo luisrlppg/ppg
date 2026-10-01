@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
 import StatsProduccion from "@/components/reportes/stats-produccion";
 import { api } from "@/lib/api";
 import type { PublicUser } from "@ppg/shared";
@@ -678,7 +679,10 @@ export default function ReportesPage() {
 
   return (
     <AppShell>
-      <h2>Reportes de producción</h2>
+      <PageHeader
+        title="Reportes de producción"
+        subtitle="Captura de reportes por turno y sección; al aplicar se descuenta consumo y se cierran las órdenes de fabricación."
+      />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 

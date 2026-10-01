@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import { api } from "@/lib/api";
 import { HOME_BY_ROLE } from "@ppg/shared";
+import type { OrdenFabricacion, StockBajo } from "@/lib/types";
 
 const MODULES = [
   { href: "/ventas", title: "Ventas", desc: "Órdenes (locales y web), confirmación con desglose/neteo y despacho por línea." },
@@ -13,13 +17,63 @@ const MODULES = [
   { href: "/monitor", title: "Monitor de stock", desc: "Bajo stock, alertas por Telegram / WhatsApp / email y eventos." },
 ];
 
+interface Pendientes {
+  ventasAbiertas: number;
+  ofsActivas: number;
+  faltantes: number;
+  bajoStock: number;
+}
+
 export default function Home() {
+  const [pend, setPend] = useState<Pendientes | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const [ventas, ofsConf, ofsProg, faltantes, bajo] = await Promise.all([
+        api<unknown[]>("/ventas?estado=abierta").catch(() => []),
+        api<OrdenFabricacion[]>("/fabricacion?estado=confirmada").catch(() => []),
+        api<OrdenFabricacion[]>("/fabricacion?estado=en_progreso").catch(() => []),
+        api<unknown[]>("/fabricacion/faltantes").catch(() => []),
+        api<StockBajo[]>("/monitor/stock-bajo").catch(() => []),
+      ]);
+      setPend({
+        ventasAbiertas: ventas.length,
+        ofsActivas: ofsConf.length + ofsProg.length,
+        faltantes: faltantes.length,
+        bajoStock: bajo.length,
+      });
+    })();
+  }, []);
+
+  const stats = [
+    { href: "/ventas", value: pend?.ventasAbiertas ?? 0, label: "Ventas abiertas", alert: (pend?.ventasAbiertas ?? 0) > 0 },
+    { href: "/fabricacion", value: pend?.ofsActivas ?? 0, label: "OFs activas", alert: (pend?.ofsActivas ?? 0) > 0 },
+    { href: "/fabricacion", value: pend?.faltantes ?? 0, label: "Pendientes de compra", alert: (pend?.faltantes ?? 0) > 0 },
+    { href: "/monitor", value: pend?.bajoStock ?? 0, label: "Productos con bajo stock", alert: (pend?.bajoStock ?? 0) > 0 },
+  ];
+
   return (
     <AppShell>
-      <h2>Inicio</h2>
-      <p className="muted">
-        Tu área: <strong>{HOME_BY_ROLE["admin"]}</strong> (adaptable por rol en E3).
-      </p>
+      <PageHeader
+        title="Inicio"
+        subtitle={
+          <>
+            Tu área: <strong>{HOME_BY_ROLE["admin"]}</strong> (adaptable por rol en E3).
+          </>
+        }
+      />
+
+      <h3 style={{ marginBottom: 4 }}>Pendientes</h3>
+      <div className="stat-grid">
+        {stats.map((s) => (
+          <Link key={s.label} href={s.href} className={`stat-card ${s.alert ? "alert" : ""}`}>
+            <div className="stat-value">{pend ? s.value : "…"}</div>
+            <div className="stat-label">{s.label}</div>
+          </Link>
+        ))}
+      </div>
+
+      <h3 style={{ marginBottom: 4 }}>Módulos</h3>
       <div className="grid-2">
         {MODULES.map((m) => (
           <Link key={m.href} href={m.href} style={{ textDecoration: "none", color: "inherit" }}>

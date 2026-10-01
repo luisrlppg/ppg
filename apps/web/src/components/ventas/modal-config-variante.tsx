@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Modal from "@/components/ui/modal";
 import { api } from "@/lib/api";
 import { getPasosCached } from "@/lib/pasos-cache";
 import type { ConfiguracionLinea, Passo, PassoOption, ProductoPublico } from "@/lib/types";
@@ -186,9 +187,9 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
 
   if (!pasosListos) {
     return (
-      <div className="modal-overlay">
-        <div className="modal"><p className="muted">Cargando opciones…</p></div>
-      </div>
+      <Modal onClose={onCerrar}>
+        <p className="muted">Cargando opciones…</p>
+      </Modal>
     );
   }
 
@@ -214,7 +215,7 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
               onClick={() => elegirOpcion(stepIdx, opt)}
               style={{
                 padding: "16px 12px",
-                border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
+                border: sel ? "2px solid var(--brand)" : "1px solid #ccc",
                 borderRadius: 8,
                 background: sel ? "#eff6ff" : "white",
                 cursor: "pointer",
@@ -225,7 +226,7 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
                 textAlign: "center",
               }}
             >
-              <span style={{ fontSize: "2em", color: sel ? "var(--primary)" : "#aaa" }}>
+              <span style={{ fontSize: "2em", color: sel ? "var(--brand)" : "#aaa" }}>
                 {iconosPlaceholder[i % iconosPlaceholder.length]}
               </span>
               <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
@@ -244,12 +245,7 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
   })();
 
   return (
-    <div className="modal-overlay" onClick={onCerrar}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: 480, maxWidth: 640 }}>
-        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0 }}>{producto.nombre}</h3>
-          <button type="button" className="btn ghost sm" onClick={onCerrar}>✕</button>
-        </div>
+    <Modal title={producto.nombre} onClose={onCerrar} size="lg">
         <p className="muted small" style={{ margin: "4px 0 16px" }}>
           Paso {Math.min(panelActual + 1, totalPasos)} de {totalPasos}
           {!esRevision && panel ? ` — ${panelTitle}` : ""}
@@ -257,7 +253,7 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
 
         <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
           {Array.from({ length: totalPasos }).map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < panelActual ? "var(--primary)" : i === panelActual && !esRevision ? "var(--primary)" : "#ddd" }} />
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < panelActual ? "var(--brand)" : i === panelActual && !esRevision ? "var(--brand)" : "#ddd" }} />
           ))}
         </div>
 
@@ -337,7 +333,6 @@ export default function ModalConfigVariante({ producto, lineaInicial, onConfirma
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
