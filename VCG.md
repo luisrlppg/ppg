@@ -111,18 +111,21 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
 - **`reportes.stats.ts`** (72 líneas): métricas de productividad (`estadisticas`).
 - **`reportes.export.ts`** (55 líneas): exportación CSV (`exportarReportes`).
 
-### 3.4 Inventario / stock / ensamble BOM  → `inventario/`
-- **Controller `inventario.controller.ts`** (141 líneas) — rutas `/api/inventario...` (OJO: rutas estáticas antes de las `:param`)
-- **Service `inventario.service.ts`** (**246 líneas**):
-  - ubicaciones 17‑39 · `existencia` 41‑74 · `existenciaDe` 75‑113
-  - `movimiento` (upsert stock + StockMove + monitor) 115‑163 · `mover` (transferencia) 165‑213
-  - **`ensamble`** 220‑230 — delegador a `ensamblar` (en `inventario.ensamble.ts`)
-  - `exportarCSV` 232‑
-- **`inventario.ensamble.ts`** (181 líneas): función `ensamblar` (BOM recursivo multi‑nivel) — `expandir` recursivo, detecta ciclos, resuelve hojas con `resolveComponentVariant`, consume hojas + suma terminado, notifica por monitor.
+### 3.4 Inventario / stock  → `inventario/`
+- **Controller `inventario.controller.ts`** — rutas `/api/inventario...` (OJO: rutas estáticas antes de las `:param`)
+- **Service `inventario.service.ts`**:
+  - `ubicaciones` · `existencia` · `existenciaDe`
+  - `movimiento` (entrada/salida: upsert stock + StockMove + monitor) · `mover` (transferencia) · **`ajuste`** (fija la cantidad absoluta y registra el delta con `motivo: ajuste`)
+  - `exportarCSV`
+- **Retirado (2026-10-02):** la operación de ensamble BOM de inventario (`inventario.ensamble.ts` / `POST /inventario/ensamble`) se eliminó. "Ensamble" queda solo como **tipo de OF** (2+ componentes exactos). El enum `MotivoStock.ensamble` se conserva para datos históricos.
 
 ### 3.5 Órdenes de fabricación  → `fabricacion/`
-- **Controller `fabricacion.controller.ts`** (40 líneas); **Service `fabricacion.service.ts`** (**124 líneas**)
-  - `list` 11‑50 · `get` 51‑74 · `iniciar` 76‑86 · `cancelar` 88‑97 · `faltantes` (pendientes de compra agregadas) 99‑124
+- **Controller `fabricacion.controller.ts`**; **Service `fabricacion.service.ts`**
+  - `list` (filtro por estado/tipo/**origen**/search) · `get` · `iniciar` · `cancelar` · `faltantes` (pendientes de compra agregadas de ventas)
+  - **`crearManual`** — alta manual de OF (exactamente N), `origen: manual`
+  - **`previewReponer` / `reponer`** — reaprovisionamiento hasta `stockMin`/`stockMax` en cascada, `origen: reposicion_minimo|maximo`
+- **`planificacion.service.ts`**: `planificar(tx, demandas, { netearRaiz })` (neteo recursivo contra stock + resolución de variantes de componente) y `crearOFs(tx, plan, { origen, ... })`. Lo usan `ventas.confirmar` (`netearRaiz: true`) y la fabricación manual/reposición (`false`).
+- Las OFs guardan `origen` (`OrigenOF`: venta | manual | reposicion_minimo | reposicion_maximo); las de venta se ligan a `salesOrderLineId` y muestran cliente.
 - Nota: el **cierre de OF a "hecha"** ocurre desde `reportes.service` (`aplicar`), no aquí.
 
 ### 3.6 Catálogos (atributos / categorías / empaques)  → `catalogos/`

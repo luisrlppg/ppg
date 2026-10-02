@@ -2,26 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
-import { ProductosService } from "../productos/productos.service";
 import { MonitorService } from "../monitor/monitor.service";
-import { ConfiguracionLinea, ResumenItem, ResumenNeteo } from "./ventas.types";
+import { PlanificacionService } from "../fabricacion/planificacion.service";
+import { ConfiguracionLinea, ResumenNeteo } from "./ventas.types";
 
 export type { ResumenItem, ResumenNeteo, ConfiguracionLinea } from "./ventas.types";
-
-interface VarianteCtx {
-  id: number;
-  productId: number;
-  sku: string;
-  nombre: string;
-  variantAttributes: { attributeId: number; valueId: number }[];
-  stockLevels: { qty: unknown }[];
-  product: {
-    id: number;
-    nombre: string;
-    basePrice: unknown;
-    components: { componentId: number; cantidad: unknown; tipo: string; component: { id: number; nombre: string } }[];
-  };
-}
 
 function placeholderNumero(): string {
   return `PEND-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -31,7 +16,7 @@ function placeholderNumero(): string {
 export class VentasService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly productos: ProductosService,
+    private readonly planificacion: PlanificacionService,
     private readonly monitor: MonitorService,
   ) {}
 
@@ -288,109 +273,29 @@ export class VentasService {
       if (order.estado !== "abierta") throw new BadRequestException("Solo se confirma una venta abierta");
       if (order.confirmadaAt) throw new BadRequestException("Esta venta ya fue confirmada");
 
-      const cache = new Map<number, VarianteCtx>();
-      const load = async (variantId: number) => {
-        let v = cache.get(variantId);
-        if (!v) {
-          v = (await tx.productVariant.findUnique({
-            where: { id: variantId },
-            include: {
-              product: {
-                include: {
-                  components: {
-                    where: { tipo: "exacto" },
-                    include: { component: { select: { id: true, nombre: true } } },
-                  },
-                },
-              },
-              variantAttributes: true,
-              stockLevels: true,
-            },
-          })) as unknown as VarianteCtx;
-          if (!v) throw new NotFoundException(`Variante ${variantId} no encontrada`);
-          cache.set(variantId, v);
-        }
-        return v;
-      };
-      const stockOf = (v: { stockLevels: { qty: unknown }[] }) => v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
+      // 1) Neteo + plan de fabricación/compra (lógica compartida).
+      const plan = await this.planificacion.planificar(
+        tx,
+        order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad) })),
+        { netearRaiz: true },
+      );
 
-      // 1) Demanda neta por variante (después de restar su propio stock).
-      const demand = new Map<number, number>();
-      const netear = async (variantId: number, cantidad: number, path: number[]) => {
-        if (path.includes(variantId)) throw new BadRequestException("BOM con dependencia circular en la venta");
-        const v = await load(variantId);
-        const falta = cantidad - stockOf(v);
-        if (falta <= 0) return;
-        demand.set(variantId, (demand.get(variantId) ?? 0) + falta);
-        if (v.product.components.length === 0) return; // hoja → compra
-        for (const c of v.product.components) {
-          const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
-            productId: v.productId,
-            variantAttributes: v.variantAttributes,
-          });
-          if (!compVariant) {
-            throw new BadRequestException(
-              `No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`,
-            );
-          }
-          await netear(compVariant.id, falta * dec(c.cantidad), [...path, variantId]);
-        }
-      };
-      for (const line of order.lines) {
-        await netear(line.variantId, dec(line.cantidad), []);
-      }
-
-      // 2) Por cada demanda: OF recursiva (con configuracion + ensamble) o simple ( resto) o pendiente compra (hoja).
-      const configPorVariant = new Map<number, ConfiguracionLinea>();
+      // 2) Se crean las OFs del plan (con configuracion + línea de venta).
+      const configuracionPorVariant = new Map<number, unknown>();
+      const salesOrderLineIdPorVariant = new Map<number, number>();
       for (const l of order.lines) {
-        if (l.configuracion) configPorVariant.set(l.variantId, l.configuracion as ConfiguracionLinea);
+        if (l.configuracion) configuracionPorVariant.set(l.variantId, l.configuracion);
+        if (!salesOrderLineIdPorVariant.has(l.variantId)) salesOrderLineIdPorVariant.set(l.variantId, l.id);
       }
-      const fabricar: ResumenItem[] = [];
-      const comprar: ResumenItem[] = [];
-      for (const [variantId, cantidad] of [...demand.entries()].sort((a, b) => a[0] - b[0])) {
-        const v = await load(variantId);
-        if (v.product.components.length === 0) {
-          comprar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad });
-          continue;
-        }
-        const tipo = v.product.components.length === 1 ? "fabricacion" : "ensamble";
-        fabricar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad, tipo });
-        const mo = await tx.manufacturingOrder.create({
-          data: {
-            numero: `OF-PEND-${Date.now()}-${variantId}`,
-            variantId,
-            cantidad,
-            tipo,
-            estado: "confirmada",
-            generatedFrom: order.numero,
-            userId: userId ?? null,
-            configuracion: (configPorVariant.get(variantId) as unknown as Prisma.InputJsonValue) ?? undefined,
-            salesOrderLineId: order.lines.find((l) => l.variantId === variantId)?.id ?? null,
-          },
-        });
-        await tx.manufacturingOrder.update({
-          where: { id: mo.id },
-          data: { numero: `OF-${String(mo.id).padStart(4, "0")}` },
-        });
-        for (const c of v.product.components) {
-          const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
-            productId: v.productId,
-            variantAttributes: v.variantAttributes,
-          });
-          if (!compVariant)
-            throw new BadRequestException(`No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`);
-          await tx.manufacturingOrderLine.create({
-            data: {
-              orderId: mo.id,
-              componentVariantId: compVariant.id,
-              cantidadRequerida: cantidad * dec(c.cantidad),
-              cantidadReservada: 0,
-            },
-          });
-        }
-      }
+      await this.planificacion.crearOFs(tx, plan, {
+        origen: "venta",
+        generatedFrom: order.numero,
+        userId: userId ?? null,
+        configuracionPorVariant,
+        salesOrderLineIdPorVariant,
+      });
 
-      const resumen: ResumenNeteo = { fabricar, comprar };
+      const resumen: ResumenNeteo = { fabricar: plan.fabricar, comprar: plan.comprar };
       await tx.salesOrder.update({
         where: { id },
         data: { confirmadaAt: new Date(), resumen: resumen as unknown as Prisma.InputJsonValue },

@@ -63,6 +63,7 @@ export class ProductosService {
       basePrice: dec(p.basePrice),
       hasVariants: p.hasVariants,
       activo: p.activo,
+      imagen: p.imagen,
       categoria: p.category?.nombre ?? null,
       variantes: p.variants.length,
       stockTotal: p.variants.reduce((acc, v) => acc + ProductosService.stockTotals(v.stockLevels).total, 0),
@@ -526,7 +527,7 @@ export class ProductosService {
 
   // --------------------------------------------------- Resolver BOM (E1)
   /**
-   * Para ensamblar un combo: encuentra qué variante del producto componente
+   * Para netear/resolver un combo: encuentra qué variante del producto componente
    * consumir, igualando los valores de atributo que comparten ambos.
    */
   async resolveComponentVariant(componentProductId: number, combo: { productId: number; variantAttributes: { attributeId: number; valueId: number }[] }): Promise<{ id: number; sku: string; nombre: string } | null> {

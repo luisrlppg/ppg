@@ -419,6 +419,13 @@ enum TipoOF {
   ensamble    // 2+ componentes exactos: se arma a partir de varios
 }
 
+enum OrigenOF {
+  venta              // generada al confirmar una venta
+  manual             // creada manualmente por el usuario
+  reposicion_minimo  // reaprovisionamiento hasta stock_min
+  reposicion_maximo  // reaprovisionamiento hasta stock_max
+}
+
 enum EstadoOF {
   borrador
   confirmada
@@ -434,6 +441,7 @@ model ManufacturingOrder {
   variant       ProductVariant @relation(fields: [variantId], references: [id])
   cantidad      Decimal
   tipo          TipoOF
+  origen        OrigenOF     @default(venta)
   estado        EstadoOF     @default(confirmada)
   fecha         DateTime     @default(now())
   notas         String?

@@ -72,6 +72,12 @@ export class ClientesController {
     return this.clientes.deactivate(id);
   }
 
+  @Roles("admin")
+  @Delete(":id/definitivo")
+  eliminar(@Param("id", ParseIntPipe) id: number) {
+    return this.clientes.eliminar(id);
+  }
+
   @Roles("admin", "supervisor")
   @Post("importar")
   importar(@Body() dto: ImportCsvDto) {

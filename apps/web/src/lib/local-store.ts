@@ -35,3 +35,47 @@ export function borrarSeleccion(prodId: number): void {
     /* noop */
   }
 }
+
+export type VistaProductos = "tabla" | "grid";
+
+const VISTA_KEY = "ppg.productos.vista";
+
+export function leerVistaProductos(): VistaProductos {
+  if (typeof window === "undefined") return "tabla";
+  try {
+    return window.localStorage.getItem(VISTA_KEY) === "grid" ? "grid" : "tabla";
+  } catch {
+    return "tabla";
+  }
+}
+
+export function guardarVistaProductos(vista: VistaProductos): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VISTA_KEY, vista);
+  } catch {
+    /* noop */
+  }
+}
+
+export type VistaClientes = "tabla" | "grid";
+
+const VISTA_CLIENTES_KEY = "ppg.clientes.vista";
+
+export function leerVistaClientes(): VistaClientes {
+  if (typeof window === "undefined") return "tabla";
+  try {
+    return window.localStorage.getItem(VISTA_CLIENTES_KEY) === "grid" ? "grid" : "tabla";
+  } catch {
+    return "tabla";
+  }
+}
+
+export function guardarVistaClientes(vista: VistaClientes): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VISTA_CLIENTES_KEY, vista);
+  } catch {
+    /* noop */
+  }
+}

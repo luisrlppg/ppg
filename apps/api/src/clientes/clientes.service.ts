@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@ppg/db";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -66,6 +66,24 @@ export class ClientesService {
     const exists = await this.prisma.partner.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException("Cliente no encontrado");
     await this.prisma.partner.update({ where: { id }, data: { activo: false } });
+    return { ok: true };
+  }
+
+  /** Elimina (hard delete) un cliente sin historial. Lanza 409 con el motivo si tiene ventas. */
+  async eliminar(id: number) {
+    const partner = await this.prisma.partner.findUnique({
+      where: { id },
+      include: { _count: { select: { orders: true } } },
+    });
+    if (!partner) throw new NotFoundException("Cliente no encontrado");
+
+    if (partner._count.orders > 0) {
+      throw new ConflictException(
+        `No se puede eliminar "${partner.nombre}": tiene ${partner._count.orders} venta(s)/pedido(s) asociados. Puedes desactivarlo en su lugar.`,
+      );
+    }
+
+    await this.prisma.partner.delete({ where: { id } });
     return { ok: true };
   }
 

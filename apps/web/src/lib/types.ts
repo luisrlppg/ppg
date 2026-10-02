@@ -37,6 +37,7 @@ export interface ProductoLite {
   basePrice: number;
   hasVariants: boolean;
   activo: boolean;
+  imagen: string | null;
   categoria: string | null;
   variantes: number;
   stockTotal: number;
@@ -231,6 +232,8 @@ export interface Venta {
   ordenesFabricacion: OrdenFabricacion[];
 }
 
+export type OrigenOF = "venta" | "manual" | "reposicion_minimo" | "reposicion_maximo";
+
 export interface OrdenFabricacion {
   id: number;
   numero: string;
@@ -240,10 +243,13 @@ export interface OrdenFabricacion {
   cantidad: number;
   uom?: string;
   tipo: "fabricacion" | "ensamble";
+  origen?: OrigenOF;
   estado: "borrador" | "confirmada" | "en_progreso" | "hecha" | "cancelada";
   fecha?: string;
   notas?: string | null;
   generatedFrom?: string | null;
+  venta?: string | null;
+  cliente?: string | null;
   componenteVariantes?: number;
   lines: {
     id: number;

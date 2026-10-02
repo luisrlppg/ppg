@@ -12,7 +12,7 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Min } from "class-validator";
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { Response } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
@@ -27,18 +27,18 @@ class MovimientoDto {
   @IsOptional() @IsString() ref?: string;
 }
 
+class AjusteDto {
+  @IsInt() variantId!: number;
+  @IsInt() locationId!: number;
+  @IsNumber() @Min(0) nuevaCantidad!: number;
+  @IsOptional() @IsString() ref?: string;
+}
+
 class MoverDto {
   @IsInt() variantId!: number;
   @IsInt() fromLocationId!: number;
   @IsInt() toLocationId!: number;
   @IsNumber() @Min(0.0001) cantidad!: number;
-  @IsOptional() @IsString() ref?: string;
-}
-
-class EnsambleDto {
-  @IsInt() variantId!: number;
-  @IsNumber() @IsPositive() cantidad!: number;
-  @IsInt() locationId!: number;
   @IsOptional() @IsString() ref?: string;
 }
 
@@ -107,6 +107,18 @@ export class InventarioController {
     });
   }
 
+  @Roles("admin", "supervisor", "operador")
+  @Post("ajuste")
+  ajuste(@Body() dto: AjusteDto, @Req() req: { user: { id: number } }) {
+    return this.inventario.ajuste({
+      variantId: dto.variantId,
+      locationId: dto.locationId,
+      nuevaCantidad: Number(dto.nuevaCantidad),
+      ref: dto.ref,
+      userId: req.user.id,
+    });
+  }
+
   @Roles("admin", "supervisor")
   @Post("mover")
   mover(@Body() dto: MoverDto, @Req() req: { user: { id: number } }) {
@@ -115,18 +127,6 @@ export class InventarioController {
       fromLocationId: dto.fromLocationId,
       toLocationId: dto.toLocationId,
       cantidad: dto.cantidad,
-      ref: dto.ref,
-      userId: req.user.id,
-    });
-  }
-
-  @Roles("admin", "supervisor")
-  @Post("ensamble")
-  ensamble(@Body() dto: EnsambleDto, @Req() req: { user: { id: number } }) {
-    return this.inventario.ensamble({
-      variantId: dto.variantId,
-      cantidad: dto.cantidad,
-      locationId: dto.locationId,
       ref: dto.ref,
       userId: req.user.id,
     });

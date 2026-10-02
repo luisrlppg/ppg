@@ -6,12 +6,11 @@ import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import Segmented from "@/components/ui/segmented";
+import CantidadEditable from "@/components/inventario/cantidad-editable";
 import { api } from "@/lib/api";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
-const MOTIVOS = ["entrada", "salida", "ajuste", "apertura"];
-
-type Accion = "movimiento" | "mover" | "ensamble";
+type Accion = "entrada" | "salida" | "mover";
 type Vista = "variante" | "matriz";
 
 export default function InventarioPage() {
@@ -53,7 +52,6 @@ export default function InventarioPage() {
   const [accion, setAccion] = useState<Accion | null>(null);
   const [selId, setSelId] = useState<number | null>(null);
   const [cantidad, setCantidad] = useState("");
-  const [motivo, setMotivo] = useState("entrada");
   const [ubiId, setUbiId] = useState("");
   const [ref, setRef] = useState("");
   const [origen, setOrigen] = useState("");
@@ -64,7 +62,6 @@ export default function InventarioPage() {
     setAccion(a);
     setSelId(variantId ?? null);
     setCantidad("");
-    setMotivo(a === "movimiento" ? "entrada" : "ajuste");
     setRef("");
     setUbiId(String(locs[0]?.id ?? ""));
     setOrigen(String(locs[0]?.id ?? ""));
@@ -88,30 +85,55 @@ export default function InventarioPage() {
     setError("");
     try {
       const qty = Number(cantidad);
-      if (accion === "movimiento") {
+      if (accion === "entrada" || accion === "salida") {
+        if (!Number.isFinite(qty) || qty <= 0) {
+          setError("La cantidad debe ser mayor a 0.");
+          return;
+        }
+        if (accion === "salida") {
+          const disponible = exist.find((x) => x.variantId === selId)?.porUbicacion[Number(ubiId)]?.qty ?? 0;
+          if (qty > disponible) {
+            setError(`Stock insuficiente en la ubicación: hay ${disponible} y se intentan sacar ${qty}.`);
+            return;
+          }
+        }
         await api("/inventario/movimiento", {
           method: "POST",
-          body: JSON.stringify({ variantId: selId, locationId: Number(ubiId), motivo, cantidad: qty, ref: ref || undefined }),
+          body: JSON.stringify({
+            variantId: selId,
+            locationId: Number(ubiId),
+            motivo: accion,
+            cantidad: accion === "salida" ? -qty : qty,
+            ref: ref || undefined,
+          }),
         });
-        notify(null, "Movimiento registrado.");
+        notify(null, accion === "entrada" ? "Entrada registrada." : "Salida registrada.");
       } else if (accion === "mover") {
         await api("/inventario/mover", {
           method: "POST",
           body: JSON.stringify({ variantId: selId, fromLocationId: Number(origen), toLocationId: Number(destino), cantidad: qty, ref: ref || undefined }),
         });
         notify(null, "Transferencia registrada.");
-      } else if (accion === "ensamble") {
-        await api("/inventario/ensamble", {
-          method: "POST",
-          body: JSON.stringify({ variantId: selId, locationId: Number(ubiId), cantidad: qty, ref: ref || undefined }),
-        });
-        notify(null, "Ensamble registrado (se consumieron los componentes exactos).");
       }
       cerrarAccion();
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setCargando(false);
+    }
+  }
+
+  // ----------------------------------------------------- Ajuste por celda
+  async function ajustar(variantId: number, locationId: number, nuevaCantidad: number) {
+    try {
+      const r = await api<{ resultado: { delta: number; sinCambio: boolean } }>("/inventario/ajuste", {
+        method: "POST",
+        body: JSON.stringify({ variantId, locationId, nuevaCantidad }),
+      });
+      if (r.resultado.sinCambio) notify(null, "Sin cambios.");
+      else notify(null, `Ajuste registrado (${r.resultado.delta > 0 ? "+" : ""}${r.resultado.delta}).`);
+    } catch (e) {
+      setError((e as Error).message);
     }
   }
 
@@ -134,6 +156,7 @@ export default function InventarioPage() {
   }
 
   const seleccion = exist.find((x) => x.variantId === selId);
+  const disponible = seleccion?.porUbicacion[Number(ubiId)]?.qty ?? 0;
   const filtradas = exist.filter((v) => {
     if (!busqueda.trim()) return true;
     const q = busqueda.toLowerCase();
@@ -148,7 +171,7 @@ export default function InventarioPage() {
 
       <PageHeader
         title="Inventario"
-        subtitle="Existencia por producto y ubicación. Registra entradas, transferencias y ensambles."
+        subtitle="Existencia por producto y ubicación. Registra entradas, salidas y transferencias."
         actions={
           <>
             <a className="btn secondary sm" href="/api/inventario/exportar.csv" download="stock.csv">
@@ -162,19 +185,20 @@ export default function InventarioPage() {
       />
 
       <HelpNote>
-        La alerta de bajo stock se dispara <strong>al momento</strong> de cada movimiento. Un ajuste negativo no puede
-        dejar el stock por debajo de cero.
+        Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Para un{" "}
+        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad de la <strong>Matriz por ubicación</strong> y escribe
+        la cantidad real: se registra la diferencia. El stock no puede quedar por debajo de cero.
       </HelpNote>
 
       <div className="toolbar">
-        <button className="btn primary" onClick={() => abrir("movimiento")}>
-          + Entrada / ajuste
+        <button className="btn primary" onClick={() => abrir("entrada")}>
+          + Entrada
+        </button>
+        <button className="btn secondary" onClick={() => abrir("salida")}>
+          − Salida
         </button>
         <button className="btn secondary" onClick={() => abrir("mover")}>
           Transferir
-        </button>
-        <button className="btn secondary" onClick={() => abrir("ensamble")}>
-          Ensamblar
         </button>
         <div className="grow" />
         <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar producto, variante o SKU…" style={{ maxWidth: 300 }} />
@@ -227,8 +251,8 @@ export default function InventarioPage() {
                     </td>
                     <td>
                       <div className="row-actions">
-                        <button className="btn ghost sm" onClick={() => abrir("movimiento", v.variantId)}>
-                          Agregar
+                        <button className="btn ghost sm" onClick={() => abrir("entrada", v.variantId)}>
+                          Entrada
                         </button>
                       </div>
                     </td>
@@ -268,7 +292,7 @@ export default function InventarioPage() {
                       const q = qtyEn(v, l.id);
                       return (
                         <td key={l.id} className={`num ${q === 0 ? "matrix-cell-0" : ""}`}>
-                          {q === 0 ? "—" : q}
+                          <CantidadEditable value={q} onSave={(nueva) => ajustar(v.variantId, l.id, nueva)} />
                         </td>
                       );
                     })}
@@ -311,11 +335,13 @@ export default function InventarioPage() {
         </ul>
       </div>
 
-      {/* --- Modal: movimiento / transferencia / ensamble --- */}
+      {/* --- Modal: entrada / salida / transferencia --- */}
       {accion && (
         <Modal
           title={
-            accion === "movimiento" ? "Entrada / ajuste de stock" : accion === "mover" ? "Transferir entre ubicaciones" : "Registrar ensamble"
+            accion === "entrada" ? "Registrar entrada"
+              : accion === "salida" ? "Registrar salida"
+              : "Transferir entre ubicaciones"
           }
           onClose={cerrarAccion}
         >
@@ -337,29 +363,23 @@ export default function InventarioPage() {
               </p>
             )}
 
-            {accion === "movimiento" && (
-              <>
-                <label>
-                  Tipo de movimiento
-                  <select value={motivo} onChange={(e) => setMotivo(e.target.value)}>
-                    {MOTIVOS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Ubicación
-                  <select value={ubiId} onChange={(e) => setUbiId(e.target.value)}>
-                    {locs.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
+            {(accion === "entrada" || accion === "salida") && (
+              <label>
+                Ubicación
+                <select value={ubiId} onChange={(e) => setUbiId(e.target.value)}>
+                  {locs.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {accion === "salida" && seleccion && (
+              <p className="muted small" style={{ margin: "0 0 8px" }}>
+                Disponible en la ubicación: <strong>{disponible} {seleccion.uom}</strong>
+              </p>
             )}
 
             {accion === "mover" && (
@@ -387,26 +407,10 @@ export default function InventarioPage() {
               </div>
             )}
 
-            {accion === "ensamble" && (
-              <>
-                <label>
-                  Ubicación de entrada del terminado
-                  <select value={ubiId} onChange={(e) => setUbiId(e.target.value)}>
-                    {locs.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <p className="muted small">Al ensamblar se consumen los componentes exactos de la BOM (incluso en varios niveles).</p>
-              </>
-            )}
-
             <div className="row">
               <label>
-                {accion === "movimiento" ? "Cantidad (negativa = sale)" : "Cantidad"}
-                <input type="number" step="0.001" value={cantidad} onChange={(e) => setCantidad(e.target.value)} required />
+                Cantidad
+                <input type="number" step="0.001" min="0" value={cantidad} onChange={(e) => setCantidad(e.target.value)} required />
               </label>
               <label>
                 Referencia (opcional)

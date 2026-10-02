@@ -1,8 +1,19 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { IsIn, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { FabricacionService } from "./fabricacion.service";
+
+class CrearOFDto {
+  @IsInt() variantId!: number;
+  @IsNumber() @Min(0.0001) cantidad!: number;
+  @IsOptional() @IsString() notas?: string;
+}
+
+class ReponerDto {
+  @IsIn(["minimo", "maximo"]) objetivo!: "minimo" | "maximo";
+}
 
 @Controller("fabricacion")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -11,8 +22,31 @@ export class FabricacionController {
 
   @Roles("admin", "supervisor", "operador")
   @Get()
-  list(@Query("estado") estado?: string, @Query("tipo") tipo?: string, @Query("search") search?: string) {
-    return this.fabricacion.list({ estado, tipo, search });
+  list(
+    @Query("estado") estado?: string,
+    @Query("tipo") tipo?: string,
+    @Query("origen") origen?: string,
+    @Query("search") search?: string,
+  ) {
+    return this.fabricacion.list({ estado, tipo, origen, search });
+  }
+
+  @Roles("admin", "supervisor", "operador")
+  @Get("reponer/preview")
+  previewReponer(@Query("objetivo") objetivo?: string) {
+    return this.fabricacion.previewReponer(objetivo === "maximo" ? "maximo" : "minimo");
+  }
+
+  @Roles("admin", "supervisor")
+  @Post("reponer")
+  reponer(@Body() dto: ReponerDto, @Req() req: { user: { id: number } }) {
+    return this.fabricacion.reponer(dto.objetivo, req.user.id);
+  }
+
+  @Roles("admin", "supervisor")
+  @Post()
+  crearManual(@Body() dto: CrearOFDto, @Req() req: { user: { id: number } }) {
+    return this.fabricacion.crearManual({ variantId: dto.variantId, cantidad: dto.cantidad, notas: dto.notas }, req.user.id);
   }
 
   @Roles("admin", "supervisor", "operador")

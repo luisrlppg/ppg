@@ -8,7 +8,10 @@ import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import Segmented from "@/components/ui/segmented";
+import ProductoCard from "@/components/productos/producto-card";
 import { api } from "@/lib/api";
+import { guardarVistaProductos, leerVistaProductos, type VistaProductos } from "@/lib/local-store";
 import type { Categoria, ProductoLite } from "@/lib/types";
 
 const CATALOGOS = [
@@ -30,6 +33,15 @@ export default function ProductosPage() {
   const [porEliminar, setPorEliminar] = useState<ProductoLite | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const [bloqueo, setBloqueo] = useState<{ p: ProductoLite; motivo: string } | null>(null);
+
+  const [vista, setVista] = useState<VistaProductos>("tabla");
+  useEffect(() => {
+    setVista(leerVistaProductos());
+  }, []);
+  function cambiarVista(v: VistaProductos) {
+    setVista(v);
+    guardarVistaProductos(v);
+  }
 
   const cargar = useCallback(async () => {
     const qs = new URLSearchParams();
@@ -200,11 +212,30 @@ export default function ProductosPage() {
             ))}
           </select>
         </label>
-        <div className="muted small" style={{ flex: 1, minWidth: 120, textAlign: "right" }}>
-          {productos.length} producto(s)
+        <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+          <span className="muted small">{productos.length} producto(s)</span>
+          <Segmented
+            value={vista}
+            onChange={(v) => cambiarVista(v as VistaProductos)}
+            options={[
+              { value: "tabla", label: "Tabla" },
+              { value: "grid", label: "Grid" },
+            ]}
+          />
         </div>
       </div>
 
+      {vista === "grid" ? (
+        productos.length === 0 ? (
+          <div className="card empty">Sin productos todavía. Usa “Nuevo producto” para crear el primero.</div>
+        ) : (
+          <div className="product-grid">
+            {productos.map((p) => (
+              <ProductoCard key={p.id} producto={p} onEliminar={setPorEliminar} />
+            ))}
+          </div>
+        )
+      ) : (
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-wrap">
           <table className="table">
@@ -250,6 +281,7 @@ export default function ProductosPage() {
           </table>
         </div>
       </div>
+      )}
 
       {showModal && (
         <Modal

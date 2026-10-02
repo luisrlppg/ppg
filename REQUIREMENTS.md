@@ -88,7 +88,7 @@ production_reports ──< production_report_lines ── variant_id   (E3)
 
 Alcances:
 - **admin**: todo + gestión de usuarios.
-- **supervisor**: alta/edición/ajuste de inventario, registrar ensamble, ventas y órdenes de fabricación, ver reportes.
+- **supervisor**: alta/edición/ajuste de inventario, ventas y órdenes de fabricación (incl. alta manual y reposición), ver reportes.
 - **operador**: lectura de productos/stock; (futuro) reportar producción.
 - **Encargada de inventario** (rol supervisor u otro): revisa y **acepta** reportes (E3), asigna **ubicaciones** — la cantidad nunca se tipea dos veces.
 
@@ -180,8 +180,10 @@ Cuando existan piezas ensambladas almacenadas (pinceles sobrados), **se registra
 - `stock_actual = n`, `stock_min = 0`, `stock_max = 0` (nunca dispara alerta, no se reponen).
 - Ajuste con motivo referenciando el BOM cuando aplique.
 
-### 5.4 Registrar ensamble (con BOM)
-**Qué es**: operación de inventario para cuando físicamente **armas un producto terminado a partir de sus componentes** (su BOM) — por ejemplo los pinceles sobrados del §5.3. Se asienta en un solo paso para que el stock nunca mienta.
+### 5.4 Registrar ensamble (con BOM) — RETIRADO (2026-10-02)
+> **Retirado:** la operación manual de ensamble de inventario (`POST /inventario/ensamble`) se eliminó. El "ensamble" pasa a ser únicamente un **tipo de orden de fabricación** (producto con 2+ componentes exactos). Las OFs se crean desde ventas, manualmente o por reposición mín/máx, y el stock se mueve al aplicar reportes de producción. Se conserva esta sección como referencia histórica.
+
+**Qué era**: operación de inventario para cuando físicamente **armas un producto terminado a partir de sus componentes** (su BOM) — por ejemplo los pinceles sobrantes del §5.3. Se asentaba en un solo paso para que el stock no mintiera.
 
 "armé n de &lt;combo&gt;" → el sistema:
 1. suma el stock del combo/terminado en `n`,
@@ -250,14 +252,14 @@ Ejemplo multi-nivel resolviendo la venta de "taparrosca con pincel":
 - `POST /products/:id/components` (BOM con `tipo`)
 - `POST /variants/:id/packagings`
 - `POST /variants/:id/stock` (ajuste con motivo → `stock_moves` con origen/destino; default `"Almacén principal"`; soporta decimales)
-- `POST /products/:id/assemble` (Registrar ensamble con BOM, §5.4)
+- ~~`POST /products/:id/assemble` (Registrar ensamble con BOM, §5.4)~~ — **retirado (2026-10-02)**
 - `GET /stock/low` (suma ≤ stock_min) · `POST /stock/check` (verificación **manual** opcional) · `POST /stock/notify` (forzado)
 - `GET /locations` (física de stock visible; el flujo completo de ubicación se usar en E3)
 
 ### 6.2 Web (una sola app)
 - **Dashboard** de inventario con badges `normal` / `bajo` / `crítico` (long_lead + bajo) y stock por ubicación.
 - **Página de producto**: atributos, variantes (combinaciones y variantes **unificadas** en una sola vista, con selector "Materializar combinación" para crear UNA variante puntual desde los ejes), empaques (con copiar), BOM (con tipo), precios (base + override) e historial, `uom`, stock por ubicación.
-- **Ajuste de stock** con motivo; **Registrar ensamble**.
+- **Ajuste de stock** con motivo (edición de cantidad en la matriz). ~~Registrar ensamble~~ — retirado (2026-10-02).
 - **Alerta manual** y estado del monitor.
 
 ### 6.3 Monitor de stock + notificaciones
@@ -376,7 +378,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 | Entrega | Contenido | Estado |
 |---|---|---|
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
-| **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), registrar ensamble | ✅ entregado |
+| **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), ~~registrar ensamble~~ (retirado 2026-10-02) | ✅ entregado |
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática. **Flujo venta→confirmación→neteo→cascada de OFs→despacho verificado end-to-end (2026-08-31)** | ✅ entregado |
 | **Tienda (futura)** | Storefront público: `/api/public` + (futuro) `apps/storefront`. **Ya está operativa la tubería completa**: `GET /public/productos`, `getPasos` (variantes publicadas), pedido invitado (`origen=web`, precio recalculado en servidor, consulta por número), y tienda guiada integrada en `apps/web/tienda/[productId]`. Falta la app `apps/storefront` separada + pasarela de pago + **imágenes** de opciones (hoy placeholders) + **precios** en la UI (ocultos a propósito). | 🟡 tubería + tienda guiada operativas |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV. **Flujo verificado end-to-end (2026-08-31)** | ✅ entregado |

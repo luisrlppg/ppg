@@ -3,15 +3,12 @@ import { MotivoStock } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { MonitorService } from "../monitor/monitor.service";
-import { ProductosService } from "../productos/productos.service";
-import { ensamblar, EnsambleParams } from "./inventario.ensamble";
 
 @Injectable()
 export class InventarioService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly monitor: MonitorService,
-    private readonly productos: ProductosService,
   ) {}
 
   // ------------------------------------------------------------ Ubicaciones
@@ -161,6 +158,60 @@ export class InventarioService {
     return { resultado: { antes: actual, despues, notificado: notificado.canales } };
   }
 
+  // -------------------------------------------------------- Ajuste absoluto
+  /**
+   * Fija la cantidad de una variante en una ubicación al valor indicado y
+   * registra un StockMove con el delta (positivo o negativo) y motivo "ajuste".
+   * Útil para inventarios físicos: se escribe la cantidad real contada.
+   */
+  async ajuste(params: {
+    variantId: number;
+    locationId: number;
+    nuevaCantidad: number;
+    ref?: string;
+    userId?: number;
+  }) {
+    const { variantId, locationId, nuevaCantidad } = params;
+    if (!Number.isFinite(nuevaCantidad) || nuevaCantidad < 0) {
+      throw new BadRequestException("La cantidad no puede ser negativa");
+    }
+
+    const location = await this.prisma.location.findUnique({ where: { id: locationId } });
+    if (!location) throw new NotFoundException("Ubicación no encontrada");
+
+    const { antes, delta } = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.stockLevel.findUnique({
+        where: { variantId_locationId: { variantId, locationId } },
+      });
+      const actual = existing ? dec(existing.qty) : 0;
+      const d = nuevaCantidad - actual;
+      if (d === 0) return { antes: actual, delta: 0 as number };
+
+      await tx.stockLevel.upsert({
+        where: { variantId_locationId: { variantId, locationId } },
+        update: { qty: nuevaCantidad },
+        create: { variantId, locationId, qty: nuevaCantidad },
+      });
+      await tx.stockMove.create({
+        data: {
+          variantId,
+          locationId,
+          qty: d,
+          motivo: "ajuste",
+          ref: params.ref ?? "ajuste manual",
+          userId: params.userId ?? null,
+        },
+      });
+      return { antes: actual, delta: d };
+    });
+
+    if (delta === 0) {
+      return { resultado: { antes, despues: antes, delta, sinCambio: true, notificado: [] as string[] } };
+    }
+    const notificado = await this.monitor.afterStockChange(variantId);
+    return { resultado: { antes, despues: nuevaCantidad, delta, sinCambio: false, notificado: notificado.canales } };
+  }
+
   // ------------------------------------------------------------- Transferir
   async mover(params: {
     variantId: number;
@@ -209,23 +260,6 @@ export class InventarioService {
 
     const notificado = await this.monitor.afterStockChange(variantId);
     return { ok: true, notificado: notificado.canales };
-  }
-
-  // ------------------------------------------------------- Ensamble con BOM
-  /**
-   * Registra un ensamble de un combo (producto con BOM). Consume los
-   * componentes EXACTOS resolviendo la variante correcta por atributos
-   * (multi-nivel) y suma el producto terminado a la ubicación indicada.
-   */
-  async ensamble(params: EnsambleParams) {
-    return ensamblar(
-      {
-        prisma: this.prisma,
-        resolveComponentVariant: (p, c) => this.productos.resolveComponentVariant(p, c),
-        afterStockChange: (v) => this.monitor.afterStockChange(v),
-      },
-      params,
-    );
   }
 
   // ------------------------------------------------------------- Export CSV

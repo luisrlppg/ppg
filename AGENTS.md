@@ -56,18 +56,26 @@ por compatibilidad en la respuesta.
 - `POST /productos/:id/materializar` — crear UNA variante puntual (idempotente)
 - `DELETE /productos/variantes/:vid` — eliminar una variante **sin historial** (si tiene stock/ventas/OFs/reportes/usos como componente → 409 con motivo)
 - `DELETE /productos/:id/definitivo` — hard delete de producto sin historial; `DELETE /productos/:id` es **desactivar** (soft)
+- `POST /api/clientes/importar` — importa CSV (nombre,telefono,direccion,email); devuelve `{ creados, omitidos }`
+- `DELETE /api/clientes/:id/definitivo` — hard delete de cliente **sin ventas** (si tiene → 409 con motivo); `DELETE /api/clientes/:id` es **desactivar** (soft)
+- `POST /api/inventario/ajuste` — fija la cantidad absoluta de (variante, ubicación) y registra un `StockMove` con el delta y `motivo: ajuste`
+- `POST /api/fabricacion` — alta **manual** de OF (`{ variantId, cantidad, notas? }`); netea los componentes en cascada y crea la OF (exactamente N). La operación de ensamble de inventario fue **retirada**
+- `GET /api/fabricacion/reponer/preview?objetivo=minimo|maximo` — cuántas OFs se crearían (no escribe) · `POST /api/fabricacion/reponer` — crea las OFs en cascada hasta el mínimo o máximo
+- Las OFs tienen `origen`: `venta` | `manual` | `reposicion_minimo` | `reposicion_maximo` (tipo = 1 componente → `fabricacion`, 2+ → `ensamble`)
 - `GET /public/productos` — productos con ≥1 variante activa y publicada (grid de Nueva venta)
 - `GET /public/productos/:id/pasos` — pasos guiados con opciones (variantes publicadas del producto navegado)
 - `GET /public/catalog` — variantes publicadas con precios/empaques
 
 ## UI pages
 - `/` — Inicio: dashboard de pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos
-- `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base). Acción **Eliminar** por fila: intenta hard delete y, si hay historial (409), ofrece **Desactivar**
+- `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base). Alterna vista **Tabla/Grid** (`Segmented`; preferencia en `localStorage` `ppg.productos.vista`, `lib/local-store.ts`); el grid usa `components/productos/producto-card.tsx` (imagen o placeholder). Acción **Eliminar** por fila/tarjeta: intenta hard delete y, si hay historial (409), ofrece **Desactivar**
 - `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Eliminar producto (header) y eliminar variante (columna Acciones), ambos con fallback a desactivar/bloqueo explicado. La selección de valores por atributo se guarda en `localStorage` (`ppg.producto.<id>.sel`, `lib/local-store.ts`) y se restaura al recargar. Empaques extraídos en `components/productos/empaques-por-variante.tsx`
+- `/clientes` — alta/edición en **modal**, importación CSV en **modal**, y vista **Tabla/Grid** (`Segmented`; preferencia en `localStorage` `ppg.clientes.vista`). El grid usa `components/clientes/cliente-card.tsx` (avatar de iniciales). Acción **Eliminar** por fila/tarjeta: intenta hard delete y, si hay ventas (409), ofrece **Desactivar**
 - `/catalogos` — atributos globales, categorías, empaques (tabs por sección; `components/catalogos/atributos-globales.tsx`)
 - `/tienda/[productId]` — storefront público con pasos guiados
 - `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs
-- `/fabricacion` — órdenes de fabricación
+- `/fabricacion` — OFs con **origen** (venta · cliente, manual, reposición mín/máx) y filtro por origen. Acciones: **+ Nueva OF** (modal con búsqueda de variante) y **Reponer** (selector mín/máx con preview y confirmación). Detalle con líneas de componentes, Iniciar/Cancelar.
+- `/inventario` — existencia con toggle **Por variante / Matriz por ubicación**. Botones **Entrada**, **Salida**, **Transferir** (modal adaptativo). El **ajuste** (conteo físico) se hace editando la cantidad en las celdas de la **Matriz** (`components/inventario/cantidad-editable.tsx`): Enter/blur confirman, Esc cancela. (Apertura y Ensamble retirados; los enums del backend los conservan sin uso.)
 - **UI compartida (`apps/web/src/components/ui/`)** — `PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`, `Segmented` (+ tokens/utilidades en `app/globals.css`). Úsalos en vez de inventar clases nuevas
 
 ## Scripts útiles
