@@ -21,6 +21,10 @@ export default function InventarioPage() {
   const [msg, setMsg] = useState("");
   const [vista, setVista] = useState<Vista>("ubicacion");
   const [busqueda, setBusqueda] = useState("");
+  const [productoSelId, setProductoSelId] = useState<number | null>(null);
+  const [filtros, setFiltros] = useState<Record<string, Set<string>>>({});
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [coincidenciasAbiertas, setCoincidenciasAbiertas] = useState(false);
 
   const cargar = useCallback(async () => {
     const [e, l, m] = await Promise.all([
@@ -36,6 +40,17 @@ export default function InventarioPage() {
   useEffect(() => {
     cargar().catch((e) => setError(e.message));
   }, [cargar]);
+
+  // Cierra el dropdown de búsqueda al hacer click fuera.
+  useEffect(() => {
+    if (!coincidenciasAbiertas) return;
+    function onDown(e: MouseEvent) {
+      const t = e.target as HTMLElement;
+      if (!t.closest(".buscador-wrap")) setCoincidenciasAbiertas(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [coincidenciasAbiertas]);
 
   const notify = (e: Error | null, okMsg: string) => {
     if (e) {
@@ -157,11 +172,84 @@ export default function InventarioPage() {
 
   const seleccion = exist.find((x) => x.variantId === selId);
   const disponible = seleccion?.porUbicacion[Number(ubiId)]?.qty ?? 0;
-  const filtradas = exist.filter((v) => {
-    if (!busqueda.trim()) return true;
-    const q = busqueda.toLowerCase();
-    return v.producto.toLowerCase().includes(q) || v.nombre.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q);
-  });
+
+  // ------------------------------------------------- Filtro producto/atributos
+  // Productos disponibles (para el autocompletado del buscador).
+  const productos = (() => {
+    const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number }>();
+    for (const v of exist) {
+      let g = map.get(v.productoId);
+      if (!g) { g = { productoId: v.productoId, producto: v.producto, uom: v.uom, variantes: 0 }; map.set(v.productoId, g); }
+      g.variantes += 1;
+    }
+    return [...map.values()].sort((a, b) => a.producto.localeCompare(b.producto));
+  })();
+
+  const coincidenciasProducto = (() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return [];
+    return productos.filter((p) => p.producto.toLowerCase().includes(q)).slice(0, 8);
+  })();
+
+  const productoSel = productos.find((p) => p.productoId === productoSelId) ?? null;
+
+  // Atributos del producto seleccionado (atributo → valores presentes).
+  const atributosProducto = (() => {
+    if (!productoSel) return [] as { attribute: string; valores: string[] }[];
+    const map = new Map<string, Set<string>>();
+    for (const v of exist) {
+      if (v.productoId !== productoSel.productoId) continue;
+      for (const a of v.valoracion) {
+        const s = map.get(a.attribute) ?? new Set<string>();
+        s.add(a.valor);
+        map.set(a.attribute, s);
+      }
+    }
+    return [...map.entries()]
+      .map(([attribute, set]) => ({ attribute, valores: [...set].sort() }))
+      .sort((a, b) => a.attribute.localeCompare(b.attribute));
+  })();
+
+  const seleccionarProducto = (productoId: number) => {
+    setProductoSelId(productoId);
+    setBusqueda("");
+    setCoincidenciasAbiertas(false);
+    setFiltros({});
+    setShowFiltros(true);
+  };
+
+  const limpiarFiltro = () => {
+    setProductoSelId(null);
+    setFiltros({});
+    setBusqueda("");
+    setShowFiltros(false);
+  };
+
+  const toggleValor = (attribute: string, valor: string) => {
+    setFiltros((prev) => {
+      const set = new Set(prev[attribute] ?? []);
+      if (set.has(valor)) set.delete(valor);
+      else set.add(valor);
+      const next = { ...prev };
+      if (set.size === 0) delete next[attribute];
+      else next[attribute] = set;
+      return next;
+    });
+  };
+
+  const nFiltrosActivos = Object.values(filtros).reduce((a, s) => a + s.size, 0);
+
+  const pasaFiltro = (v: Existencia) => {
+    if (!productoSel) return true;
+    if (v.productoId !== productoSel.productoId) return false;
+    for (const [attribute, valores] of Object.entries(filtros)) {
+      const tiene = v.valoracion.some((a) => a.attribute === attribute && valores.has(a.valor));
+      if (!tiene) return false;
+    }
+    return true;
+  };
+
+  const filtradas = exist.filter(pasaFiltro);
   const qtyEn = (v: Existencia, locId: number) => v.porUbicacion[locId]?.qty ?? 0;
   const grupos = filtradas
     .map((v) => ({
@@ -170,24 +258,16 @@ export default function InventarioPage() {
     }))
     .filter((g) => g.filas.length > 0);
 
-  // Totales por producto: suma el stock de todas sus variantes (misma uom).
-  // Se respeta la búsqueda: aparece un producto si su nombre o alguna variante coincide.
+  // Totales por producto (respeta el filtro de atributos del producto seleccionado).
   const gruposProducto = (() => {
-    const q = busqueda.trim().toLowerCase();
-    const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number; stock: number; coincide: boolean }>();
-    for (const v of exist) {
+    const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number; stock: number }>();
+    for (const v of filtradas) {
       let g = map.get(v.productoId);
-      if (!g) {
-        g = { productoId: v.productoId, producto: v.producto, uom: v.uom, variantes: 0, stock: 0, coincide: false };
-        map.set(v.productoId, g);
-      }
+      if (!g) { g = { productoId: v.productoId, producto: v.producto, uom: v.uom, variantes: 0, stock: 0 }; map.set(v.productoId, g); }
       g.variantes += 1;
       g.stock += v.stockActual;
-      if (!q || v.producto.toLowerCase().includes(q) || v.nombre.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q)) {
-        g.coincide = true;
-      }
     }
-    return [...map.values()].filter((g) => g.coincide).sort((a, b) => a.producto.localeCompare(b.producto));
+    return [...map.values()].sort((a, b) => a.producto.localeCompare(b.producto));
   })();
 
   return (
@@ -227,7 +307,35 @@ export default function InventarioPage() {
           Transferir
         </button>
         <div className="grow" />
-        <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar producto, variante o SKU…" style={{ maxWidth: 300 }} />
+        {productoSel ? (
+          <span className="filtro-activo">
+            <strong>{productoSel.producto}</strong>
+            {nFiltrosActivos > 0 && <span className="muted"> · {nFiltrosActivos} filtro(s)</span>}
+            <button type="button" className="btn ghost sm" onClick={() => setShowFiltros(true)}>Atributos</button>
+            <button type="button" className="btn ghost sm" onClick={limpiarFiltro} aria-label="Quitar filtro">×</button>
+          </span>
+        ) : (
+          <div className="buscador-wrap">
+            <input
+              value={busqueda}
+              onChange={(e) => { setBusqueda(e.target.value); setCoincidenciasAbiertas(true); }}
+              onFocus={() => setCoincidenciasAbiertas(true)}
+              placeholder="Buscar producto…"
+              style={{ maxWidth: 300 }}
+            />
+            {coincidenciasAbiertas && coincidenciasProducto.length > 0 && (
+              <ul className="buscador-lista">
+                {coincidenciasProducto.map((p) => (
+                  <li key={p.productoId}>
+                    <button type="button" onClick={() => seleccionarProducto(p.productoId)}>
+                      {p.producto} <span className="muted small">({p.variantes})</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <Segmented
           value={vista}
           onChange={(v) => setVista(v as Vista)}
@@ -259,8 +367,14 @@ export default function InventarioPage() {
                       <strong>
                         {v.producto} <span className="muted">({v.uom})</span>
                       </strong>
-                      <div className="small muted">
-                        {v.nombre} · {v.sku}
+                      <div className="attr-list">
+                        {v.valoracion.length > 0
+                          ? v.valoracion.map((a) => (
+                              <span key={a.attribute} className="attr-item">
+                                <span className="attr-name">{a.attribute}</span> {a.valor}
+                              </span>
+                            ))
+                          : <span className="muted small">—</span>}
                       </div>
                     </td>
                     <td className="num">
@@ -328,8 +442,14 @@ export default function InventarioPage() {
                       {i === 0 && (
                         <td rowSpan={g.filas.length}>
                           <strong>{g.v.producto}</strong>
-                          <div className="small muted">
-                            {g.v.nombre} · {g.v.sku}
+                          <div className="attr-list">
+                            {g.v.valoracion.length > 0
+                              ? g.v.valoracion.map((a) => (
+                                  <span key={a.attribute} className="attr-item">
+                                    <span className="attr-name">{a.attribute}</span> {a.valor}
+                                  </span>
+                                ))
+                              : <span className="muted small">—</span>}
                           </div>
                         </td>
                       )}
@@ -463,6 +583,50 @@ export default function InventarioPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* --- Modal: filtros por atributos --- */}
+      {showFiltros && productoSel && (
+        <Modal title={`Filtrar: ${productoSel.producto}`} onClose={() => setShowFiltros(false)} size="lg">
+          {atributosProducto.length === 0 ? (
+            <p className="muted small">Este producto no tiene atributos definidos.</p>
+          ) : (
+            <>
+              <p className="muted small" style={{ marginTop: 0 }}>
+                Selecciona los valores. Dentro de un atributo es “alguno de”; entre atributos se combinan (Y).
+                La tabla de atrás ya está filtrada.
+              </p>
+              {atributosProducto.map(({ attribute, valores }) => (
+                <div key={attribute} className="filtro-attr">
+                  <div className="filtro-attr-nombre">{attribute}</div>
+                  <div className="filtro-attr-valores">
+                    {valores.map((valor) => {
+                      const activo = filtros[attribute]?.has(valor) ?? false;
+                      return (
+                        <button
+                          key={valor}
+                          type="button"
+                          className={`chip-toggle ${activo ? "on" : ""}`}
+                          onClick={() => toggleValor(attribute, valor)}
+                        >
+                          {valor}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+          <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+            <button type="button" className="btn ghost" onClick={() => setFiltros({})} disabled={nFiltrosActivos === 0}>
+              Limpiar filtros
+            </button>
+            <button type="button" className="btn primary" onClick={() => setShowFiltros(false)}>
+              Cerrar
+            </button>
+          </div>
         </Modal>
       )}
 

@@ -12,3 +12,5 @@ coverage/
 .dev/
 .DS_Store
 uploads/
+scripts/odoo-data/
+scripts/odoo-migration/

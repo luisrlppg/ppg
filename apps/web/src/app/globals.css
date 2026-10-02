@@ -902,6 +902,112 @@ select:focus {
   justify-content: flex-end;
 }
 
+/* ---- Buscador con autocompletado (inventario) ---- */
+.buscador-wrap {
+  position: relative;
+  max-width: 300px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.buscador-lista {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.buscador-lista button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.buscador-lista button:hover {
+  background: var(--info-bg);
+}
+
+/* ---- Filtro activo + chips de atributo ---- */
+.filtro-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--info-bg);
+  border: 1px solid var(--info-line);
+  border-radius: 999px;
+  padding: 4px 6px 4px 14px;
+}
+
+.filtro-attr {
+  margin-bottom: 12px;
+}
+
+.filtro-attr-nombre {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.filtro-attr-valores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-toggle {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  color: inherit;
+}
+
+.chip-toggle:hover {
+  border-color: var(--brand);
+}
+
+.chip-toggle.on {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+/* ---- Atributos de variante (inventario) ---- */
+.attr-list {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.attr-item:not(:last-child)::after {
+  content: " ·";
+  color: var(--line);
+}
+
+.attr-name {
+  color: var(--muted-2, #9aa0a6);
+}
+
 /* ---- Celda de cantidad editable (ajuste de inventario) ---- */
 .cell-editable {
   width: 100%;

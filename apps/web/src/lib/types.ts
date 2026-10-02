@@ -113,6 +113,7 @@ export interface Existencia {
   publicado: boolean;
   estado: "normal" | "bajo" | "critico";
   porUbicacion: Record<number, { location: string; qty: number }>;
+  valoracion: { attribute: string; valor: string }[];
 }
 
 export interface StockBajo {

@@ -41,6 +41,7 @@ export class InventarioService {
       include: {
         product: { select: { id: true, nombre: true, uom: true, activo: true } },
         stockLevels: { include: { location: true } },
+        variantAttributes: { include: { attribute: true, value: true } },
       },
       orderBy: { nombre: "asc" },
     });
@@ -58,6 +59,9 @@ export class InventarioService {
           productoId: v.productId,
           producto: v.product.nombre,
           uom: v.product.uom,
+          valoracion: v.variantAttributes
+            .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+            .sort((a, b) => a.attribute.localeCompare(b.attribute)),
           stockActual: total,
           stockMin: dec(v.stockMin),
           stockMax: dec(v.stockMax),
