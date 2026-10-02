@@ -46,21 +46,24 @@ por compatibilidad en la respuesta.
 ## API endpoints relevantes
 - `GET /api/productos` — lista de productos
 - `GET /api/productos/:id` — detalle con componentes
-- `GET /api/productos/:id/grid` — combinaciones posibles (materializable puntual)
+- `GET /api/productos/:id/grid` — **resumen ligero** `{ ejes, existentes }` (ya no devuelve el cartesiano; el front calcula la combinación elegida)
 - `GET /api/catalogos/atributos` — todos los atributos globales
 - `GET /api/catalogos/atributos/producto/:id` — propios + heredados
 - `POST /catalogos/atributos` — crear atributo global
 - `POST /catalogos/atributos/:id/asignar/:productoId` — asignar
 - `DELETE /catalogos/atributos/:id/desasignar/:productoId` — desasignar
 - `PUT /productos/:id/ejes` — asignar atributos al producto
+- `POST /productos/:id/materializar` — crear UNA variante puntual (idempotente)
+- `DELETE /productos/variantes/:vid` — eliminar una variante **sin historial** (si tiene stock/ventas/OFs/reportes/usos como componente → 409 con motivo)
+- `DELETE /productos/:id/definitivo` — hard delete de producto sin historial; `DELETE /productos/:id` es **desactivar** (soft)
 - `GET /public/productos` — productos con ≥1 variante activa y publicada (grid de Nueva venta)
 - `GET /public/productos/:id/pasos` — pasos guiados con opciones (variantes publicadas del producto navegado)
 - `GET /public/catalog` — variantes publicadas con precios/empaques
 
 ## UI pages
 - `/` — Inicio: dashboard de pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos
-- `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base)
-- `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Empaques extraídos en `components/productos/empaques-por-variante.tsx`
+- `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base). Acción **Eliminar** por fila: intenta hard delete y, si hay historial (409), ofrece **Desactivar**
+- `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Eliminar producto (header) y eliminar variante (columna Acciones), ambos con fallback a desactivar/bloqueo explicado. La selección de valores por atributo se guarda en `localStorage` (`ppg.producto.<id>.sel`, `lib/local-store.ts`) y se restaura al recargar. Empaques extraídos en `components/productos/empaques-por-variante.tsx`
 - `/catalogos` — atributos globales, categorías, empaques (tabs por sección; `components/catalogos/atributos-globales.tsx`)
 - `/tienda/[productId]` — storefront público con pasos guiados
 - `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs

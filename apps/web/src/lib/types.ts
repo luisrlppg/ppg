@@ -66,9 +66,16 @@ export interface GridCombo {
   sku: string;
 }
 
+export interface GridVarianteExistente {
+  varianteId: number;
+  valueIds: number[];
+  nombre: string;
+  sku: string;
+}
+
 export interface Grid {
   ejes: { attributeId: number; nombre: string; valores: { id: number; valor: string }[]; sortOrder: number }[];
-  combinaciones: GridCombo[];
+  existentes: GridVarianteExistente[];
 }
 
 export interface ProductoDetalle {

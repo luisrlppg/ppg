@@ -133,6 +133,12 @@ export class ProductosController {
     return this.productos.deactivate(id);
   }
 
+  @Roles("admin")
+  @Delete(":id/definitivo")
+  eliminarProducto(@Param("id", ParseIntPipe) id: number) {
+    return this.productos.eliminarProducto(id);
+  }
+
   // ------------------------------------------------ Ejes del grid y BOM
   @Roles("admin", "supervisor")
   @Put(":id/ejes")
@@ -181,12 +187,6 @@ export class ProductosController {
     return this.productos.materializar(id, dto.valueIds.map(Number));
   }
 
-  @Roles("admin", "supervisor")
-  @Post(":id/generar")
-  generar(@Param("id", ParseIntPipe) id: number) {
-    return this.productos.generar(id);
-  }
-
   // ------------------------------------------------------- Variante
   @Roles("admin", "supervisor")
   @Patch("variantes/:vid/precio")
@@ -198,6 +198,12 @@ export class ProductosController {
   @Patch("variantes/:vid")
   updateVariante(@Param("vid", ParseIntPipe) vid: number, @Body() dto: UpdateVarianteDto) {
     return this.productos.updateVariant(vid, dto);
+  }
+
+  @Roles("admin", "supervisor")
+  @Delete("variantes/:vid")
+  eliminarVariante(@Param("vid", ParseIntPipe) vid: number) {
+    return this.productos.eliminarVariante(vid);
   }
 
   @Roles("admin", "supervisor")

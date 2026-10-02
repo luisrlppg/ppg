@@ -1,10 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@ppg/db";
 import { PrismaService } from "../prisma/prisma.service";
 import { dec, toTipoComponente, toUom } from "../common/util";
-import { gridProducto, Grid, MaterializableCombo } from "./productos.grid";
+import {
+  gridProducto,
+  Grid,
+  ejesProducto,
+  variantesExistentes,
+  comboKey,
+  slugify,
+} from "./productos.grid";
 
-export type { Grid, MaterializableCombo } from "./productos.grid";
+export type { Grid } from "./productos.grid";
 
 @Injectable()
 export class ProductosService {
@@ -394,27 +401,33 @@ export class ProductosService {
   }
 
   async materializar(productId: number, valueIds: number[]) {
-    const grid = await gridProducto(this.prisma, productId);
-    const axisSizes = grid.ejes.map((e) => e.valores.length);
-    if (valueIds.length !== axisSizes.length) {
-      throw new BadRequestException(`Se requieren ${axisSizes.length} valores de atributo`);
-    }
-    const combo = grid.combinaciones.find(
-      (c) => c.valueIds.length === valueIds.length && c.valueIds.every((v, i) => v === valueIds[i]),
-    );
-    if (!combo) throw new BadRequestException("Combinación no válida para este producto");
-
-    if (combo.varianteId) return combo.varianteId;
-
     const p = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!p) throw new NotFoundException("Producto no encontrado");
+
+    const ejes = await ejesProducto(this.prisma, productId);
+    if (valueIds.length !== ejes.length) {
+      throw new BadRequestException(`Se requieren ${ejes.length} valores de atributo`);
+    }
+    // Toda combinación de valores permitidos es válida (no hay reglas de compatibilidad).
+    for (let i = 0; i < ejes.length; i++) {
+      if (!ejes[i].valores.some((v) => v.id === valueIds[i])) {
+        throw new BadRequestException("Combinación no válida para este producto");
+      }
+    }
+
+    const existentes = await variantesExistentes(this.prisma, productId, ejes);
+    const key = comboKey(valueIds);
+    const ya = existentes.find((e) => comboKey(e.valueIds) === key);
+    if (ya) return ya.varianteId;
+
+    const valoracion = valueIds.map((id, i) => ejes[i].valores.find((v) => v.id === id)?.valor ?? String(id));
     const variant = await this.prisma.productVariant.create({
       data: {
         productId,
-        nombre: combo.nombre,
-        sku: combo.sku,
+        nombre: valoracion.join(" "),
+        sku: `${p.skuBase}-${slugify(valoracion)}`,
         variantAttributes: {
-          create: valueIds.map((valueId, i) => ({ attributeId: grid.ejes[i].attributeId, valueId })),
+          create: valueIds.map((valueId, i) => ({ attributeId: ejes[i].attributeId, valueId })),
         },
       },
     });
@@ -422,16 +435,93 @@ export class ProductosService {
     return variant.id;
   }
 
-  async generar(productId: number): Promise<{ creadas: number }> {
-    const grid = await gridProducto(this.prisma, productId);
-    let creadas = 0;
-    for (const c of grid.combinaciones) {
-      if (!c.varianteId) {
-        await this.materializar(productId, c.valueIds);
-        creadas++;
-      }
+  // ------------------------------------------------------ Eliminar
+  /** Bloqueos de negocio que impiden borrar una variante. */
+  private async bloqueosVariante(variantId: number): Promise<string[]> {
+    const [stock, movimientos, cambiosPrecio, lineasVenta, ofs, lineasOF, reportes] = await Promise.all([
+      this.prisma.stockLevel.count({ where: { variantId } }),
+      this.prisma.stockMove.count({ where: { variantId } }),
+      this.prisma.priceChange.count({ where: { variantId } }),
+      this.prisma.salesOrderLine.count({ where: { variantId } }),
+      this.prisma.manufacturingOrder.count({ where: { variantId } }),
+      this.prisma.manufacturingOrderLine.count({ where: { componentVariantId: variantId } }),
+      this.prisma.productionReportLine.count({ where: { variantId } }),
+    ]);
+    const motivos: string[] = [];
+    if (stock) motivos.push(`${stock} registro(s) de stock`);
+    if (movimientos) motivos.push(`${movimientos} movimiento(s) de stock`);
+    if (cambiosPrecio) motivos.push(`${cambiosPrecio} cambio(s) de precio`);
+    if (lineasVenta) motivos.push(`${lineasVenta} línea(s) de venta`);
+    if (ofs) motivos.push(`${ofs} orden(es) de fabricación`);
+    if (lineasOF) motivos.push(`${lineasOF} uso(s) como componente en OF`);
+    if (reportes) motivos.push(`${reportes} línea(s) de reporte de producción`);
+    return motivos;
+  }
+
+  /** Elimina una variante si no tiene historial. Lanza 409 con los motivos si lo tiene. */
+  async eliminarVariante(variantId: number) {
+    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+    if (!variant) throw new NotFoundException("Variante no encontrada");
+
+    const motivos = await this.bloqueosVariante(variantId);
+    if (motivos.length > 0) {
+      throw new ConflictException(
+        `No se puede eliminar "${variant.nombre}": tiene ${motivos.join(", ")}. Puedes desactivarla en su lugar.`,
+      );
     }
-    return { creadas };
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.variantAttribute.deleteMany({ where: { variantId } });
+      await tx.variantPackaging.deleteMany({ where: { variantId } });
+      await tx.productVariant.delete({ where: { id: variantId } });
+    });
+    return { ok: true };
+  }
+
+  /** Elimina (hard delete) un producto sin historial. Lanza 409 con los motivos si lo tiene. */
+  async eliminarProducto(productId: number) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { variants: { select: { id: true, nombre: true } } },
+    });
+    if (!product) throw new NotFoundException("Producto no encontrado");
+
+    const motivos: string[] = [];
+
+    const usadoComoComponente = await this.prisma.productComponent.count({ where: { componentId: productId } });
+    if (usadoComoComponente) {
+      motivos.push(`se usa como componente en ${usadoComoComponente} BOM(s) de otros productos`);
+    }
+
+    const bloqueosVariantes: string[] = [];
+    for (const v of product.variants) {
+      const b = await this.bloqueosVariante(v.id);
+      if (b.length > 0) bloqueosVariantes.push(`${v.nombre}: ${b.join(", ")}`);
+    }
+    if (bloqueosVariantes.length > 0) {
+      motivos.push(`variantes con historial → ${bloqueosVariantes.join(" | ")}`);
+    }
+
+    if (motivos.length > 0) {
+      throw new ConflictException(
+        `No se puede eliminar el producto "${product.nombre}": ${motivos.join("; ")}. Puedes desactivarlo en su lugar.`,
+      );
+    }
+
+    const variantIds = product.variants.map((v) => v.id);
+    await this.prisma.$transaction(async (tx) => {
+      if (variantIds.length > 0) {
+        await tx.variantAttribute.deleteMany({ where: { variantId: { in: variantIds } } });
+        await tx.variantPackaging.deleteMany({ where: { variantId: { in: variantIds } } });
+        await tx.productVariant.deleteMany({ where: { id: { in: variantIds } } });
+      }
+      await tx.productAttributeValue.deleteMany({ where: { productId } });
+      await tx.productAttributeLine.deleteMany({ where: { productId } });
+      await tx.productPasso.deleteMany({ where: { productId } });
+      await tx.productComponent.deleteMany({ where: { productId } });
+      await tx.product.delete({ where: { id: productId } });
+    });
+    return { ok: true };
   }
 
   // --------------------------------------------------- Resolver BOM (E1)

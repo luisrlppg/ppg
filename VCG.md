@@ -66,13 +66,24 @@ Todos los módulos autenticados usan `JwtAuthGuard + RolesGuard` y tienen 3 role
   - `setEjes` 201‑217 · `setComponentes` (BOM) 247‑266
   - `setValoresPermitidos` 218‑246 — restringe los **ejes**: subconjunto de valores del atributo válidos para el producto (tabla `ProductAttributeValue`). Lo consume `PUT /productos/:id/ejes/:attributeId/valores`
   - Variantes: `variantesDeProducto` 268‑283 · `buscarVariantes` 284‑315 · `createVariant` 316‑332 · `updateVariant` 333‑339 · `setVariantPrice` 340‑362 · `setPackagings` 363‑374 · `inheritPackagingsToVariant` 375‑390
-  - **`grid` 392‑395 · `materializar` 396‑424 · `generar` 425‑436** (delegan en `productos.grid.ts`)
-  - **`resolveComponentVariant`** 442‑ (resuelve variante de componente BOM; lo consumen ventas e inventario)
-- **`productos.grid.ts`** (93 líneas): lógica del **grid cartesiano** (`gridProducto`, `slugify`) +
-  tipos `Grid`, `MaterializableCombo`. A él delegan `grid`/`materializar`/`generar`; los tipos se re-exportan desde `productos.service`.
-  - **Ejes con subconjunto de valores:** `gridProducto` usa `valoresPermitidosLote` (`common/valores-permitidos.ts`), batcheado (sin N+1 por eje).
+  - **`grid` · `materializar`** (delegan en `productos.grid.ts`)
+  - **`eliminarVariante`** (chequea historial: stock, movimientos, precios, ventas, OFs, uso como componente, reportes; 409 con motivos) ·
+    **`eliminarProducto`** (hard delete si sus variantes no tienen historial y no se usa como componente; 409 con motivos). Lo consume
+    `DELETE /productos/variantes/:vid` y `DELETE /productos/:id/definitivo` (`DELETE /productos/:id` sigue siendo desactivar).
+  - **`resolveComponentVariant`** (resuelve variante de componente BOM; lo consumen ventas e inventario)
+- **`productos.grid.ts`**: `slugify` + tipos `GridEje`, `GridVarianteExistente`, `Grid`.
+  - **`ejesProducto`**: ejes (atributo + valores permitidos) en O(ejes), **sin** producto cartesiano.
+  - **`variantesExistentes`**: variantes materializadas con `valueIds` alineados al orden de ejes (acotado por nº de variantes).
+  - **`gridProducto` = `{ ejes, existentes }`**: ya **no** devuelve `combinaciones` (antes generaba el cartesiano completo:
+    p.ej. producto 15 → 489.888 combos / 160 MB / ~7,5 s; ahora ~1,8 KB / ~25 ms).
+  - **`materializar`** valida `valueIds` contra los ejes y busca/crea la variante puntual (idempotente), sin cartesiano.
+  - **Nota:** la generación masiva (`generar`/`combinacionesCartesianas`) fue **retirada** (código muerto, sin uso en UI/scripts).
+  - **Ejes con subconjunto de valores:** `ejesProducto` usa `valoresPermitidosLote` (`common/valores-permitidos.ts`), batcheado (sin N+1 por eje).
     Si no hay filas en `ProductAttributeValue` para el par (producto, atributo) → se asumen **todos** los valores del atributo (fallback).
     El storefront (`getPasos`) y `atributos/producto` (con `permitidos`) usan el mismo helper.
+  - **Compatibilidad (solo ventas):** `getPasos` agrupa variantes **publicadas** por valor y el cliente cruza `variantId`
+    entre pasos para descartar opciones. Es un flujo independiente de `productos.grid.ts`; en el alta de producto
+    toda combinación de valores permitidos es válida (no hay reglas de compatibilidad).
 
 ### 3.2 Ventas / neteo / OFs  → `ventas/`
 - **Controller `ventas.controller.ts`** (107 líneas) — rutas `/api/ventas...`

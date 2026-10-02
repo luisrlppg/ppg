@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import EmpaquesPorVariante from "@/components/productos/empaques-por-variante";
 import { api } from "@/lib/api";
-import type { Atributo, Categoria, Grid, GridCombo, Packaging, ProductoDetalle, Variante } from "@/lib/types";
+import { borrarSeleccion, guardarSeleccion, leerSeleccion } from "@/lib/local-store";
+import type { Atributo, Categoria, Grid, GridCombo, GridVarianteExistente, Packaging, ProductoDetalle, Variante } from "@/lib/types";
 
 interface BomRow {
   componentId: number;
@@ -16,8 +18,22 @@ interface BomRow {
   tipo: string;
 }
 
+function slugify(valores: string[]): string {
+  return valores
+    .map((v) =>
+      v
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, ""),
+    )
+    .join("-");
+}
+
 export default function ProductoDetallePage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const prodId = Number(id);
   const [d, setD] = useState<ProductoDetalle | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -26,6 +42,14 @@ export default function ProductoDetallePage() {
   const [grid, setGrid] = useState<Grid | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+
+  // --- Eliminar producto / variante ---
+  const [confirmElimProducto, setConfirmElimProducto] = useState(false);
+  const [eliminandoProducto, setEliminandoProducto] = useState(false);
+  const [bloqueoProducto, setBloqueoProducto] = useState<string | null>(null);
+  const [varianteAEliminar, setVarianteAEliminar] = useState<Variante | null>(null);
+  const [eliminandoVariante, setEliminandoVariante] = useState(false);
+  const [bloqueoVariante, setBloqueoVariante] = useState<string | null>(null);
 
   // --- Atributos propios y heredados del producto ---
   const [propios, setPropios] = useState<Atributo[]>([]);
@@ -52,7 +76,7 @@ export default function ProductoDetallePage() {
   const cargar = useCallback(async () => {
     const [pd, g] = await Promise.all([
       api<ProductoDetalle>(`/productos/${prodId}`),
-      api<Grid | { ejes: never[]; combinaciones: never[] }>(`/productos/${prodId}/grid`),
+      api<Grid | { ejes: never[]; existentes: never[] }>(`/productos/${prodId}/grid`),
     ]);
     setD(pd);
     setGrid(g);
@@ -220,11 +244,18 @@ export default function ProductoDetallePage() {
   // ---------------------------------------------------------------- Grid
   async function materializar(combo: GridCombo) {
     try {
-      await api(`/productos/${prodId}/materializar`, {
+      const variantId = await api<number>(`/productos/${prodId}/materializar`, {
         method: "POST",
         body: JSON.stringify({ valueIds: combo.valueIds }),
       });
-      await cargar();
+      setGrid((prev) => {
+        if (!prev || prev.existentes.some((e) => e.varianteId === variantId)) return prev;
+        return {
+          ...prev,
+          existentes: [...prev.existentes, { varianteId: variantId, valueIds: combo.valueIds, nombre: combo.nombre, sku: combo.sku }],
+        };
+      });
+      setD(await api<ProductoDetalle>(`/productos/${prodId}`));
       notify(null, `Variante "${combo.nombre}" creada con empaques heredados.`);
     } catch (e) { notify(e as Error, ""); }
   }
@@ -233,11 +264,90 @@ export default function ProductoDetallePage() {
   const [selValores, setSelValores] = useState<Record<number, number>>({});
   const ejesGrid = grid?.ejes ?? [];
   const faltantesGrid = ejesGrid.filter((e) => !(selValores[e.attributeId] !== undefined)).length;
-  const comboSeleccionado: GridCombo | null = (() => {
+  const existentesPorKey = useMemo(() => {
+    const m = new Map<string, GridVarianteExistente>();
+    for (const e of grid?.existentes ?? []) m.set(e.valueIds.join(","), e);
+    return m;
+  }, [grid]);
+  const comboSeleccionado: GridCombo | null = useMemo(() => {
     if (!grid || faltantesGrid > 0) return null;
-    const valueIds = ejesGrid.map((e) => selValores[e.attributeId]);
-    return grid.combinaciones.find((c) => c.valueIds.length === valueIds.length && c.valueIds.every((v, i) => v === valueIds[i])) ?? null;
-  })();
+    const valueIds = grid.ejes.map((e) => selValores[e.attributeId]);
+    const valoracion = valueIds.map((id, i) => grid.ejes[i].valores.find((v) => v.id === id)?.valor);
+    if (valoracion.some((v) => v === undefined)) return null;
+    const existente = existentesPorKey.get(valueIds.join(","));
+    return {
+      valueIds,
+      valoracion: valoracion as string[],
+      varianteId: existente?.varianteId ?? null,
+      nombre: existente?.nombre ?? (valoracion as string[]).join(" "),
+      sku: existente?.sku ?? `${d?.skuBase ?? ""}-${slugify(valoracion as string[])}`,
+    };
+  }, [grid, faltantesGrid, selValores, existentesPorKey, d?.skuBase]);
+
+  // Persistencia local de la selección (por producto): al recargar se restaura
+  // lo último elegido y se podan los valores que ya no aplican.
+  const [selLista, setSelLista] = useState(false);
+  useEffect(() => {
+    setD(null);
+    setGrid(null);
+    setSelLista(false);
+    setSelValores({});
+  }, [prodId]);
+  useEffect(() => {
+    if (!grid || selLista) return;
+    const guardada = leerSeleccion(prodId);
+    const pruned: Record<number, number> = {};
+    for (const eje of grid.ejes) {
+      const val = guardada[eje.attributeId];
+      if (val !== undefined && eje.valores.some((v) => v.id === val)) pruned[eje.attributeId] = val;
+    }
+    if (Object.keys(pruned).length > 0) setSelValores(pruned);
+    setSelLista(true);
+  }, [grid, prodId, selLista]);
+  useEffect(() => {
+    if (!selLista) return;
+    guardarSeleccion(prodId, selValores);
+  }, [selValores, prodId, selLista]);
+
+  // -------------------------------------------------------- Eliminar
+  async function eliminarProducto() {
+    setEliminandoProducto(true);
+    try {
+      await api(`/productos/${prodId}/definitivo`, { method: "DELETE" });
+      borrarSeleccion(prodId);
+      router.push("/productos");
+    } catch (e) {
+      setConfirmElimProducto(false);
+      setBloqueoProducto((e as Error).message);
+      notify(e as Error, "");
+    } finally {
+      setEliminandoProducto(false);
+    }
+  }
+
+  async function desactivarProducto() {
+    try {
+      await api(`/productos/${prodId}`, { method: "DELETE" });
+      setBloqueoProducto(null);
+      router.push("/productos");
+    } catch (e) { setBloqueoProducto(null); notify(e as Error, ""); }
+  }
+
+  async function eliminarVariante(v: Variante) {
+    setEliminandoVariante(true);
+    try {
+      await api(`/productos/variantes/${v.id}`, { method: "DELETE" });
+      setGrid((prev) => prev ? { ...prev, existentes: prev.existentes.filter((e) => e.varianteId !== v.id) } : prev);
+      setD(await api<ProductoDetalle>(`/productos/${prodId}`));
+      setVarianteAEliminar(null);
+      notify(null, `Variante "${v.nombre}" eliminada.`);
+    } catch (e) {
+      setVarianteAEliminar(null);
+      setBloqueoVariante((e as Error).message);
+    } finally {
+      setEliminandoVariante(false);
+    }
+  }
 
   // -------------------------------------------------------------- Variantes
   const [editNombreVid, setEditNombreVid] = useState<number | null>(null);
@@ -351,7 +461,68 @@ export default function ProductoDetallePage() {
           )
         }
         subtitle={`SKU base: ${d.skuBase} · UOM: ${d.uom} · ${d.hasVariants ? "Con variantes" : "Variante única"}`}
+        actions={
+          <button type="button" className="btn danger" onClick={() => setConfirmElimProducto(true)}>
+            Eliminar producto
+          </button>
+        }
       />
+
+      {confirmElimProducto && (
+        <ConfirmDialog
+          title="Eliminar producto"
+          message={
+            <>
+              ¿Seguro que deseas eliminar <strong>{d.nombre}</strong>? Esta acción no se puede deshacer.
+              {d.variantes.length > 0 && <> Se eliminarán también sus {d.variantes.length} variante(s).</>}
+            </>
+          }
+          confirmLabel="Eliminar"
+          danger
+          loading={eliminandoProducto}
+          onConfirm={eliminarProducto}
+          onClose={() => setConfirmElimProducto(false)}
+        />
+      )}
+
+      {bloqueoProducto && (
+        <ConfirmDialog
+          title="No se pudo eliminar"
+          message={bloqueoProducto}
+          confirmLabel="Desactivar en su lugar"
+          cancelLabel="Cerrar"
+          onConfirm={desactivarProducto}
+          onClose={() => setBloqueoProducto(null)}
+        />
+      )}
+
+      {varianteAEliminar && (
+        <ConfirmDialog
+          title="Eliminar variante"
+          message={
+            <>
+              ¿Seguro que deseas eliminar la variante <strong>{varianteAEliminar.nombre}</strong> ({varianteAEliminar.sku})?
+              Esta acción no se puede deshacer.
+            </>
+          }
+          confirmLabel="Eliminar"
+          danger
+          loading={eliminandoVariante}
+          onConfirm={() => eliminarVariante(varianteAEliminar)}
+          onClose={() => setVarianteAEliminar(null)}
+        />
+      )}
+
+      {bloqueoVariante && (
+        <ConfirmDialog
+          title="No se pudo eliminar"
+          message={bloqueoVariante}
+          confirmLabel="Cerrar"
+          cancelLabel="Cancelar"
+          onConfirm={() => setBloqueoVariante(null)}
+          onClose={() => setBloqueoVariante(null)}
+        />
+      )}
 
       <HelpNote>
         Sigue este orden: <strong>datos base</strong>, <strong>atributos</strong> (ejes de combinación),{" "}
@@ -746,6 +917,7 @@ export default function ProductoDetallePage() {
                 <th>Stock</th>
                 <th>Publicada</th>
                 <th>Crítico</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -789,10 +961,15 @@ export default function ProductoDetallePage() {
                   <td>
                     <input type="checkbox" checked={v.longLead} onChange={() => toggle(v, "longLead")} style={{ width: "auto" }} />
                   </td>
+                  <td>
+                    <button type="button" className="btn ghost sm" onClick={() => setVarianteAEliminar(v)}>
+                      Eliminar
+                    </button>
+                  </td>
                 </tr>
               ))}
               {d.variantes.length === 0 && (
-                <tr><td colSpan={6} className="empty">Sin variantes. Crea una desde el grid de combinaciones arriba.</td></tr>
+                <tr><td colSpan={7} className="empty">Sin variantes. Crea una desde el grid de combinaciones arriba.</td></tr>
               )}
             </tbody>
           </table>

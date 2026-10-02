@@ -7,6 +7,7 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import type { Categoria, ProductoLite } from "@/lib/types";
 
@@ -25,6 +26,10 @@ export default function ProductosPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroCat, setFiltroCat] = useState("");
+
+  const [porEliminar, setPorEliminar] = useState<ProductoLite | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  const [bloqueo, setBloqueo] = useState<{ p: ProductoLite; motivo: string } | null>(null);
 
   const cargar = useCallback(async () => {
     const qs = new URLSearchParams();
@@ -119,6 +124,37 @@ export default function ProductosPage() {
     }
   }
 
+  // --------------------------------------------------------------- Eliminar
+  async function eliminar(p: ProductoLite) {
+    setEliminando(true);
+    try {
+      await api(`/productos/${p.id}/definitivo`, { method: "DELETE" });
+      setPorEliminar(null);
+      await cargar();
+      setError("");
+      setMsg(`Producto "${p.nombre}" eliminado.`);
+    } catch (e) {
+      setPorEliminar(null);
+      setBloqueo({ p, motivo: (e as Error).message });
+    } finally {
+      setEliminando(false);
+    }
+  }
+
+  async function desactivar(p: ProductoLite) {
+    try {
+      await api(`/productos/${p.id}`, { method: "DELETE" });
+      setBloqueo(null);
+      await cargar();
+      setError("");
+      setMsg(`Producto "${p.nombre}" desactivado.`);
+    } catch (e) {
+      setBloqueo(null);
+      setMsg("");
+      setError((e as Error).message);
+    }
+  }
+
   return (
     <AppShell>
       {error && <div className="error">{error}</div>}
@@ -181,6 +217,7 @@ export default function ProductosPage() {
                 <th>Categoría</th>
                 <th className="num">Variantes</th>
                 <th className="num">Stock</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -195,11 +232,16 @@ export default function ProductosPage() {
                   <td>{p.categoria ?? "—"}</td>
                   <td className="num">{p.variantes}</td>
                   <td className="num">{p.stockTotal}</td>
+                  <td>
+                    <button type="button" className="btn ghost sm" onClick={() => setPorEliminar(p)}>
+                      Eliminar
+                    </button>
+                  </td>
                 </tr>
               ))}
               {productos.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="empty">
+                  <td colSpan={8} className="empty">
                     Sin productos todavía. Usa “Nuevo producto” para crear el primero.
                   </td>
                 </tr>
@@ -287,6 +329,34 @@ export default function ProductosPage() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {porEliminar && (
+        <ConfirmDialog
+          title="Eliminar producto"
+          message={
+            <>
+              ¿Seguro que deseas eliminar <strong>{porEliminar.nombre}</strong>? Esta acción no se puede deshacer.
+              {porEliminar.variantes > 0 && <> Se eliminarán también sus {porEliminar.variantes} variante(s).</>}
+            </>
+          }
+          confirmLabel="Eliminar"
+          danger
+          loading={eliminando}
+          onConfirm={() => eliminar(porEliminar)}
+          onClose={() => setPorEliminar(null)}
+        />
+      )}
+
+      {bloqueo && (
+        <ConfirmDialog
+          title="No se pudo eliminar"
+          message={bloqueo.motivo}
+          confirmLabel="Desactivar en su lugar"
+          cancelLabel="Cerrar"
+          onConfirm={() => desactivar(bloqueo.p)}
+          onClose={() => setBloqueo(null)}
+        />
       )}
     </AppShell>
   );
