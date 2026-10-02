@@ -11,7 +11,7 @@ import { api } from "@/lib/api";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
 type Accion = "entrada" | "salida" | "mover";
-type Vista = "variante" | "matriz";
+type Vista = "variante" | "producto" | "ubicacion";
 
 export default function InventarioPage() {
   const [exist, setExist] = useState<Existencia[]>([]);
@@ -19,7 +19,7 @@ export default function InventarioPage() {
   const [movs, setMovs] = useState<Movimiento[]>([]);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [vista, setVista] = useState<Vista>("matriz");
+  const [vista, setVista] = useState<Vista>("ubicacion");
   const [busqueda, setBusqueda] = useState("");
 
   const cargar = useCallback(async () => {
@@ -163,6 +163,32 @@ export default function InventarioPage() {
     return v.producto.toLowerCase().includes(q) || v.nombre.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q);
   });
   const qtyEn = (v: Existencia, locId: number) => v.porUbicacion[locId]?.qty ?? 0;
+  const grupos = filtradas
+    .map((v) => ({
+      v,
+      filas: locs.map((l) => ({ l, qty: qtyEn(v, l.id) })).filter((f) => f.qty > 0),
+    }))
+    .filter((g) => g.filas.length > 0);
+
+  // Totales por producto: suma el stock de todas sus variantes (misma uom).
+  // Se respeta la búsqueda: aparece un producto si su nombre o alguna variante coincide.
+  const gruposProducto = (() => {
+    const q = busqueda.trim().toLowerCase();
+    const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number; stock: number; coincide: boolean }>();
+    for (const v of exist) {
+      let g = map.get(v.productoId);
+      if (!g) {
+        g = { productoId: v.productoId, producto: v.producto, uom: v.uom, variantes: 0, stock: 0, coincide: false };
+        map.set(v.productoId, g);
+      }
+      g.variantes += 1;
+      g.stock += v.stockActual;
+      if (!q || v.producto.toLowerCase().includes(q) || v.nombre.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q)) {
+        g.coincide = true;
+      }
+    }
+    return [...map.values()].filter((g) => g.coincide).sort((a, b) => a.producto.localeCompare(b.producto));
+  })();
 
   return (
     <AppShell>
@@ -184,9 +210,9 @@ export default function InventarioPage() {
         }
       />
 
-      <HelpNote>
+      <HelpNote closable>
         Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Para un{" "}
-        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad de la <strong>Matriz por ubicación</strong> y escribe
+        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad de <strong>Por ubicación</strong> y escribe
         la cantidad real: se registra la diferencia. El stock no puede quedar por debajo de cero.
       </HelpNote>
 
@@ -206,8 +232,9 @@ export default function InventarioPage() {
           value={vista}
           onChange={(v) => setVista(v as Vista)}
           options={[
+            { value: "ubicacion", label: "Por ubicación" },
             { value: "variante", label: "Por variante" },
-            { value: "matriz", label: "Matriz por ubicación" },
+            { value: "producto", label: "Por producto" },
           ]}
         />
       </div>
@@ -221,46 +248,66 @@ export default function InventarioPage() {
                   <th>Producto / Variante</th>
                   <th className="num">Stock</th>
                   <th className="num">Mín</th>
+                  <th className="num">Máx</th>
                   <th>Ubicaciones</th>
-                  <th>Estado</th>
-                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtradas.map((v) => (
                   <tr key={v.variantId}>
                     <td>
-                      <strong>{v.producto}</strong>
+                      <strong>
+                        {v.producto} <span className="muted">({v.uom})</span>
+                      </strong>
                       <div className="small muted">
                         {v.nombre} · {v.sku}
                       </div>
                     </td>
                     <td className="num">
-                      <strong>
-                        {v.stockActual} {v.uom}
-                      </strong>
+                      <strong>{v.stockActual}</strong>
                     </td>
-                    <td className="num">{v.stockMin > 0 ? `${v.stockMin} ${v.uom}` : "—"}</td>
+                    <td className="num">{v.stockMin > 0 ? v.stockMin : "—"}</td>
+                    <td className="num">{v.stockMax > 0 ? v.stockMax : "—"}</td>
                     <td className="small muted">
                       {Object.values(v.porUbicacion)
                         .map((l) => `${l.location}: ${l.qty}`)
                         .join(" · ") || "—"}
                     </td>
-                    <td>
-                      <span className={`badge ${v.estado}`}>{v.estado}</span>
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="btn ghost sm" onClick={() => abrir("entrada", v.variantId)}>
-                          Entrada
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
                 {filtradas.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="empty">Sin existencias que coincidan.</td>
+                    <td colSpan={5} className="empty">Sin existencias que coincidan.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          ) : vista === "producto" ? (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th className="num">Variantes</th>
+                  <th className="num">Stock</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gruposProducto.map((g) => (
+                  <tr key={g.productoId}>
+                    <td>
+                      <strong>
+                        {g.producto} <span className="muted">({g.uom})</span>
+                      </strong>
+                    </td>
+                    <td className="num">{g.variantes}</td>
+                    <td className="num">
+                      <strong>{g.stock}</strong>
+                    </td>
+                  </tr>
+                ))}
+                {gruposProducto.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="empty">Sin existencias que coincidan.</td>
                   </tr>
                 )}
               </tbody>
@@ -270,43 +317,32 @@ export default function InventarioPage() {
               <thead>
                 <tr>
                   <th>Producto / Variante</th>
-                  {locs.map((l) => (
-                    <th key={l.id} className="num">
-                      {l.nombre}
-                    </th>
-                  ))}
-                  <th className="num">Total</th>
-                  <th>Estado</th>
+                  <th>Ubicación</th>
+                  <th className="num">Cantidad</th>
                 </tr>
               </thead>
               <tbody>
-                {filtradas.map((v) => (
-                  <tr key={v.variantId}>
-                    <td>
-                      <strong>{v.producto}</strong>
-                      <div className="small muted">
-                        {v.nombre} · {v.sku}
-                      </div>
-                    </td>
-                    {locs.map((l) => {
-                      const q = qtyEn(v, l.id);
-                      return (
-                        <td key={l.id} className={`num ${q === 0 ? "matrix-cell-0" : ""}`}>
-                          <CantidadEditable value={q} onSave={(nueva) => ajustar(v.variantId, l.id, nueva)} />
+                {grupos.map((g) =>
+                  g.filas.map((f, i) => (
+                    <tr key={`${g.v.variantId}-${f.l.id}`}>
+                      {i === 0 && (
+                        <td rowSpan={g.filas.length}>
+                          <strong>{g.v.producto}</strong>
+                          <div className="small muted">
+                            {g.v.nombre} · {g.v.sku}
+                          </div>
                         </td>
-                      );
-                    })}
-                    <td className="num">
-                      <strong>{v.stockActual}</strong>
-                    </td>
-                    <td>
-                      <span className={`badge ${v.estado}`}>{v.estado}</span>
-                    </td>
-                  </tr>
-                ))}
-                {filtradas.length === 0 && (
+                      )}
+                      <td>{f.l.nombre}</td>
+                      <td className="num">
+                        <CantidadEditable value={f.qty} onSave={(nueva) => ajustar(g.v.variantId, f.l.id, nueva)} />
+                      </td>
+                    </tr>
+                  )),
+                )}
+                {grupos.length === 0 && (
                   <tr>
-                    <td colSpan={locs.length + 3} className="empty">Sin existencias que coincidan.</td>
+                    <td colSpan={3} className="empty">Sin existencias que coincidan.</td>
                   </tr>
                 )}
               </tbody>

@@ -558,6 +558,27 @@ select:focus {
   margin-top: 1px;
 }
 
+.help-note .help-note-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.help-note .help-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.65;
+}
+
+.help-note .help-close:hover {
+  opacity: 1;
+}
+
 /* ---- Estado vacío ---- */
 .empty-state {
   text-align: center;
@@ -879,10 +900,6 @@ select:focus {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
-}
-
-.matrix-cell-0 {
-  color: #c2c2c2;
 }
 
 /* ---- Celda de cantidad editable (ajuste de inventario) ---- */

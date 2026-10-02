@@ -75,7 +75,7 @@ por compatibilidad en la respuesta.
 - `/tienda/[productId]` — storefront público con pasos guiados
 - `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs
 - `/fabricacion` — OFs con **origen** (venta · cliente, manual, reposición mín/máx) y filtro por origen. Acciones: **+ Nueva OF** (modal con búsqueda de variante) y **Reponer** (selector mín/máx con preview y confirmación). Detalle con líneas de componentes, Iniciar/Cancelar.
-- `/inventario` — existencia con toggle **Por variante / Matriz por ubicación**. Botones **Entrada**, **Salida**, **Transferir** (modal adaptativo). El **ajuste** (conteo físico) se hace editando la cantidad en las celdas de la **Matriz** (`components/inventario/cantidad-editable.tsx`): Enter/blur confirman, Esc cancela. (Apertura y Ensamble retirados; los enums del backend los conservan sin uso.)
+- `/inventario` — existencia con toggle **Por variante / Por producto / Por ubicación**. "Por producto" suma el stock de todas las variantes (misma uom). "Por ubicación" es una lista `variante · ubicación · cantidad` (una fila por ubicación con stock > 0, agrupada por variante) sin Total/Estado; la cantidad es editable (ajuste inline, `components/inventario/cantidad-editable.tsx`: Enter/blur confirman, Esc cancela). Botones **Entrada**, **Salida**, **Transferir** (modal adaptativo). (Apertura y Ensamble retirados; los enums del backend los conservan sin uso.)
 - **UI compartida (`apps/web/src/components/ui/`)** — `PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`, `Segmented` (+ tokens/utilidades en `app/globals.css`). Úsalos en vez de inventar clases nuevas
 
 ## Scripts útiles
