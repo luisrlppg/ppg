@@ -13,6 +13,7 @@ export class ClientesService {
         ? {
             OR: [
               { nombre: { contains: query.search, mode: "insensitive" } },
+              { empresa: { contains: query.search, mode: "insensitive" } },
               { telefono: { contains: query.search, mode: "insensitive" } },
               { email: { contains: query.search, mode: "insensitive" } },
             ],
@@ -36,17 +37,23 @@ export class ClientesService {
     return p;
   }
 
-  create(data: { nombre: string; telefono?: string; direccion?: string; email?: string }) {
+  create(data: { nombre: string; empresa?: string; telefono?: string; direccion?: string; email?: string }) {
     const nombre = data.nombre.trim();
     if (!nombre) throw new BadRequestException("El nombre es obligatorio");
     return this.prisma.partner.create({
-      data: { nombre, telefono: data.telefono ?? null, direccion: data.direccion ?? null, email: data.email ?? null },
+      data: {
+        nombre,
+        empresa: data.empresa?.trim() || null,
+        telefono: data.telefono ?? null,
+        direccion: data.direccion ?? null,
+        email: data.email ?? null,
+      },
     });
   }
 
   async update(
     id: number,
-    data: Partial<{ nombre: string; telefono: string; direccion: string; email: string; activo: boolean }>,
+    data: Partial<{ nombre: string; empresa: string; telefono: string; direccion: string; email: string; activo: boolean }>,
   ) {
     const exists = await this.prisma.partner.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException("Cliente no encontrado");
@@ -54,6 +61,7 @@ export class ClientesService {
       where: { id },
       data: {
         ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
+        ...(data.empresa !== undefined ? { empresa: data.empresa.trim() || null } : {}),
         ...(data.telefono !== undefined ? { telefono: data.telefono } : {}),
         ...(data.direccion !== undefined ? { direccion: data.direccion } : {}),
         ...(data.email !== undefined ? { email: data.email } : {}),
@@ -87,8 +95,8 @@ export class ClientesService {
     return { ok: true };
   }
 
-  /** Importa clientes desde CSV pegado (columnas: nombre, telefono, direccion, email).
-   *  Encabezado opcional; las filas duplicadas por nombre se omiten. */
+  /** Importa clientes desde CSV pegado (columnas: nombre, telefono, direccion, email, empresa).
+   *  Encabezado opcional; las filas duplicadas por nombre+empresa se omiten. */
   async importar(csv: string): Promise<{ creados: number; omitidos: number }> {
     const lineas = csv
       .split(/\r?\n/)
@@ -105,10 +113,11 @@ export class ClientesService {
     let creados = 0;
     let omitidos = 0;
     for (const row of filas) {
-      const [nombreRaw, telefono, direccion, email] = row;
+      const [nombreRaw, telefono, direccion, email, empresaRaw] = row;
       const nombre = nombreRaw.trim();
       if (!nombre) continue;
-      const exists = await this.prisma.partner.findFirst({ where: { nombre } });
+      const empresa = (empresaRaw ?? "").trim() || null;
+      const exists = await this.prisma.partner.findFirst({ where: { nombre, empresa } });
       if (exists) {
         omitidos++;
         continue;
@@ -116,6 +125,7 @@ export class ClientesService {
       await this.prisma.partner.create({
         data: {
           nombre,
+          empresa,
           telefono: telefono || null,
           direccion: direccion || null,
           email: email || null,

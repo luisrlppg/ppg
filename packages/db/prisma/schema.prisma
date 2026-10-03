@@ -139,6 +139,7 @@ model ProductVariant {
   longLead         Boolean             @default(false)
   published        Boolean             @default(false) // visible en tienda pública (§7.7)
   imagen           String?
+  notas            String?             // anotación interna (ej. medidas del cepillo)
   activo           Boolean             @default(true)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -340,6 +341,7 @@ model StockMove {
 model Partner {
   id        Int      @id @default(autoincrement())
   nombre    String
+  empresa   String?
   telefono  String?
   direccion String?
   email     String?
@@ -350,6 +352,7 @@ model Partner {
   orders SalesOrder[]
 
   @@index([nombre])
+  @@index([empresa])
 }
 
 enum OrigenPedido {

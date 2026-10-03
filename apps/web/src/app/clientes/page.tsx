@@ -13,12 +13,13 @@ import type { Partner } from "@/lib/types";
 
 interface Form {
   nombre: string;
+  empresa: string;
   telefono: string;
   direccion: string;
   email: string;
 }
 
-const vacio: Form = { nombre: "", telefono: "", direccion: "", email: "" };
+const vacio: Form = { nombre: "", empresa: "", telefono: "", direccion: "", email: "" };
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Partner[]>([]);
@@ -49,7 +50,7 @@ export default function ClientesPage() {
   }
 
   function abrirEditar(c: Partner) {
-    setForm({ nombre: c.nombre, telefono: c.telefono ?? "", direccion: c.direccion ?? "", email: c.email ?? "" });
+    setForm({ nombre: c.nombre, empresa: c.empresa ?? "", telefono: c.telefono ?? "", direccion: c.direccion ?? "", email: c.email ?? "" });
     setEditId(c.id);
     setError("");
     setShowModal(true);
@@ -214,6 +215,7 @@ export default function ClientesPage() {
               <thead>
                 <tr>
                   <th>Nombre</th>
+                  <th>Empresa</th>
                   <th>Teléfono</th>
                   <th>Dirección</th>
                   <th>Email</th>
@@ -228,6 +230,7 @@ export default function ClientesPage() {
                       <strong>{c.nombre}</strong>
                       {!c.activo && <span className="badge critico" style={{ marginLeft: 8 }}>inactivo</span>}
                     </td>
+                    <td>{c.empresa ?? "—"}</td>
                     <td>{c.telefono ?? "—"}</td>
                     <td>{c.direccion ?? "—"}</td>
                     <td>{c.email ?? "—"}</td>
@@ -244,7 +247,7 @@ export default function ClientesPage() {
                 ))}
                 {clientes.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="empty">Sin clientes.</td>
+                    <td colSpan={7} className="empty">Sin clientes.</td>
                   </tr>
                 )}
               </tbody>
@@ -262,7 +265,11 @@ export default function ClientesPage() {
           <form onSubmit={guardar}>
             <label>
               Nombre *
-              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Razón social / nombre" autoFocus />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Nombre de la persona o empresa" autoFocus />
+            </label>
+            <label>
+              Empresa
+              <input value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} placeholder="opcional" />
             </label>
             <label>
               Teléfono
@@ -295,14 +302,14 @@ export default function ClientesPage() {
           size="lg"
         >
           <p className="muted small">
-            Pega el contenido: <code>nombre,telefono,direccion,email</code> (una fila por cliente, encabezado opcional).
-            Duplicados por nombre se omiten.
+            Pega el contenido: <code>nombre,telefono,direccion,email,empresa</code> (empresa opcional; una fila por cliente,
+            encabezado opcional). Duplicados por nombre + empresa se omiten.
           </p>
           <textarea
             rows={8}
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
-            placeholder={"Dulceria La Michoacana,555-1234,Calle 5 #12,ventas@michoacana.mx\nJugueria El Tesoro,555-9876,Fco. Larrosa 40,,tesoro@puntitos.mx"}
+            placeholder={"Maria Lopez,555-1234,Calle 5 #12,maria@michoacana.mx,Dulceria La Michoacana\nJugueria El Tesoro,555-9876,Fco. Larrosa 40,,Jugueria El Tesoro"}
           />
           <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
             <button type="button" className="btn ghost" onClick={() => { setMostrarCsv(false); setCsv(""); }}>

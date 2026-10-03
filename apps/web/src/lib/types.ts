@@ -55,6 +55,7 @@ export interface Variante {
   activo: boolean;
   stockActual: number;
   uom?: string;
+  notas?: string | null;
   valoracion: { attributeId: number; attribute: string; valueId: number; valor: string }[];
   packagings?: { packagingId: number; nombre: string; cantidad: number }[];
 }
@@ -116,6 +117,28 @@ export interface Existencia {
   valoracion: { attribute: string; valor: string }[];
 }
 
+export interface ExistenciaDe {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  productoId: number;
+  producto: string;
+  uom: string;
+  price: number | null;
+  basePrice: number;
+  stockMin: number;
+  stockMax: number;
+  longLead: boolean;
+  published: boolean;
+  activo: boolean;
+  notas: string | null;
+  stockActual: number;
+  valoracion: { attribute: string; valor: string }[];
+  packagings: { packagingId: number; nombre: string; cantidad: number }[];
+  porUbicacion: { locationId: number; location: string; qty: number }[];
+  movimientos: Movimiento[];
+}
+
 export interface StockBajo {
   variantId: number;
   sku: string;
@@ -153,6 +176,7 @@ export interface EventoNotificacion {
 export interface Partner {
   id: number;
   nombre: string;
+  empresa: string | null;
   telefono: string | null;
   direccion: string | null;
   email: string | null;
@@ -227,7 +251,7 @@ export interface Venta {
   confirmadaAt: string | null;
   notas: string | null;
   partnerId: number | null;
-  partner: (Pick<Partner, "id" | "nombre" | "telefono" | "direccion" | "email">) | null;
+  partner: (Pick<Partner, "id" | "nombre" | "empresa" | "telefono" | "direccion" | "email">) | null;
   resumen: ResumenNeteo | null;
   lines: VentaLinea[];
   ordenesFabricacion: OrdenFabricacion[];

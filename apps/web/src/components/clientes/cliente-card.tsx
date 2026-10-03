@@ -18,6 +18,7 @@ export default function ClienteCard({ cliente, onEditar, onEliminar }: Props) {
         </span>
         <div className="cliente-card-id">
           <strong className="cliente-card-nombre">{cliente.nombre}</strong>
+          {cliente.empresa && <span className="muted small">{cliente.empresa}</span>}
           {!cliente.activo && <span className="badge critico">inactivo</span>}
         </div>
       </div>

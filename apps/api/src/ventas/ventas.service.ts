@@ -98,7 +98,7 @@ export class VentasService {
       paymentMethod: o.paymentMethod,
       partnerId: o.partnerId,
       partner: o.partner
-        ? { id: o.partner.id, nombre: o.partner.nombre, telefono: o.partner.telefono, direccion: o.partner.direccion, email: o.partner.email }
+        ? { id: o.partner.id, nombre: o.partner.nombre, empresa: o.partner.empresa, telefono: o.partner.telefono, direccion: o.partner.direccion, email: o.partner.email }
         : null,
       resumen: o.resumen as ResumenNeteo | null,
       lines: o.lines.map((l) => ({

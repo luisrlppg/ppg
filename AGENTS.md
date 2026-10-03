@@ -23,11 +23,19 @@ scripts/      # Scripts de utilidad
 - **Cerda** (ID 2) — uom=kg, consumible
 - **Pincel** (ID 3) — ensamble: Vástago + Cerda
 - **Taparrosca con Pincel** (ID 4) — ensamble: Pincel + Vástago
+- **Palillos** (reorg `scripts/reorg-palillos.ts`):
+  - **Palillo Sin Cepillo** (id 42, `P0014`) — componente; eje `Color de Palillo`.
+  - **Palillo Citologico Sin Cepillo** (`P0032`) — componente; eje `Color de Palillo Citologico` (solo `Blanco`).
+  - **Palillo con Cepillo** (`P0033`) — ensamble final; BOM `Palillo Sin Cepillo` + `Cepillo Nylon` (exacto);
+    ejes `Color de Palillo` + `Color de Cerda de Cepillo` + `Forma de cepillo nylon`.
+  - **Palillo Citologico con Cepillo** (`P0034`) — ensamble final; BOM `Palillo Citologico Sin Cepillo` + `Cepillo Nylon`;
+    ejes `Color de Palillo Citologico` + `Color de Cerda de Cepillo` + `Forma de cepillo nylon`.
 
 ### Atributos (globales)
 - `Attribute` es global (sin productId)
 - `ProductAttributeLine` asigna atributos a productos (N:N)
 - Atributos propios vs heredados (de componentes del BOM)
+- **`ProductVariant.notas`** — texto libre **interno** por variante (p.ej. medidas del cepillo). No es eje ni se expone en la tienda.
 
 ### Atributos (consolidados 2026-10-03)
 - Globales, asignados por producto (`ProductAttributeLine`); los ejes pueden restringirse con
@@ -42,10 +50,17 @@ scripts/      # Scripts de utilidad
   `Forma de Taparrosca`, `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
   `Agujero de Vastago`, `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`,
   `Capacidad de Botella`.
-- Compartidos legítimos: `Tamaño rosca`, `Ceja`, `Punta`, `Estado`, `Grosor cerda`, `Medidas`,
+- Compartidos legítimos: `Tamaño rosca`, `Ceja`, `Punta`, `Grosor cerda`,
   `Medida pincel`, `Logo`, `Versión del vástago`, `Densidad`.
 - Estilo de valores: **primera letra mayúscula**, sin duplicados dentro del mismo atributo.
 - El producto **PVC** (uom kg) se creó con `Color de PVC` (`Violeta`, `Transparente`).
+- **Cepillos:** Cepillo Nylon se identifica por `Forma de cepillo nylon` + `Color de Cerda de Cepillo`
+  (el **grosor de cerda va como nota interna** `grosor: N"`, y las medidas de los Recto
+  `medida · grosor: 5"`); el grosor se codifica en la forma: 5" default, 5.75" → forma `… Prosa`,
+  4" → `Bala Barradas`/`Pino Barradas`, 3" → `Citologico`. Cepillo Silicon por `Forma de cepillo silicon`
+  (sin `Estado`). Las medidas del "Cepillo Recto" se volvieron formas
+  (`Recto Chico/XG/Grande/Mediano/Mini`) y las muestras prosa `Bala Prosa`/`Balita Prosa`/`Pino Prosa`.
+  (reorg `scripts/reorg-cepillos.ts` original + `scripts/reorg-cepillos-grosor.ts` que quitó el eje `Grosor cerda`).
 
 ### Pasos del storefront (ProductPasso)
 6 pasos para Taparrosca con Pincel (pasos 1-3 → Vástago, paso 4 → Pincel, pasos 5-6 → Taparrosca).
@@ -80,13 +95,14 @@ por compatibilidad en la respuesta.
 ## UI pages
 - `/` — Inicio: dashboard de pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos
 - `/productos` — lista de productos admin (alta en modal; sin tabs de catálogos base). Alterna vista **Tabla/Grid** (`Segmented`; preferencia en `localStorage` `ppg.productos.vista`, `lib/local-store.ts`); el grid usa `components/productos/producto-card.tsx` (imagen o placeholder). Acción **Eliminar** por fila/tarjeta: intenta hard delete y, si hay historial (409), ofrece **Desactivar**
-- `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Eliminar producto (header) y eliminar variante (columna Acciones), ambos con fallback a desactivar/bloqueo explicado. La selección de valores por atributo se guarda en `localStorage` (`ppg.producto.<id>.sel`, `lib/local-store.ts`) y se restaura al recargar. Empaques extraídos en `components/productos/empaques-por-variante.tsx`
+- `/productos/[id]` — editar producto (atributos inline, BOM, variantes). Combinaciones y variantes unificadas: selector "Materializar combinación" para crear UNA variante puntual (sin generador masivo). Eliminar producto (header) y eliminar variante (columna Acciones), ambos con fallback a desactivar/bloqueo explicado. Clic en una **fila de variante** abre la página de variante. La selección de valores por atributo se guarda en `localStorage` (`ppg.producto.<id>.sel`, `lib/local-store.ts`) y se restaura al recargar. Los empaques ya **no** se editan aquí: se configuran dentro de la página de variante
+- `/productos/[id]/variantes/[vid]` — **página de variante** (`ExistenciaDe` = `GET /inventario/existencia/:vid`): edita nombre, precio (`PATCH .../precio` → `PriceChange`), mín/máx, notas (interno), publicado/crítico/activo; muestra atributos, existencia por ubicación, empaques editables (`components/productos/empaques-variante.tsx`) y últimos movimientos. Eliminar variante con fallback a bloqueo explicado
 - `/clientes` — alta/edición en **modal**, importación CSV en **modal**, y vista **Tabla/Grid** (`Segmented`; preferencia en `localStorage` `ppg.clientes.vista`). El grid usa `components/clientes/cliente-card.tsx` (avatar de iniciales). Acción **Eliminar** por fila/tarjeta: intenta hard delete y, si hay ventas (409), ofrece **Desactivar**
 - `/catalogos` — atributos globales, categorías, empaques (tabs por sección; `components/catalogos/atributos-globales.tsx`)
 - `/tienda/[productId]` — storefront público con pasos guiados
 - `/ventas` — alta desde **grid de productos públicos** + modal guiado de configuración; lista, confirmación con neteo y OFs
 - `/fabricacion` — OFs con **origen** (venta · cliente, manual, reposición mín/máx) y filtro por origen. Acciones: **+ Nueva OF** (modal con búsqueda de variante) y **Reponer** (selector mín/máx con preview y confirmación). Detalle con líneas de componentes, Iniciar/Cancelar.
-- `/inventario` — existencia con toggle **Por variante / Por producto / Por ubicación**. "Por producto" suma el stock de todas las variantes (misma uom). "Por ubicación" es una lista `variante · ubicación · cantidad` (una fila por ubicación con stock > 0, agrupada por variante) sin Total/Estado; la cantidad es editable (ajuste inline, `components/inventario/cantidad-editable.tsx`: Enter/blur confirman, Esc cancela). Botones **Entrada**, **Salida**, **Transferir** (modal adaptativo). (Apertura y Ensamble retirados; los enums del backend los conservan sin uso.)
+- `/inventario` — existencia con toggle **Por ubicación / Por variante / Por variante min max / Por producto**. "Por producto" suma el stock de todas las variantes (misma uom). "Por ubicación" agrupa por ubicación (una fila de ubicación con `rowSpan` y las variantes con stock listadas debajo) e incluye un botón **Filtrar ubicación** que abre un modal con todas las ubicaciones para ver solo una. "Por variante" es una lista `variante · ubicación · cantidad` (una fila por ubicación con stock > 0, agrupada por variante). "Por variante min max" muestra Stock/Mín/Máx por variante. En las vistas "Por ubicación" y "Por variante" la cantidad es editable (ajuste inline, `components/inventario/cantidad-editable.tsx`: Enter/blur confirman, Esc cancela). **Exportar CSV** se genera en el cliente según la vista activa (`lib/csv.ts`), respetando filtros. Botones **Entrada**, **Salida**, **Transferir** (modal adaptativo). (Apertura y Ensamble retirados; los enums del backend los conservan sin uso.)
 - **UI compartida (`apps/web/src/components/ui/`)** — `PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`, `Segmented` (+ tokens/utilidades en `app/globals.css`). Úsalos en vez de inventar clases nuevas
 
 ## Scripts útiles
@@ -100,6 +116,11 @@ por compatibilidad en la respuesta.
 - `scripts/reorg-atributos.ts` — split/rename de atributos por producto desde `atributos-mapping.csv` (re-apunta variantes, ejes, permitidos y pasos). `--dry`/`--apply`.
 - `scripts/consolidar-atributos.ts` — consolidación one-off: splits, merges, repunts, renombres, borrado de muertos y normalización de valores (primera mayúscula + colisiones). `--dry`/`--apply`.
 - `scripts/finalizar-minmax.ts` — crea el producto PVC y asigna la forma a los Pino del Cepillo Nylon. `--dry`/`--apply`.
+- `scripts/reorg-cepillos.ts` — one-off: Cepillo Nylon pasa a identificarse por `Forma de cepillo nylon` + `Grosor cerda` + `Color de Cerda de Cepillo` (elimina `Estado` y `Medidas`; sólo estado Nuevo) y Cepillo Silicon por `Forma de cepillo silicon` (sin `Estado`). Convierte las medidas del "Cepillo Recto" en formas (`Recto Chico/XG/Grande/Mediano/Mini`) y las muestras prosa en `Bala Prosa`/`Balita Prosa`/`Pino Prosa`. Borra los atributos `Medidas` y `Estado` del catálogo. `--dry`/`--apply`.
+- `scripts/reorg-cepillos-grosor.ts` — one-off: quita el eje `Grosor cerda` del Cepillo Nylon y mueve el grosor a `notas` (`grosor: N"`); codifica el grosor en la forma (5.75"→`… Prosa`, 4"→`Bala Barradas`/`Pino Barradas`); borra valores de Forma huérfanos. Ejes finales: Forma + Color (todas las formas, incluidas las `… Prosa`, llevan color; por defecto Negro). `--dry`/`--apply`.
+- `scripts/seed-cepillos-notas.ts` — carga las medidas/grosor de los cepillos como nota interna de la variante (`ProductVariant.notas`). Idempotente. `--dry`/`--apply`.
+- `scripts/reorg-palillos.ts` — one-off: separa el producto `Palillo`: renombra id 42 → `Palillo Sin Cepillo` (eje `Color de Palillo`), crea `Palillo Citologico Sin Cepillo` (`P0032`, eje `Color de Palillo Citologico` solo `Blanco`), `Palillo con Cepillo` (`P0033`, ejes color/cerda/forma) y `Palillo Citologico con Cepillo` (`P0034`, eje `Color de Palillo Citologico`); renumera variantes y define los BOM (palillo + `Cepillo Nylon`, exacto). Idempotente. `--dry`/`--apply`.
+- `scripts/odoo-migration/reconcile-stock.ts` — reconcilia `docs/odoo_inv.csv` (Odoo) contra la existencia de PPG (**BD `StockLevel` por defecto**; `--ppg <csv>` usa un export): mapea Odoo→SKU con `mapeo-odoo-ppg.csv`, deja **subensamblados pendientes** (SVC/SVP/VC/VP/SV/Gloss/Tapa con Vástago Sin Rosca) y excluye pigmentos/oficina. Genera `docs/odoo-inventario-diferencias.csv` y `docs/odoo-inventario-correccion.csv`. `--apply` fija `StockLevel` (motivo `ajuste`, ref "reconciliación Odoo") sólo en los renglones `ajuste`; **`--reset`** borra todo el stock (`StockMove` + `StockLevel`) y recarga sólo el snapshot de Odoo actual (qty > 0; negativas omitidas). Destructivo: respaldar con `pg_dump` antes.
 - `scripts/odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**: `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `scripts/ppg.sh` — único gestor de servidores (alias `ppg` en `~/.bashrc`): `ppg start|stop|restart|reload|status|logs|db`. `start` hace bootstrap completo (Postgres + deps + migraciones) y arranca api+web con hot-reload en background; `reload` aplica migraciones y reinicia; `db <native|docker|auto|stop>` elige el motor de Postgres (persistido como `PPG_DB_MODE` en `.env`). **No siembra.**
 

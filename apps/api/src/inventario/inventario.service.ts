@@ -80,6 +80,7 @@ export class InventarioService {
         product: { include: { category: true } },
         stockLevels: { include: { location: true } },
         packagings: { include: { packaging: true } },
+        variantAttributes: { include: { attribute: true, value: true } },
       },
     });
     if (!v) throw new NotFoundException("Variante no encontrada");
@@ -87,11 +88,20 @@ export class InventarioService {
       variantId: v.id,
       sku: v.sku,
       nombre: v.nombre,
+      productoId: v.productId,
       producto: v.product.nombre,
       uom: v.product.uom,
+      price: v.price === null ? null : dec(v.price),
+      basePrice: dec(v.product.basePrice),
       stockMin: dec(v.stockMin),
       stockMax: dec(v.stockMax),
       longLead: v.longLead,
+      published: v.published,
+      activo: v.activo,
+      notas: v.notas,
+      valoracion: v.variantAttributes
+        .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+        .sort((a, b) => a.attribute.localeCompare(b.attribute)),
       stockActual: v.stockLevels.reduce((a, l) => a + dec(l.qty), 0),
       packagings: v.packagings.map((p) => ({ packagingId: p.packagingId, nombre: p.packaging.nombre, cantidad: dec(p.cantidad) })),
       porUbicacion: v.stockLevels.map((l) => ({ locationId: l.locationId, location: l.location.nombre, qty: dec(l.qty) })),

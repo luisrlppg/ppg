@@ -338,7 +338,7 @@ export class ProductosService {
     return variant;
   }
 
-  async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; published: boolean; activo: boolean; imagen: string | null }>) {
+  async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; published: boolean; activo: boolean; imagen: string | null; notas: string | null }>) {
     return this.prisma.productVariant.update({
       where: { id: variantId },
       data: { ...data },

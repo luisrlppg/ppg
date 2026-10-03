@@ -69,6 +69,7 @@ class UpdateVarianteDto {
   @IsOptional() @IsBoolean() published?: boolean;
   @IsOptional() @IsBoolean() activo?: boolean;
   @IsOptional() @IsString() imagen?: string;
+  @IsOptional() @IsString() notas?: string | null;
 }
 
 class PackagingItem {

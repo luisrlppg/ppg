@@ -6,11 +6,10 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
-import EmpaquesPorVariante from "@/components/productos/empaques-por-variante";
 import CompletarEjes from "@/components/productos/completar-ejes";
 import { api } from "@/lib/api";
 import { borrarSeleccion, guardarSeleccion, leerSeleccion } from "@/lib/local-store";
-import type { Atributo, Categoria, Grid, GridCombo, GridVarianteExistente, Packaging, ProductoDetalle, Variante } from "@/lib/types";
+import type { Atributo, Categoria, Grid, GridCombo, GridVarianteExistente, ProductoDetalle, Variante } from "@/lib/types";
 
 interface BomRow {
   componentId: number;
@@ -39,7 +38,6 @@ export default function ProductoDetallePage() {
   const [d, setD] = useState<ProductoDetalle | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [atributos, setAtributos] = useState<Atributo[]>([]);
-  const [empaques, setEmpaques] = useState<Packaging[]>([]);
   const [grid, setGrid] = useState<Grid | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -87,7 +85,6 @@ export default function ProductoDetallePage() {
   useEffect(() => {
     api<Categoria[]>("/catalogos/categorias").then(setCategorias).catch(() => setCategorias([]));
     api<Atributo[]>("/catalogos/atributos").then(setAtributos).catch(() => setAtributos([]));
-    api<Packaging[]>("/catalogos/empaques").then(setEmpaques).catch(() => setEmpaques([]));
   }, []);
 
   useEffect(() => {
@@ -98,12 +95,6 @@ export default function ProductoDetallePage() {
     if (e) { setError(e.message); setMsg(""); }
     else { setError(""); setMsg(okMsg); }
   };
-
-  const refrescarEmpaques = useCallback(async () => {
-    try {
-      setEmpaques(await api<Packaging[]>("/catalogos/empaques"));
-    } catch { /* noop */ }
-  }, []);
 
   // ------------------------------------------------------------- Datos base
   const [nombreEdit, setNombreEdit] = useState<string | null>(null);
@@ -351,27 +342,10 @@ export default function ProductoDetallePage() {
   }
 
   // -------------------------------------------------------------- Variantes
-  const [editNombreVid, setEditNombreVid] = useState<number | null>(null);
-  const [editNombreVal, setEditNombreVal] = useState("");
   const [showNuevaVariante, setShowNuevaVariante] = useState(false);
   const [nuevaVarNombre, setNuevaVarNombre] = useState("");
   const [nuevaVarSku, setNuevaVarSku] = useState("");
   const [guardandoVar, setGuardandoVar] = useState(false);
-
-  function iniciarEditNombre(v: Variante) {
-    setEditNombreVid(v.id);
-    setEditNombreVal(v.nombre);
-  }
-
-  async function guardarNombreVariante(v: Variante) {
-    if (!editNombreVal.trim()) { setEditNombreVid(null); return; }
-    try {
-      await api(`/productos/variantes/${v.id}`, { method: "PATCH", body: JSON.stringify({ nombre: editNombreVal.trim() }) });
-      await cargar();
-      setEditNombreVid(null);
-      notify(null, "Nombre de variante actualizado.");
-    } catch (e) { notify(e as Error, ""); }
-  }
 
   async function crearVariante(e: React.FormEvent) {
     e.preventDefault();
@@ -527,8 +501,8 @@ export default function ProductoDetallePage() {
 
       <HelpNote>
         Sigue este orden: <strong>datos base</strong>, <strong>atributos</strong> (ejes de combinación),{" "}
-        <strong>lista de materiales (BOM)</strong>, materializa las <strong>variantes</strong> y, al final, configura
-        sus <strong>empaques</strong>.
+        <strong>lista de materiales (BOM)</strong> y materializa las <strong>variantes</strong>. Los{" "}
+        <strong>empaques</strong> se configuran dentro de cada variante.
       </HelpNote>
 
       <nav className="section-nav">
@@ -536,7 +510,6 @@ export default function ProductoDetallePage() {
         <a href="#atributos">2 · Atributos</a>
         <a href="#bom">3 · BOM</a>
         <a href="#variantes">4 · Variantes</a>
-        <a href="#empaques">5 · Empaques</a>
       </nav>
 
       <div className="card section-anchor" id="datos">
@@ -933,26 +906,14 @@ export default function ProductoDetallePage() {
             </thead>
             <tbody>
               {d.variantes.map((v) => (
-                <tr key={v.id}>
+                <tr
+                  key={v.id}
+                  onClick={() => router.push(`/productos/${prodId}/variantes/${v.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <td>
-                    {editNombreVid === v.id ? (
-                      <input
-                        value={editNombreVal}
-                        onChange={(e) => setEditNombreVal(e.target.value)}
-                        onBlur={() => guardarNombreVariante(v)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                        autoFocus
-                        style={{ width: 160 }}
-                      />
-                    ) : (
-                      <span
-                        onClick={() => iniciarEditNombre(v)}
-                        style={{ cursor: "pointer" }}
-                        title="Clic para editar nombre"
-                      >
-                        {v.nombre}
-                      </span>
-                    )}
+                    <strong>{v.nombre}</strong>
+                    {v.notas ? <div className="small muted">{v.notas}</div> : null}
                   </td>
                   <td className="muted-2">{v.sku}</td>
                   <td>
@@ -966,13 +927,13 @@ export default function ProductoDetallePage() {
                     </div>
                   </td>
                   <td>{v.stockActual} {d.uom}</td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={v.published} onChange={() => toggle(v, "published")} style={{ width: "auto" }} />
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={v.longLead} onChange={() => toggle(v, "longLead")} style={{ width: "auto" }} />
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <button type="button" className="btn ghost sm" onClick={() => setVarianteAEliminar(v)}>
                       Eliminar
                     </button>
@@ -986,19 +947,8 @@ export default function ProductoDetallePage() {
           </table>
         </div>
         <p className="muted small" style={{ marginTop: 8 }}>
-          Clic en el nombre para editar. Los precios se gestionan desde la app de cotizaciones.
+          Clic en una fila para abrir la variante.
         </p>
-      </div>
-
-      {/* --- Empaques por variante --- */}
-      <div className="section-anchor" id="empaques">
-        <EmpaquesPorVariante
-          variantes={d.variantes}
-          empaques={empaques}
-          uom={d.uom}
-          notify={notify}
-          onEmpaqueCreado={refrescarEmpaques}
-        />
       </div>
     </AppShell>
   );

@@ -19,6 +19,7 @@ import { ClientesService } from "./clientes.service";
 
 class ClienteDto {
   @IsString() @IsNotEmpty() nombre!: string;
+  @IsOptional() @IsString() empresa?: string;
   @IsOptional() @IsString() telefono?: string;
   @IsOptional() @IsString() direccion?: string;
   @IsOptional() @IsString() email?: string;
@@ -26,6 +27,7 @@ class ClienteDto {
 
 class UpdateClienteDto {
   @IsOptional() @IsString() nombre?: string;
+  @IsOptional() @IsString() empresa?: string;
   @IsOptional() @IsString() telefono?: string;
   @IsOptional() @IsString() direccion?: string;
   @IsOptional() @IsString() email?: string;

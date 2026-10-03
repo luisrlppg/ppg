@@ -8,10 +8,11 @@ import Modal from "@/components/ui/modal";
 import Segmented from "@/components/ui/segmented";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
 import { api } from "@/lib/api";
+import { descargarCSV } from "@/lib/csv";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
 type Accion = "entrada" | "salida" | "mover";
-type Vista = "variante" | "producto" | "ubicacion";
+type Vista = "ubicacion" | "variante" | "variante-minmax" | "producto";
 
 export default function InventarioPage() {
   const [exist, setExist] = useState<Existencia[]>([]);
@@ -20,10 +21,12 @@ export default function InventarioPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [vista, setVista] = useState<Vista>("ubicacion");
+  const [ubicacionFiltro, setUbicacionFiltro] = useState<number | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [productoSelId, setProductoSelId] = useState<number | null>(null);
   const [filtros, setFiltros] = useState<Record<string, Set<string>>>({});
   const [showFiltros, setShowFiltros] = useState(false);
+  const [showUbiFiltro, setShowUbiFiltro] = useState(false);
   const [coincidenciasAbiertas, setCoincidenciasAbiertas] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -258,6 +261,15 @@ export default function InventarioPage() {
     }))
     .filter((g) => g.filas.length > 0);
 
+  // Vista "Por ubicación": la ubicación encabeza y agrupa sus variantes.
+  const gruposUbicacion = locs
+    .map((l) => ({
+      l,
+      filas: filtradas.map((v) => ({ v, qty: qtyEn(v, l.id) })).filter((f) => f.qty > 0),
+    }))
+    .filter((g) => g.filas.length > 0)
+    .filter((g) => ubicacionFiltro === null || g.l.id === ubicacionFiltro);
+
   // Totales por producto (respeta el filtro de atributos del producto seleccionado).
   const gruposProducto = (() => {
     const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number; stock: number }>();
@@ -270,6 +282,38 @@ export default function InventarioPage() {
     return [...map.values()].sort((a, b) => a.producto.localeCompare(b.producto));
   })();
 
+  // ---------------------------------------------------------- Exportar CSV
+  const celdaVariante = (v: Existencia) =>
+    [v.producto, ...v.valoracion.map((a) => `${a.attribute} ${a.valor}`)].join(" · ");
+
+  function exportar() {
+    const filas: (string | number)[][] = [];
+    if (vista === "ubicacion") {
+      filas.push(["Ubicación", "SKU", "Producto / Variante", "Cantidad"]);
+      for (const g of gruposUbicacion) {
+        for (const f of g.filas) filas.push([g.l.nombre, f.v.sku, celdaVariante(f.v), f.qty]);
+      }
+      descargarCSV("inventario-por-ubicacion.csv", filas);
+    } else if (vista === "variante") {
+      filas.push(["Producto / Variante", "SKU", "Ubicación", "Cantidad"]);
+      for (const g of grupos) {
+        for (const f of g.filas) filas.push([celdaVariante(g.v), g.v.sku, f.l.nombre, f.qty]);
+      }
+      descargarCSV("inventario-por-variante.csv", filas);
+    } else if (vista === "variante-minmax") {
+      filas.push(["Producto / Variante", "SKU", "Stock", "Mín", "Máx", "Ubicaciones"]);
+      for (const v of filtradas) {
+        const ubic = Object.values(v.porUbicacion).map((l) => `${l.location}: ${l.qty}`).join(" · ");
+        filas.push([celdaVariante(v), v.sku, v.stockActual, v.stockMin, v.stockMax, ubic]);
+      }
+      descargarCSV("inventario-por-variante-min-max.csv", filas);
+    } else {
+      filas.push(["Producto", "Variantes", "Stock"]);
+      for (const g of gruposProducto) filas.push([g.producto, g.variantes, g.stock]);
+      descargarCSV("inventario-por-producto.csv", filas);
+    }
+  }
+
   return (
     <AppShell>
       {error && <div className="error">{error}</div>}
@@ -280,9 +324,9 @@ export default function InventarioPage() {
         subtitle="Existencia por producto y ubicación. Registra entradas, salidas y transferencias."
         actions={
           <>
-            <a className="btn secondary sm" href="/api/inventario/exportar.csv" download="stock.csv">
+            <button className="btn secondary sm" onClick={exportar}>
               Exportar CSV
-            </a>
+            </button>
             <button className="btn ghost sm" onClick={() => setShowUbi(true)}>
               + Ubicación
             </button>
@@ -292,8 +336,9 @@ export default function InventarioPage() {
 
       <HelpNote closable>
         Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Para un{" "}
-        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad de <strong>Por ubicación</strong> y escribe
-        la cantidad real: se registra la diferencia. El stock no puede quedar por debajo de cero.
+        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad en <strong>Por ubicación</strong> o{" "}
+        <strong>Por variante</strong> y escribe la cantidad real: se registra la diferencia. El stock no puede
+        quedar por debajo de cero.
       </HelpNote>
 
       <div className="toolbar">
@@ -336,12 +381,20 @@ export default function InventarioPage() {
             )}
           </div>
         )}
+        {vista === "ubicacion" && (
+          <button type="button" className="btn secondary sm" onClick={() => setShowUbiFiltro(true)}>
+            {ubicacionFiltro === null
+              ? "Filtrar ubicación"
+              : `Ubicación: ${locs.find((l) => l.id === ubicacionFiltro)?.nombre ?? ""}`}
+          </button>
+        )}
         <Segmented
           value={vista}
           onChange={(v) => setVista(v as Vista)}
           options={[
             { value: "ubicacion", label: "Por ubicación" },
             { value: "variante", label: "Por variante" },
+            { value: "variante-minmax", label: "Por variante min max" },
             { value: "producto", label: "Por producto" },
           ]}
         />
@@ -349,7 +402,7 @@ export default function InventarioPage() {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-wrap">
-          {vista === "variante" ? (
+          {vista === "variante-minmax" ? (
             <table className="table">
               <thead>
                 <tr>
@@ -426,7 +479,7 @@ export default function InventarioPage() {
                 )}
               </tbody>
             </table>
-          ) : (
+          ) : vista === "variante" ? (
             <table className="table">
               <thead>
                 <tr>
@@ -461,6 +514,49 @@ export default function InventarioPage() {
                   )),
                 )}
                 {grupos.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="empty">Sin existencias que coincidan.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Ubicación</th>
+                  <th>Producto / Variante</th>
+                  <th className="num">Cantidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gruposUbicacion.map((g) =>
+                  g.filas.map((f, i) => (
+                    <tr key={`${g.l.id}-${f.v.variantId}`}>
+                      {i === 0 && (
+                        <td rowSpan={g.filas.length}>
+                          <strong>{g.l.nombre}</strong>
+                        </td>
+                      )}
+                      <td>
+                        <strong>{f.v.producto}</strong>
+                        <div className="attr-list">
+                          {f.v.valoracion.length > 0
+                            ? f.v.valoracion.map((a) => (
+                                <span key={a.attribute} className="attr-item">
+                                  <span className="attr-name">{a.attribute}</span> {a.valor}
+                                </span>
+                              ))
+                            : <span className="muted small">—</span>}
+                        </div>
+                      </td>
+                      <td className="num">
+                        <CantidadEditable value={f.qty} onSave={(nueva) => ajustar(f.v.variantId, g.l.id, nueva)} />
+                      </td>
+                    </tr>
+                  )),
+                )}
+                {gruposUbicacion.length === 0 && (
                   <tr>
                     <td colSpan={3} className="empty">Sin existencias que coincidan.</td>
                   </tr>
@@ -624,6 +720,48 @@ export default function InventarioPage() {
               Limpiar filtros
             </button>
             <button type="button" className="btn primary" onClick={() => setShowFiltros(false)}>
+              Cerrar
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* --- Modal: filtro por ubicación --- */}
+      {showUbiFiltro && (
+        <Modal title="Filtrar por ubicación" onClose={() => setShowUbiFiltro(false)}>
+          {locs.length === 0 ? (
+            <p className="muted small">No hay ubicaciones registradas.</p>
+          ) : (
+            <>
+              <p className="muted small" style={{ marginTop: 0 }}>
+                Selecciona una ubicación para ver solo su contenido. “Todas” quita el filtro.
+              </p>
+              <div className="filtro-attr-valores">
+                <button
+                  type="button"
+                  className={`chip-toggle ${ubicacionFiltro === null ? "on" : ""}`}
+                  onClick={() => setUbicacionFiltro(null)}
+                >
+                  Todas
+                </button>
+                {locs.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    className={`chip-toggle ${ubicacionFiltro === l.id ? "on" : ""}`}
+                    onClick={() => setUbicacionFiltro((prev) => (prev === l.id ? null : l.id))}
+                  >
+                    {l.nombre}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+            <button type="button" className="btn ghost" onClick={() => setUbicacionFiltro(null)} disabled={ubicacionFiltro === null}>
+              Limpiar filtro
+            </button>
+            <button type="button" className="btn primary" onClick={() => setShowUbiFiltro(false)}>
               Cerrar
             </button>
           </div>

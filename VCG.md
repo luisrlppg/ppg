@@ -179,14 +179,15 @@ local + `fetch` manual.
 
 | Página | Archivo | Líneas | Funcionalidad |
 |--------|---------|--------|---------------|
-| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **816** | datos base 83‑95 · atributos inline 96‑200 · ejes legacy 201‑219 · grid 220‑241 · variantes 242‑290 (incluye "Materializar combinación") · BOM 291‑ — empaques extraídos en `components/productos/empaques-por-variante.tsx` (153 líneas). Editor **inline compacto**: fila colapsable por atributo con chips de valores del eje (× para quitar) y "+ Valor" que expande checkboxes + input inline. Heredados en solo lectura. Sin modales Crear/Editar/Agregar-global |
+| Detalle/edición de producto | `app/productos/[id]/page.tsx` | **954** | datos base · atributos inline · ejes legacy · grid · variantes (incluye "Materializar combinación"; la fila navega a la página de variante, ya no edita nombre inline) · BOM. Editor **inline compacto**: fila colapsable por atributo con chips de valores del eje (× para quitar) y "+ Valor" que expande checkboxes + input inline. Heredados en solo lectura. Los empaques se movieron a la página de variante (se eliminó `components/productos/empaques-por-variante.tsx`) |
+| Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | **262** | carga `ExistenciaDe` (`GET /inventario/existencia/:vid`): edita nombre/precio/mín‑máx/notas/publicado/crítico/activo; atributos, existencia por ubicación, empaques (`components/productos/empaques-variante.tsx`) y movimientos. Eliminar con bloqueo explicado |
 | Inicio (dashboard) | `app/page.tsx` | **89** | pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) en `stat-grid` + tarjetas de módulos. Usa `PageHeader` |
 | Reportes de producción | `app/reportes/page.tsx` | **718** | form 100‑240 · bandeja 241‑328 · ubicar lotes 329‑385 · UI 386‑ — stats extraídas en `components/reportes/stats-produccion.tsx` (150 líneas) |
 | Ventas | `app/ventas/page.tsx` | **472** | lista/detalle/confirmar/despachar 24‑123 · UI 124‑400 · lista 401‑. Alta en `components/ventas/nueva-venta.tsx` (167) desde **grid de productos públicos** + **modal guiado** `components/ventas/modal-config-variante.tsx` (**338**). Sin búsqueda libre de variantes |
 | Catálogos | `app/catalogos/page.tsx` | **332** | tabs por sección (categorías/empaques/atributos) con `HelpNote`; atributos globales extraídos en `components/catalogos/atributos-globales.tsx` (207 líneas) |
 | Lista productos | `app/productos/page.tsx` | **293** | grid de productos + alta en modal. Ya **no** tiene tabs de catálogos base (se movieron a `/catalogos`) |
 | Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | **422** — público, sin AppShell | `buildPaneles` 30‑66 · carga 67‑94 · selección/filtrado por conjunto de variantes `opcionesDelPaso` 103‑127 · paneles 146‑156 · envío 168‑. Iconos placeholder (sin imágenes) |
-| Inventario | `app/inventario/page.tsx` | **455** | toolbar de acciones 52‑117 (entrada/ajuste, transferir, ensamblar) · nueva ubicación 118‑130 · UI en **modales** + toggle matriz por ubicación/variante |
+| Inventario | `app/inventario/page.tsx` | **797** | toolbar de acciones 52‑117 (entrada/ajuste, transferir, ensamblar) · nueva ubicación 118‑130 · UI en **modales** + toggle de 4 vistas: **Por ubicación** (ubicación con `rowSpan` → variantes, con botón "Filtrar ubicación" que abre modal), **Por variante** (`variante · ubicación · cantidad`), **Por variante min max** (Stock/Mín/Máx) y **Por producto** (suma). Cantidad editable en las dos primeras. Export CSV en cliente según vista (`lib/csv.ts`) |
 | Clientes | `app/clientes/page.tsx` | **229** | CRUD 18‑80 · import CSV 81‑. Con `PageHeader` |
 | Fabricación (OFs) | `app/fabricacion/page.tsx` | **207** | listar 26‑56 · acciones iniciar/cancelar 61‑80 · detalle inline · faltantes. Leyenda de estados |
 | Monitor stock | `app/monitor/page.tsx` | **156** | estado 24‑38 · acciones 39‑. Con `PageHeader` |
@@ -197,6 +198,7 @@ local + `fetch` manual.
 - `lib/api.ts` (31 líneas) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`
 - `lib/types.ts` — **370 líneas**, todos los tipos de dominio (API y tienda). Añade aquí los tipos nuevos de forma centralizada.
 - `lib/pasos-cache.ts` (17 líneas) — cachea 30s el resultado de `getPasos` por productId (tienda y modal).
+- `lib/csv.ts` (14 líneas) — `descargarCSV(nombre, filas)`: CSV en cliente con BOM para Excel (lo usa inventario).
 - `app/globals.css` — tokens, utilidades y estilos de los componentes UI (`.modal`, `.modal-overlay`, `.page-header`, `.segmented`, `.help-note`, `.stat-grid`, `.breadcrumb`, etc.).
 
 ### Componentes UI compartidos — `components/ui/`
@@ -231,9 +233,13 @@ vez de inventar clases nuevas:
 | Tipos shared | `web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` |
 | Migración Odoo → mín/máx | `scripts/odoo-migration/step9-min-max.ts` (resuelve con `variantes.csv`; `--file`, `--pendientes`, `--apply`) + `step10-materializar.ts` |
+| Reconciliación inventario Odoo↔PPG | `scripts/odoo-migration/reconcile-stock.ts` (mapea con `mapeo-odoo-ppg.csv`; difiere subensamblados; compara contra BD o `--ppg <csv>`; genera `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`; `--apply` ajusta sólo renglones `ajuste`; `--reset` borra stock y recarga el snapshot Odoo) |
 | Reorg / consolidación de atributos | `scripts/reorg-atributos.ts` + `scripts/consolidar-atributos.ts` (`--dry`/`--apply`) |
 | Producto PVC + forma Cepillo Pino | `scripts/finalizar-minmax.ts` |
+| Cepillos: forma en vez de Medidas/Estado/grosor | `scripts/reorg-cepillos.ts` + `scripts/reorg-cepillos-grosor.ts` (`--dry`/`--apply`); reconciliación resuelve cepillos por BD (`reconcile-stock.ts`) |
+| Notas internas de variante (medidas/grosor) | `ProductVariant.notas`; `scripts/seed-cepillos-notas.ts`; página de variante `app/productos/[id]/variantes/[vid]/page.tsx` |
 | Crosswalk Odoo↔PPG | `scripts/odoo-migration/mapeo-odoo-ppg.csv` (por variante) + `mapping-odoo.csv` (por plantilla) |
+| Palillos (separar sin/con cepillo) | `scripts/reorg-palillos.ts` (`--dry`/`--apply`) |
 
 ---
 
@@ -272,7 +278,7 @@ vez de inventar clases nuevas:
   `catalogos.controller.ts` → `catalogos.atributos-producto.ts`;
   `monitor.service.ts` → `monitor.notificadores.ts`;
   `inventario.service.ts` → `inventario.ensamble.ts`.
-  Web: `productos/[id]/page.tsx` → `components/productos/empaques-por-variante.tsx`;
+  Web: `productos/[id]/page.tsx` → `components/productos/empaques-variante.tsx` (página de variante);
   `reportes/page.tsx` → `components/reportes/stats-produccion.tsx`;
   `ventas/page.tsx` → `components/ventas/nueva-venta.tsx` + `components/ventas/modal-config-variante.tsx`;
   `catalogos/page.tsx` → `components/catalogos/atributos-globales.tsx`;
@@ -284,7 +290,7 @@ vez de inventar clases nuevas:
   `ConfirmDialog`, `HelpNote`, `Segmented`) + tokens/utilidades en `app/globals.css`. `/productos`
   ya no duplica los tabs de catálogos base (se movieron a `/catalogos` con tabs por sección); el detalle
   de producto tiene breadcrumb y navegación numerada por secciones; inventario usa toolbar con modales,
-  export CSV discreto y toggle de matriz por ubicación/variante; el Inicio muestra dashboard de
+  export CSV discreto y toggle de 4 vistas (por ubicación, por variante, por variante min max, por producto); el Inicio muestra dashboard de
   pendientes; se reemplazaron `confirm`/`prompt` por modales. Se eliminaron `ui/badge.tsx` y
   `ui/empty-state.tsx` por no tener uso.
 - **Nueva venta (2026-08-31):** flujo rediseñado basado en **productos públicos** (grid de cards) +
@@ -307,6 +313,6 @@ vez de inventar clases nuevas:
   `finalizar-minmax.ts`; crosswalk vivo en `scripts/odoo-migration/mapeo-odoo-ppg.csv`.
   Único pendiente: `Botella 1580 (Color: transparente)`. `Tapa con Pincel` no lleva mín/máx (por regla).
 
-*Última actualización: 2026‑10‑03 (atributos consolidados + migración de mín/máx). Este mapa de líneas
+*Última actualización: 2026‑10‑03 (atributos consolidados + migración de mín/máx + reconciliación de inventario Odoo↔PPG + cepillos por forma). Este mapa de líneas
 es una referencia viva: al refactorizar, actualiza este documento para que la herramienta de vibe coding
 siempre apunte al archivo/zona correcta.*
