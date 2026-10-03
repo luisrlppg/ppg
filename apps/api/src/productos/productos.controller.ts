@@ -88,6 +88,10 @@ class PrecioDto {
   @IsOptional() @IsNumber() price?: number | null;
 }
 
+class SetVarianteAtributoDto {
+  @IsNumber() valueId!: number;
+}
+
 @Controller("productos")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductosController {
@@ -210,5 +214,22 @@ export class ProductosController {
   @Put("variantes/:vid/packagings")
   packagings(@Param("vid", ParseIntPipe) vid: number, @Body() dto: VariantePackagingDto) {
     return this.productos.setPackagings(vid, dto.packagings);
+  }
+
+  @Roles("admin", "supervisor")
+  @Put("variantes/:vid/atributos/:attributeId")
+  setAtributo(
+    @Param("vid", ParseIntPipe) vid: number,
+    @Param("attributeId", ParseIntPipe) attributeId: number,
+    @Body() dto: SetVarianteAtributoDto,
+  ) {
+    return this.productos.setVariantAttribute(vid, attributeId, dto.valueId);
+  }
+
+  @Roles("admin", "supervisor")
+  @HttpCode(204)
+  @Delete("variantes/:vid/atributos/:attributeId")
+  removeAtributo(@Param("vid", ParseIntPipe) vid: number, @Param("attributeId", ParseIntPipe) attributeId: number) {
+    return this.productos.removeVariantAttribute(vid, attributeId);
   }
 }

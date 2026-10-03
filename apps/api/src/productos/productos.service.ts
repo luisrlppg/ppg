@@ -345,6 +345,36 @@ export class ProductosService {
     });
   }
 
+  /** Fija (o reemplaza) el valor de un eje en una variante. */
+  async setVariantAttribute(variantId: number, attributeId: number, valueId: number) {
+    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+    if (!variant) throw new NotFoundException("Variante no encontrada");
+
+    const line = await this.prisma.productAttributeLine.findUnique({
+      where: { productId_attributeId: { productId: variant.productId, attributeId } },
+    });
+    if (!line) throw new BadRequestException("El atributo no es un eje de este producto");
+
+    const value = await this.prisma.attributeValue.findUnique({ where: { id: valueId } });
+    if (!value || value.attributeId !== attributeId) {
+      throw new BadRequestException("El valor no pertenece al atributo");
+    }
+
+    return this.prisma.variantAttribute.upsert({
+      where: { variantId_attributeId: { variantId, attributeId } },
+      update: { valueId },
+      create: { variantId, attributeId, valueId },
+    });
+  }
+
+  async removeVariantAttribute(variantId: number, attributeId: number) {
+    const va = await this.prisma.variantAttribute.findUnique({
+      where: { variantId_attributeId: { variantId, attributeId } },
+    });
+    if (va) await this.prisma.variantAttribute.delete({ where: { id: va.id } });
+    return { ok: true };
+  }
+
   async setVariantPrice(variantId: number, price: number | null, userId?: number) {
     const current = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
     if (!current) throw new NotFoundException("Variante no encontrada");

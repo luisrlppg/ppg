@@ -7,6 +7,7 @@ import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import EmpaquesPorVariante from "@/components/productos/empaques-por-variante";
+import CompletarEjes from "@/components/productos/completar-ejes";
 import { api } from "@/lib/api";
 import { borrarSeleccion, guardarSeleccion, leerSeleccion } from "@/lib/local-store";
 import type { Atributo, Categoria, Grid, GridCombo, GridVarianteExistente, Packaging, ProductoDetalle, Variante } from "@/lib/types";
@@ -904,6 +905,16 @@ export default function ProductoDetallePage() {
               <p className="muted small">No se encontró esa combinación.</p>
             )}
           </div>
+        )}
+
+        {grid && grid.ejes.length > 0 && (
+          <CompletarEjes
+            productoNombre={d.nombre}
+            ejes={grid.ejes}
+            variantes={d.variantes}
+            onSaved={cargar}
+            onNotify={notify}
+          />
         )}
 
         <div className="spacer" />
