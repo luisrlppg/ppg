@@ -29,12 +29,23 @@ scripts/      # Scripts de utilidad
 - `ProductAttributeLine` asigna atributos a productos (N:N)
 - Atributos propios vs heredados (de componentes del BOM)
 
-### Atributos actuales
-- Tamaño rosca (10mm, 13mm, 15mm)
-- Altura vastago (10mm-35mm)
-- Agujero vastago (Plano, Normal)
-- Forma tapa (Hexagonal, Bala, Rebeca, Yadis)
-- Color tapa (Negro, Blanco, Transparente, Personalizado)
+### Atributos (consolidados 2026-10-03)
+- Globales, asignados por producto (`ProductAttributeLine`); los ejes pueden restringirse con
+  `ProductAttributeValue` (si no hay filas → se asumen **todos** los valores del atributo).
+- **Un atributo por producto** (convención `<Propiedad> de <Producto>`): `Altura de Mango`,
+  `Altura de Vastago`, `Altura de Taparrosca`, `Altura de Botella`, `Altura de Escurridor`,
+  `Altura de Sobretapa`, `Color de Botella`, `Color de Vastago`, `Color de Sobretapa`,
+  `Color de Escurridor`, `Color de Taparrosca`, `Color de Tapon`, `Color de Tapa con Pincel`,
+  `Color de Palillo`, `Color de Cepillo Nylon`, `Color de Cepillo Silicon`, `Color de Cerda de Pincel`,
+  `Color de Cerda de Cepillo`, `Color de PVC`, `Tipo de Mango`, `Tipo de Vastago`, `Tipo de Botella`,
+  `Tipo de Taparrosca`, `Tipo de Tapa con Pincel`, `Tipo de Sobretapa`, `Tipo de Punta`,
+  `Forma de Taparrosca`, `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
+  `Agujero de Vastago`, `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`,
+  `Capacidad de Botella`.
+- Compartidos legítimos: `Tamaño rosca`, `Ceja`, `Punta`, `Estado`, `Grosor cerda`, `Medidas`,
+  `Medida pincel`, `Logo`, `Versión del vástago`, `Densidad`.
+- Estilo de valores: **primera letra mayúscula**, sin duplicados dentro del mismo atributo.
+- El producto **PVC** (uom kg) se creó con `Color de PVC` (`Violeta`, `Transparente`).
 
 ### Pasos del storefront (ProductPasso)
 6 pasos para Taparrosca con Pincel (pasos 1-3 → Vástago, paso 4 → Pincel, pasos 5-6 → Taparrosca).
@@ -56,7 +67,7 @@ por compatibilidad en la respuesta.
 - `POST /productos/:id/materializar` — crear UNA variante puntual (idempotente)
 - `DELETE /productos/variantes/:vid` — eliminar una variante **sin historial** (si tiene stock/ventas/OFs/reportes/usos como componente → 409 con motivo)
 - `DELETE /productos/:id/definitivo` — hard delete de producto sin historial; `DELETE /productos/:id` es **desactivar** (soft)
-- `POST /api/clientes/importar` — importa CSV (nombre,telefono,direccion,email); devuelve `{ creados, omitidos }`
+- `POST /api/clientes/importar` — importa CSV (nombre,telefono,direccion,email,empresa); empresa es la 5ª columna opcional; dedupe por nombre+empresa; devuelve `{ creados, omitidos }`
 - `DELETE /api/clientes/:id/definitivo` — hard delete de cliente **sin ventas** (si tiene → 409 con motivo); `DELETE /api/clientes/:id` es **desactivar** (soft)
 - `POST /api/inventario/ajuste` — fija la cantidad absoluta de (variante, ubicación) y registra un `StockMove` con el delta y `motivo: ajuste`
 - `POST /api/fabricacion` — alta **manual** de OF (`{ variantId, cantidad, notas? }`); netea los componentes en cascada y crea la OF (exactamente N). La operación de ensamble de inventario fue **retirada**
@@ -83,6 +94,13 @@ por compatibilidad en la respuesta.
 - `scripts/seed-products.ts` — configura estructura BOM + ProductAttributeLine + ProductPasso
 - `scripts/seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3 (reportes/producción); idempotente
 - `scripts/seed-demo-ventas.ts` — siembra variantes únicas + combo taparrosca SIN stock para probar el flujo ventas → confirmación → neteo → cascada de OFs (E2); idempotente
+- `scripts/odoo-migration/step8-clientes.ts` — migra `scripts/odoo-data/contacts.csv` a Clientes (`Partner`): separa `Persona, Empresa`, omite direcciones hijas, descarta el email de prueba, limpia teléfonos y normaliza a Título; idempotente por nombre+empresa. `--dry` no escribe y genera `scripts/odoo-migration/clientes-revision.csv`
+- `scripts/odoo-migration/step9-min-max.ts` — aplica `stockMin/stockMax` desde `min-max.csv` (resuelve por `familiaOdoo`+atributos con `variantes.csv`). Soporta `--file`, `--apply`, `--factor` (máx implícito si Máx=0) y `--pendientes`; en `--pendientes` descuenta lo resuelto (`min-max-resueltos.csv`) y lo omitido (`min-max-omitidos.csv`).
+- `scripts/odoo-migration/step10-materializar.ts` — materializa variantes faltantes desde `materializar-faltantes.csv` (clona `baseSku` + `overrides`), crea valores y fija min/máx. `--dry`/`--apply`.
+- `scripts/reorg-atributos.ts` — split/rename de atributos por producto desde `atributos-mapping.csv` (re-apunta variantes, ejes, permitidos y pasos). `--dry`/`--apply`.
+- `scripts/consolidar-atributos.ts` — consolidación one-off: splits, merges, repunts, renombres, borrado de muertos y normalización de valores (primera mayúscula + colisiones). `--dry`/`--apply`.
+- `scripts/finalizar-minmax.ts` — crea el producto PVC y asigna la forma a los Pino del Cepillo Nylon. `--dry`/`--apply`.
+- `scripts/odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**: `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `scripts/ppg.sh` — único gestor de servidores (alias `ppg` en `~/.bashrc`): `ppg start|stop|restart|reload|status|logs|db`. `start` hace bootstrap completo (Postgres + deps + migraciones) y arranca api+web con hot-reload en background; `reload` aplica migraciones y reinicia; `db <native|docker|auto|stop>` elige el motor de Postgres (persistido como `PPG_DB_MODE` en `.env`). **No siembra.**
 
 ## Pendiente

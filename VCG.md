@@ -230,6 +230,10 @@ vez de inventar clases nuevas:
 | Login / roles / JWT | `auth/` |
 | Tipos shared | `web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` |
+| Migración Odoo → mín/máx | `scripts/odoo-migration/step9-min-max.ts` (resuelve con `variantes.csv`; `--file`, `--pendientes`, `--apply`) + `step10-materializar.ts` |
+| Reorg / consolidación de atributos | `scripts/reorg-atributos.ts` + `scripts/consolidar-atributos.ts` (`--dry`/`--apply`) |
+| Producto PVC + forma Cepillo Pino | `scripts/finalizar-minmax.ts` |
+| Crosswalk Odoo↔PPG | `scripts/odoo-migration/mapeo-odoo-ppg.csv` (por variante) + `mapping-odoo.csv` (por plantilla) |
 
 ---
 
@@ -294,6 +298,15 @@ vez de inventar clases nuevas:
 
 ---
 
-*Última actualización: 2026‑09‑30 (mapa web + componentes UI + ventas `.ofs` eliminado). Este mapa de líneas
+- **Atributos consolidados (2026‑10‑03):** se separó el catálogo global por producto
+  (`Altura de X`, `Color de X`, `Tipo de X`, `Forma de X`, `Agujero de X`, `Capacidad de Botella`,
+  `Tamaño de Caja de Cartón`, etc.), se fusionaron duplicados (`Tipo de Pincel` → `Tipo de Mango`,
+  `Altura Mango2` → `Altura de Mango`), se normalizó a primera mayúscula y se eliminaron atributos
+  muertos. Herramientas: `scripts/reorg-atributos.ts` y `scripts/consolidar-atributos.ts`.
+- **Mín/máx Odoo (2026‑10‑03):** migrados con `step9-min-max.ts` + `step10-materializar.ts` +
+  `finalizar-minmax.ts`; crosswalk vivo en `scripts/odoo-migration/mapeo-odoo-ppg.csv`.
+  Único pendiente: `Botella 1580 (Color: transparente)`. `Tapa con Pincel` no lleva mín/máx (por regla).
+
+*Última actualización: 2026‑10‑03 (atributos consolidados + migración de mín/máx). Este mapa de líneas
 es una referencia viva: al refactorizar, actualiza este documento para que la herramienta de vibe coding
 siempre apunte al archivo/zona correcta.*

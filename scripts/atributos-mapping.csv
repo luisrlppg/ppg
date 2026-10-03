@@ -1,0 +1,26 @@
+﻿op,atributoOrigen,producto,atributoDestino,valores,borrarOrigenLinea
+split,Altura vastago,Mango,Altura vastago de Mango,19mm|24mm|28mm|30mm|33mm|35mm|58mm,si
+split,Altura vastago,Pincel,Altura vastago de Pincel,18mm|19mm|24mm|28mm|30mm|33mm|35mm|58mm,si
+split,Altura vastago,Rimel Nylon,Altura vastago de Rimel Nylon,20mm,si
+split,Altura vastago,Taparrosca con Pincel,Altura vastago de Taparrosca con Pincel,10mm,si
+split,Altura vastago,Vastago,Altura vastago de Vastago,14mm|19mm|21mm|29mm|35mm|43mm|60mm|62mm|70mm|74mm|82mm,si
+split,Altura tapa,Taparrosca,Altura tapa de Taparrosca,18mm|23mm|25mm|26mm|30mm|35mm|37mm|38mm|44mm,si
+split,Color,Botella,Color de Botella,amarillo keratina|beige|blanco|carbon black|chocolate|colageno|cromado azul|cromado oro|cromado plata|cromado rosa|hueso de mamey|lila|morado hipoalergenico|morado prosa|naranja|negro|rosa 1348|rosa 52377|rosa silicon|te verde|transparente,si
+split,Color,Cerda,Color de Cerda,negro|transparente,si
+split,Color,Escurridor,Color de Escurridor,negro|transparente,si
+split,Color,Palillo,Color de Palillo,amarillo|amarillo neon|blanco|lila|naranja neon|negro|rosa|rosa neon|verde neon,si
+split,Color,Sobretapa,Color de Sobretapa,amarillo keratina|azul barradas|azul cielo|blanco|chocolate|fiusha|gris 134|gris 2170|lila|morado hipoalergenico|naranja barradas|naranja rohs 52622|negro|rojo jorge diaz|rosa 0708|rosa lili|steel green|verde barradas|verde t5g1878|violeta,si
+split,Color,Tapa con Pincel,Color de Tapa con Pincel,blanco|gris|negro|rosa glither|rosa ultra|transparente,si
+split,Color,Taparrosca,Color de Taparrosca,amatista|blanco|bugambilia|desconocido|menta|morado satin|negro|negro mate|oro|orquidea|plata|plata cromada|rosa 0992|rosa glither|sara|transparente|tutifruti|vegas|vino|watermelon,si
+split,Color,Tapon,Color de Tapon,fiusha|lila|naranja|negro|rosa|verde,si
+split,Color,Vastago,Color de Vastago,blanco|negro|transparente,si
+split,Tipo,Botella,Tipo de Botella,conica|corta|delineador|mini|normal,si
+split,Tipo,Mango,Tipo de Mango,normal|pelikan|plano,si
+split,Tipo,Pincel,Tipo de Pincel,normal|pelikan|plano,si
+split,Tipo,Punta Delineador;Punta Lip Gloss;Punta Tratamiento,Tipo de Punta,delineador|punta lip gloss|punta lip gloss grande|punta lip gloss tipo hoja|tratamiento nocturno,si
+split,Tipo,Sobretapa,Tipo de Sobretapa,normal,si
+split,Tipo,Tapa con Pincel,Tipo de Tapa con Pincel,gg|hexagonal|normal|rebeca|yadis,si
+split,Tipo,Taparrosca,Tipo de Taparrosca,bala|hexagonal|mini yadis|normal|triangular|yadis,si
+split,Tipo,Vastago,Tipo de Vastago,casquillo|delineador|externo|normal|sin rosca,si
+rename,Forma,,Forma de cepillo nylon,,no
+rename,Forma del cepillo,,Forma de cepillo silicon,,no

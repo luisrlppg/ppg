@@ -160,8 +160,9 @@ export class CatalogosController {
     const attr = await this.prisma.attribute.findUnique({ where: { id } });
     if (!attr) throw new NotFoundException("Atributo no encontrado");
 
-    if (dto.nombre) {
+    if (dto.nombre !== undefined) {
       const nombre = dto.nombre.trim();
+      if (!nombre) throw new BadRequestException("El nombre del atributo no puede estar vacío");
       const conflict = await this.prisma.attribute.findFirst({
         where: { nombre, NOT: { id } },
       });
@@ -222,6 +223,30 @@ export class CatalogosController {
     // Elimina también las referencias como valor permitido de ejes.
     await this.prisma.productAttributeValue.deleteMany({ where: { valueId: valorId } });
     await this.prisma.attributeValue.delete({ where: { id: valorId } });
+  }
+
+  @Patch("atributos/:id/valores/:valorId")
+  async renombrarValor(
+    @Param("id", ParseIntPipe) id: number,
+    @Param("valorId", ParseIntPipe) valorId: number,
+    @Body() dto: ValorDto,
+  ) {
+    const valor = dto.valor.trim();
+    if (!valor) throw new BadRequestException("El valor no puede estar vacío");
+
+    const current = await this.prisma.attributeValue.findUnique({ where: { id: valorId } });
+    if (!current || current.attributeId !== id) {
+      throw new NotFoundException("Valor no encontrado");
+    }
+    if (current.valor === valor) return current;
+
+    const conflict = await this.prisma.attributeValue.findFirst({
+      where: { attributeId: id, valor, NOT: { id: valorId } },
+    });
+    if (conflict) {
+      throw new BadRequestException(`Ya existe el valor "${valor}" en este atributo`);
+    }
+    return this.prisma.attributeValue.update({ where: { id: valorId }, data: { valor } });
   }
 
   // --- Atributos por producto (propios + heredados) ---
