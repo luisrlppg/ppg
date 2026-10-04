@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { formatCantidad as formatBase, type SeparadorMiles } from "@ppg/shared";
+import { formatCantidad as formatBase, type PublicUser, type SeparadorMiles } from "@ppg/shared";
 
 interface Preferences {
   separadorMiles: SeparadorMiles;
@@ -10,16 +10,36 @@ interface Preferences {
   formatCantidad: (valor: number | string | null | undefined) => string;
 }
 
-const Ctx = createContext<Preferences | null>(null);
+interface Auth {
+  user: PublicUser | null;
+  loading: boolean;
+  refresh: () => Promise<void>;
+}
 
-export function PreferencesProvider({
-  initial,
-  children,
-}: {
-  initial: SeparadorMiles;
-  children: React.ReactNode;
-}) {
-  const [separadorMiles, setSep] = useState<SeparadorMiles>(initial);
+const PreferencesCtx = createContext<Preferences | null>(null);
+const AuthCtx = createContext<Auth | null>(null);
+
+export function PreferencesProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<PublicUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [separadorMiles, setSep] = useState<SeparadorMiles>("coma");
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api<{ user: PublicUser }>("/auth/me");
+      setUser(data.user);
+      setSep(data.user.separadorMiles);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const setSeparadorMiles = useCallback(
     async (s: SeparadorMiles) => {
@@ -43,20 +63,32 @@ export function PreferencesProvider({
     [separadorMiles],
   );
 
-  const value = useMemo(
+  const prefs = useMemo(
     () => ({ separadorMiles, setSeparadorMiles, formatCantidad }),
     [separadorMiles, setSeparadorMiles, formatCantidad],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  const auth = useMemo(() => ({ user, loading, refresh }), [user, loading, refresh]);
+
+  return (
+    <AuthCtx.Provider value={auth}>
+      <PreferencesCtx.Provider value={prefs}>{children}</PreferencesCtx.Provider>
+    </AuthCtx.Provider>
+  );
 }
 
 export function usePreferences(): Preferences {
-  const ctx = useContext(Ctx);
+  const ctx = useContext(PreferencesCtx);
   if (!ctx) throw new Error("usePreferences debe usarse dentro de PreferencesProvider");
   return ctx;
 }
 
 export function useFormatCantidad() {
   return usePreferences().formatCantidad;
+}
+
+export function useAuth(): Auth {
+  const ctx = useContext(AuthCtx);
+  if (!ctx) throw new Error("useAuth debe usarse dentro de PreferencesProvider");
+  return ctx;
 }

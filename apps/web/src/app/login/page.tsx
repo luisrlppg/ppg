@@ -3,10 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/preferences";
 import { type LoginResponse } from "@ppg/shared";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,6 +23,7 @@ export default function LoginPage() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
+      await refresh();
       router.push("/");
       router.refresh();
     } catch (err) {
