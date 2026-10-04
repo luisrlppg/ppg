@@ -108,6 +108,7 @@ export class VentasService {
         nombre: l.variant.nombre,
         producto: l.variant.product.nombre,
         uom: l.variant.product.uom,
+        imagen: l.variant.imagen ?? l.variant.product.imagen,
         cantidad: dec(l.cantidad),
         precioUnitario: dec(l.precioUnitario),
         subtotal: dec(l.cantidad) * dec(l.precioUnitario),

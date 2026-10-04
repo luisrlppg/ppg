@@ -7,6 +7,7 @@ import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import NuevaVenta from "@/components/ventas/nueva-venta";
+import DocumentoVenta from "@/components/ventas/documento-venta";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { Venta } from "@/lib/types";
@@ -31,6 +32,7 @@ export default function VentasPage() {
   const [vista, setVista] = useState<"lista" | "detalle">("lista");
   const [nuevaOpen, setNuevaOpen] = useState(false);
   const [detalle, setDetalle] = useState<Venta | null>(null);
+  const [imprimirVenta, setImprimirVenta] = useState<Venta | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
@@ -53,6 +55,7 @@ export default function VentasPage() {
     setVista("detalle");
     setError("");
     setMsg("");
+    return d;
   }
 
   // ------------------------------------------------------- Acciones sobre venta
@@ -149,9 +152,14 @@ export default function VentasPage() {
             </>
           }
           actions={
-            <button className="btn ghost" onClick={() => { setVista("lista"); cargarLista(); }}>
-              Volver
-            </button>
+            <>
+              <button className="btn primary" style={{ flex: 0 }} onClick={() => setImprimirVenta(d)}>
+                Imprimir
+              </button>
+              <button className="btn ghost" style={{ flex: 0 }} onClick={() => { setVista("lista"); cargarLista(); }}>
+                Volver
+              </button>
+            </>
           }
         />
 
@@ -350,6 +358,10 @@ export default function VentasPage() {
           />
         )}
 
+        {imprimirVenta && (
+          <DocumentoVenta venta={imprimirVenta} onCerrar={() => setImprimirVenta(null)} />
+        )}
+
         {despacho && (
           <Modal title="Despachar línea" onClose={() => setDespacho(null)} size="sm">
             <p className="muted small" style={{ marginTop: 0 }}>
@@ -460,7 +472,10 @@ export default function VentasPage() {
           {error && <div className="error">{error}</div>}
           {msg && <div className="msg-ok">{msg}</div>}
           <NuevaVenta
-            onCreada={(id) => { setNuevaOpen(false); abrirDetalle(id); }}
+            onCreada={(id) => {
+              setNuevaOpen(false);
+              abrirDetalle(id).then(setImprimirVenta).catch((e) => setError((e as Error).message));
+            }}
             onError={(m) => setError(m)}
             onMsg={(m) => setMsg(m)}
           />

@@ -56,7 +56,7 @@ Registrados en `app.module.ts`.
 ### 2.2 Ventas / neteo / OFs → `ventas/`
 - `ventas.controller.ts` (107) — rutas `/api/ventas...`
 - `ventas.service.ts` (402), zonas:
-  - `list` 28 · `get` (con OFs asociados) 69 · `create` 143 · `update` 206
+  - `list` 28 · `get` (con OFs asociados; cada línea incluye `imagen = variant.imagen ?? product.imagen`) 69 · `create` 143 · `update` 206
   - **`confirmar` = NETEO + CASCADA DE OFs** 266 (lo más crítico): `$transaction` + carga BOM `exacto` con caché → `netear` recursivo multi-nivel con detección de ciclos → genera OFs `fabricacion`/`ensamble` **inline** (con `configuracion`) → persiste `resumen` en la venta.
   - `despacharLinea` (consume stock, dispara monitor) 309 · `cancelar` 389
 - `ventas.types.ts` (18): `ResumenItem`, `ResumenNeteo`, `ConfiguracionLinea` (re-exportados desde `ventas.service`).
@@ -149,7 +149,7 @@ y `AppShell` (excepto tienda y login).
 | Lista productos | `app/productos/page.tsx` | 395 | grid/tabla + alta en modal; eliminar con fallback a desactivar |
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
-| Ventas | `app/ventas/page.tsx` | 469 | lista/detalle/confirmar/despachar; alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 322): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas, alta de cliente inline (`components/clientes/cliente-form-modal.tsx`) + `modal-config-variante.tsx` (338) |
+| Ventas | `app/ventas/page.tsx` | 486 | lista/detalle/confirmar/despachar/**imprimir**; alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 322): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas, alta de cliente inline (`components/clientes/cliente-form-modal.tsx`) + `modal-config-variante.tsx` (338). Documento imprimible: `components/ventas/documento-venta.tsx` (overlay + `window.print()`, toggle IVA 16%, imagen por línea) |
 | Fabricación (OFs) | `app/fabricacion/page.tsx` | 431 | listar/acciones/detalle; **+ Nueva OF** y **Reponer** (mín/máx con preview) |
 | Inventario | `app/inventario/page.tsx` | 797 | toolbar + 4 vistas (Por ubicación / Por variante / Por variante min max / Por producto); cantidad editable (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
 | Reportes de producción | `app/reportes/page.tsx` | 718 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
@@ -187,6 +187,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Editar BOM / componentes | `productos.service.ts:255` · `app/productos/[id]/page.tsx` (Lista de materiales) |
 | Neteo de materiales / generar OFs | `ventas.service.ts:266` (`confirmar`, recursión inline) + `fabricacion/planificacion.service.ts` |
 | Despachar línea / consumo de stock | `ventas.service.ts:309` |
+| Imprimir venta / documento de venta (IVA, imagen) | `components/ventas/documento-venta.tsx` · `app/ventas/page.tsx` (overlay `imprimirVenta`) · `ventas.service.get` (`imagen`) |
 | Reporte de producción / aplicar | `reportes.service.ts:222` |
 | Alta manual de OF / reponer mín-máx | `fabricacion.service.ts:113` y `:175` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
