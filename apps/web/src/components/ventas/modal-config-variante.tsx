@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/ui/modal";
 import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
-import { buildPaneles, esPanelResuelto, resolver, seleccionActual, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
+import { buildPaneles, esPanelResuelto, resolver, seleccionHasta, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
 import type { ConfiguracionLinea, Passo, PassoOption, ProductoPublico } from "@/lib/types";
 
 export interface LineaConfigurada {
@@ -42,33 +42,44 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
       .catch((e) => { setError((e as Error).message); setPasosListos(true); });
   }, [producto.productId]);
 
-  // Recarga las opciones del servidor cada vez que cambia la selección (cascada).
-  useEffect(() => {
-    if (!pasosListos || passos.length === 0) return;
-    let cancel = false;
-    const sel = seleccionActual(passos, selIdx);
-    if (sel.length === 0) return;
-    getPasosConSeleccion(producto.productId, sel)
-      .then((ps) => { if (!cancel) setPassos(ps); })
-      .catch(() => {});
-    return () => { cancel = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(selIdx)]);
-
-  // Limpia selecciones que la cascada dejó inválidas (no preselecciona).
-  useEffect(() => {
-    if (!pasosListos || passos.length === 0) return;
-    setSelIdx((prev) => {
-      const { next, changed } = limpiarSeleccionesInvalidas(passos, prev);
-      return changed ? next : prev;
-    });
-  }, [passos, pasosListos]);
-
   const paneles = useMemo(() => buildPaneles(passos), [passos]);
   const esRevision = panelActual >= paneles.length;
 
+  // Al elegir una opción NO se recarga: la lista del paso queda completa.
   function elegirOpcion(pasoIdx: number, opt: PassoOption) {
     setSelIdx((prev) => ({ ...prev, [pasoIdx]: opt.valueId }));
+  }
+
+  // Avanza aplicando la cascada (opciones del siguiente paso según lo confirmado).
+  async function avanzar() {
+    const pasoActual = paneles[panelActual];
+    if (!pasoActual) return;
+    const ultimoIdx = pasoActual.pasos[pasoActual.pasos.length - 1];
+    const sel = seleccionHasta(passos, selIdx, ultimoIdx);
+    let nuevos = passos;
+    if (sel.length > 0) {
+      try { nuevos = await getPasosConSeleccion(producto.productId, sel); } catch { nuevos = passos; }
+    }
+    setPassos(nuevos);
+    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, ultimoIdx + 1).next);
+    setPanelActual(panelActual + 1);
+  }
+
+  // Retrocede reofreciendo todas las opciones del paso anterior (cascada hasta el anterior).
+  async function retroceder() {
+    if (panelActual === 0) return;
+    const objetivo = panelActual - 1;
+    const panelObj = paneles[objetivo];
+    const panelPrevio = paneles[objetivo - 1];
+    const ultimoIdxAntes = panelPrevio ? panelPrevio.pasos[panelPrevio.pasos.length - 1] : -1;
+    const sel = seleccionHasta(passos, selIdx, ultimoIdxAntes);
+    let nuevos = passos;
+    if (sel.length > 0) {
+      try { nuevos = await getPasosConSeleccion(producto.productId, sel); } catch { nuevos = passos; }
+    }
+    setPassos(nuevos);
+    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, panelObj.pasos[0]).next);
+    setPanelActual(objetivo);
   }
 
   function panelResuelto(p: { pasos: number[] }): boolean {
@@ -244,10 +255,10 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
         {panelActual > 0 ? (
-          <button type="button" className="btn ghost" onClick={() => setPanelActual(panelActual - 1)}>← Atrás</button>
+          <button type="button" className="btn ghost" onClick={retroceder}>← Atrás</button>
         ) : <span />}
         {!esRevision ? (
-          <button type="button" className="btn primary" onClick={() => setPanelActual(panelActual + 1)} disabled={!puedeAvanzar()}>
+          <button type="button" className="btn primary" onClick={avanzar} disabled={!puedeAvanzar()}>
             {panelActual === paneles.length - 1 ? "Revisar →" : "Siguiente →"}
           </button>
         ) : (

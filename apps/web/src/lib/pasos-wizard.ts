@@ -40,6 +40,21 @@ export function seleccionActual(passos: Passo[], selecciones: Record<number, num
   return out;
 }
 
+/** Selección confirmada hasta el paso `hastaIdx` inclusive (para pedir opciones al avanzar). */
+export function seleccionHasta(
+  passos: Passo[],
+  selecciones: Record<number, number | undefined>,
+  hastaIdx: number,
+): SeleccionPaso[] {
+  const out: SeleccionPaso[] = [];
+  passos.forEach((p, i) => {
+    if (i > hastaIdx) return;
+    const valueId = selecciones[i];
+    if (valueId !== undefined) out.push({ attributeId: p.attributeId, valueId });
+  });
+  return out;
+}
+
 export function resolver(
   productId: number,
   passos: Passo[],
@@ -53,17 +68,19 @@ export function resolver(
 }
 
 /**
- * Limpia selecciones que dejaron de ser válidas tras recargar opciones por la
- * cascada (si el valueId elegido ya no está entre las opciones). NO preselecciona:
- * la elección la hace el usuario.
+ * Limpia en silencio las selecciones que dejaron de ser válidas tras recargar
+ * opciones por la cascada. Solo desde `desdeIdx` en adelante: los pasos en curso
+ * y anteriores no se tocan. NO preselecciona: la elección la hace el usuario.
  */
 export function limpiarSeleccionesInvalidas(
   passos: Passo[],
   selecciones: Record<number, number | undefined>,
+  desdeIdx = 0,
 ): { next: Record<number, number | undefined>; changed: boolean } {
   let changed = false;
   const next = { ...selecciones };
   passos.forEach((p, i) => {
+    if (i < desdeIdx) return;
     const actual = next[i];
     if (actual !== undefined && !p.opciones.some((o) => o.valueId === actual)) {
       delete next[i];

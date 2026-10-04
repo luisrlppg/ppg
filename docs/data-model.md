@@ -102,7 +102,8 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
   primer paso = `Tamaño de Botella` (componente Botella), que deriva `Tamaño rosca` y altura.
 - **Regla BTVPE:** la altura del vástago ≤ altura de la botella + 2mm (hardcoded para SKU `BTVPE-*`
   en `public.service.ts`). El wizard muestra **un paso por sub-pregunta** (`panel` único) y **resalta**
-  la primera opción sin seleccionarla (la elige el usuario).
+  la primera opción sin seleccionarla (la elige el usuario). La **cascada se aplica al avanzar**
+  (no al seleccionar); "Atrás" reofrece el paso y limpia en silencio los posteriores inválidos.
 
 ## Reglas de negocio relevantes
 

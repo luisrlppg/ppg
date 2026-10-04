@@ -163,6 +163,10 @@ Ejes comunes a los BTVPE:
 > vástago, color de vástago, … no se combinan. El wizard **resalta** la primera opción
 > (borde rojo `--brand`) pero **no la selecciona**: el usuario debe hacer clic y solo
 > entonces "Siguiente" se habilita. Los pasos con una sola opción también se muestran.
+> **Cascada al avanzar:** elegir una opción NO recarga la lista (puedes cambiar libremente
+> dentro del paso). Las opciones del siguiente paso se calculan al pulsar "Siguiente".
+> "Atrás" reofrece todas las opciones del paso anterior; si cambias una selección, los
+> pasos posteriores que sigan siendo válidos se conservan y los inválidos se limpian en silencio.
 > **Regla de compatibilidad (solo BTVPE):** la altura del vástago no puede exceder la
 > altura de la botella + 2mm (Botella 60mm → vástago ≤62mm; Botella 80mm → ≤82mm).
 > Se aplica en `getPasos` (filtra opciones) y en `resolverConfiguracion` (valida).
