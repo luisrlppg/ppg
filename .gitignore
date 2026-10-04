@@ -15,3 +15,8 @@ uploads/
 scripts/odoo-data/
 scripts/odoo-migration/
 docs/backups/
+docs/catalog-snapshot.json
+docs/catalog-snapshot.md
+docs/odoo-diff-report.md
+docs/odoo-diff-report.csv
+scripts/catalog/ops/odoo-diff-*.yaml

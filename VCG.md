@@ -235,12 +235,15 @@ vez de inventar clases nuevas:
 | Migración Odoo → mín/máx | `scripts/odoo-migration/step9-min-max.ts` (resuelve con `variantes.csv`; `--file`, `--pendientes`, `--apply`) + `step10-materializar.ts` |
 | Reconciliación inventario Odoo↔PPG | `scripts/odoo-migration/reconcile-stock.ts` (mapea con `mapeo-odoo-ppg.csv`; difiere subensamblados; compara contra BD o `--ppg <csv>`; genera `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`; `--apply` ajusta sólo renglones `ajuste`; `--reset` borra stock y recarga el snapshot Odoo) |
 | Reorg / consolidación de atributos | `scripts/reorg-atributos.ts` + `scripts/consolidar-atributos.ts` (`--dry`/`--apply`) |
+| Migraciones de catálogo (estado + ops declarativas) | `scripts/catalog/` (`snapshot.ts`, `apply.ts`, `odoo-diff.ts`) + `scripts/catalog/ops/*.yaml` + `docs/CATALOG-OPS.md` |
 | Producto PVC + forma Cepillo Pino | `scripts/finalizar-minmax.ts` |
 | Cepillos: forma en vez de Medidas/Estado/grosor | `scripts/reorg-cepillos.ts` + `scripts/reorg-cepillos-grosor.ts` (`--dry`/`--apply`); reconciliación resuelve cepillos por BD (`reconcile-stock.ts`) |
 | Notas internas de variante (medidas/grosor) | `ProductVariant.notas`; `scripts/seed-cepillos-notas.ts`; página de variante `app/productos/[id]/variantes/[vid]/page.tsx` |
 | Crosswalk Odoo↔PPG | `scripts/odoo-migration/mapeo-odoo-ppg.csv` (por variante) + `mapping-odoo.csv` (por plantilla) |
 | Palillos (separar sin/con cepillo) | `scripts/reorg-palillos.ts` (`--dry`/`--apply`) |
 | Reorg de Vastago (quitar `Agujero de Vastago`, simplificar `Tipo de Vastago`) | `scripts/reorg-vastago.ts` (`--dry`/`--apply`) |
+| Completar `Color`/`Punta` manuales de Vastago | `scripts/completar-vastago.ts` (`--dry`/`--apply`) + `mapeo-odoo-ppg.csv` |
+| Eliminar `Tipo de Mango` y sincronizar `Pincel`↔`Mango` | `scripts/reorg-tipo-mango.ts` (`--dry`/`--apply`) |
 
 ---
 

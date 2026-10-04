@@ -12,6 +12,9 @@
     "db:seed:demo": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-demo.ts",
     "db:seed:demo:ventas": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-demo-ventas.ts",
     "db:studio": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma studio",
+    "cat:snapshot": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/snapshot.ts",
+    "cat:apply": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/apply.ts",
+    "cat:odoo-diff": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/odoo-diff.ts",
     "build": "pnpm -r build",
     "dev": "pnpm --parallel --filter @ppg/api --filter @ppg/web run dev",
     "dev:api": "pnpm --filter @ppg/api run dev",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "yaml": "^2.9.1"
   }
 }

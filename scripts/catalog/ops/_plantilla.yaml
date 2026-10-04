@@ -1,0 +1,31 @@
+# Plantilla de operaciones de catálogo. Copia y edita.
+# Corre: pnpm exec dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/apply.ts --file scripts/catalog/ops/mi-caso.yaml --apply
+version: 1
+name: mi-caso
+description: qué hace este archivo
+ops:
+  # --- Atributos ---
+  # - { op: attr.ensure,        name: "Nuevo atributo", values: [A, B] }
+  # - { op: attr.rename,        from: "Viejo", to: "Nuevo" }
+  # - { op: attr.merge,         from: "Duplicado", into: "Oficial" }
+  # - { op: attr.delete,        name: "Muerto" }          # cascade: true para borrar variantes
+  # - { op: attr.assignAxis,    product: Pincel, attribute: Ceja }
+  # - { op: attr.unassignAxis,  product: Pincel, attribute: Ceja }
+  # - { op: attr.restrictValues, product: Vastago, attribute: "Punta", values: [Nylon, Gloss] }
+  # - { op: attr.splitByProduct, from: "Color", into: { Mango: "Color de Mango", Pincel: "Color de Pincel" } }
+  # --- Valores ---
+  # - { op: value.add,     attribute: Ceja, value: Pelikan }
+  # - { op: value.rename,  attribute: Ceja, from: Delgada, to: Fina }
+  # - { op: value.merge,   attribute: Ceja, from: Fina, into: Delgada }
+  # - { op: value.delete,  attribute: Ceja, value: Fina }
+  # - { op: value.remap,   fromAttr: "Tipo de Mango", fromValue: Pelikan, toAttr: Ceja, toValue: Pelikan }
+  # --- Variantes ---
+  # - { op: variant.set,        sku: PIN-0015, attribute: Ceja, value: Pelikan }
+  # - { op: variant.clear,      sku: PIN-0015, attribute: "Agujero de Mango" }
+  # - { op: variant.create,     product: Pincel, sku: "PIN-13mm-35mm-plano", attrs: { "Tamaño rosca": 13mm, "Altura de Mango": 35mm } }
+  # - { op: variant.copy,       from: PIN-0010, sku: "PIN-13mm-35mm-plano", overrides: { "Agujero de Mango": Plano } }
+  # - { op: variant.deriveFrom, target: Pincel, source: Mango, on: ["Tamaño rosca", "Altura de Mango"], inherit: [Ceja, "Agujero de Mango"] }
+  # - { op: variant.delete,     sku: PIN-0099, allowStock: true }
+  # --- Pasos de tienda ---
+  # - { op: step.repoint, product: "Taparrosca con Pincel", fromAttribute: "Agujero vastago", toAttribute: "Agujero de Mango" }
+  - { op: value.add, attribute: Ceja, value: Ejemplo }
