@@ -926,7 +926,7 @@ export default function ProductoDetallePage() {
                       )}
                     </div>
                   </td>
-                  <td>{v.stockActual} {d.uom}</td>
+                  <td>{v.stockActual}</td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={v.published} onChange={() => toggle(v, "published")} style={{ width: "auto" }} />
                   </td>

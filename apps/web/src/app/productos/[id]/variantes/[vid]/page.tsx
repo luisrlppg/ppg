@@ -197,7 +197,7 @@ export default function VariantePage() {
           <tfoot>
             <tr>
               <td><strong>Total</strong></td>
-              <td className="num"><strong>{v.stockActual} {v.uom}</strong></td>
+              <td className="num"><strong>{v.stockActual}</strong></td>
             </tr>
           </tfoot>
         </table>
