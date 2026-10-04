@@ -6,7 +6,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos:
    `productos/[id]/page.tsx` (954), `inventario/page.tsx` (797), `reportes/page.tsx` (718),
-   `ventas/page.tsx` (472), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
+   `ventas/page.tsx` (469), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (Taparrosca sin `Forma`,
    `PIN-0011`, crosswalk con SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
@@ -20,6 +20,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Alta de venta en modal con wizard (2026-10-04):** la vista "Nueva venta" (`/ventas`) ahora abre un
+  `Modal` con wizard de 3 pasos (Cliente → Producto → Revisión) y stepper; el stepper y las acciones
+  quedan fijos y solo la lista hace scroll interno. Permite **crear el cliente sin salir** desde
+  `components/clientes/cliente-form-modal.tsx` (compartido con `/clientes`); el cliente es opcional
+  ("Sin asignar"). Se dejaron de pedir **fecha de entrega** y **notas** en la UI (siguen como campos
+  opcionales del dominio). Ver [§7.2](../REQUIREMENTS.md).
 - **Wizard de ventas — Modelo B (2026-10-04):** los pasos guiados (`ProductPasso`) pasaron a tomar
   las opciones de las **variantes activas del componente** (`variantProductId`), no del producto
   vendido. Se agregó `panel` (agrupa pasos; reemplaza el regex de color), `getPasos(id, seleccion)`
@@ -43,8 +49,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   breadcrumb y navegación numerada; inventario usa toolbar con modales y toggle de 4 vistas; el Inicio
   muestra dashboard de pendientes; se reemplazaron `confirm`/`prompt` por modales. Se eliminaron
   `ui/badge.tsx` y `ui/empty-state.tsx`.
-- **Nueva venta (2026-08-31):** el alta parte de un **grid de productos públicos** + **modal guiado**
-  (estilo storefront) en vez de búsqueda libre. El modal y `/tienda` reusan `getPasos` (opciones =
+- **Nueva venta (2026-08-31, reorganizada 2026-10-04):** el alta parte de un **grid de productos
+  públicos** + **modal guiado** (estilo storefront) en vez de búsqueda libre; hoy precedido por el
+  paso de cliente (ver entrada de alta en modal más arriba). El modal y `/tienda` reusan `getPasos` (opciones =
   variantes publicadas del producto navegado) y filtran por conjunto de variantes compatibles (intersección
   por `variantId`). En `/productos/[id]` se unificaron combinaciones y variantes con "Materializar
   combinación" (sin generador masivo). **Pendiente:** imágenes de opciones (hoy placeholders) y precios

@@ -29,7 +29,7 @@ Construir un ERP propio, libre de Odoo, con una **base de datos central (Postgre
 | Moneda | Solo MXN |
 | Precios | Netos (sin IVA); IVA (16%) se aplica en ventas/cotizaciones después |
 | Variantes configurables | Creación bajo demanda (lazy); el inventario incluye la acción "materializar variante" |
-| Venta en E2 | **Mínima**: solo lo necesario para planear (cliente, producto, cantidad, precio, fecha de entrega). Cotización/factura/IVA después |
+| Venta en E2 | **Mínima**: solo lo necesario para planear (cliente, producto, cantidad, precio). `fecha_entrega_deseada` y notas son campos opcionales del dominio, pero la UI de alta ya no los pide. Cotización/factura/IVA después |
 | Desglose BOM | **Multi-nivel** para componentes `exacto`; los `consumible` (cerda) quedan **fuera del neteo** (§5.7) |
 | Componentes faltantes | **Cascada automática**: generar órdenes de fabricación en cascada para componentes fabricables (§7.5) |
 | Unidad de medida | `products.uom` (pieza / metro…); cantidades decimales cuando `uom = metro` (§5.8) |
@@ -271,7 +271,7 @@ Ejemplo multi-nivel resolviendo la venta de "taparrosca con pincel":
 - CRUD de `partners` (nombre, teléfono, dirección, email). Alta manual; datos iniciales importables por CSV.
 
 ### 7.2 Venta mínima
-- Captura: cliente, producto (variante/combos), cantidad, precio_unitario, fecha de entrega deseada. Estado abierta/despachada/cancelada y estado de entrega por línea (pendiente/parcial/entregado).
+- Captura: cliente (opcional; se puede crear desde la misma vista de venta), producto (variante/combos), cantidad, precio_unitario. `fecha_entrega_deseada` y notas se conservan como campos opcionales del modelo, pero el alta interna ya no los solicita. Estado abierta/despachada/cancelada y estado de entrega por línea (pendiente/parcial/entregado).
 - NOTA: cotización/facturación/IVA quedan para una entrega posterior (E5); aquí la venta existe solo para planear.
 
 ### 7.3 Desglose BOM (multi-nivel, solo `exacto`)
