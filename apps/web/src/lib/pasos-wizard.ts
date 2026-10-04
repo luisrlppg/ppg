@@ -53,11 +53,11 @@ export function resolver(
 }
 
 /**
- * Preselecciona la primera opción disponible de cada paso (incluida la botella).
- * También limpia una selección que dejó de ser válida tras recargar opciones
- * (cascada): si el valueId guardado ya no está entre las opciones, se re-elige.
+ * Limpia selecciones que dejaron de ser válidas tras recargar opciones por la
+ * cascada (si el valueId elegido ya no está entre las opciones). NO preselecciona:
+ * la elección la hace el usuario.
  */
-export function autoSeleccionar(
+export function limpiarSeleccionesInvalidas(
   passos: Passo[],
   selecciones: Record<number, number | undefined>,
 ): { next: Record<number, number | undefined>; changed: boolean } {
@@ -65,15 +65,16 @@ export function autoSeleccionar(
   const next = { ...selecciones };
   passos.forEach((p, i) => {
     const actual = next[i];
-    const valido = actual !== undefined && p.opciones.some((o) => o.valueId === actual);
-    if (valido) return;
-    if (p.opciones.length > 0) {
-      next[i] = p.opciones[0].valueId;
-      changed = true;
-    } else if (actual !== undefined) {
+    if (actual !== undefined && !p.opciones.some((o) => o.valueId === actual)) {
       delete next[i];
       changed = true;
     }
   });
   return { next, changed };
+}
+
+/** Índice de la opción "resaltada" del paso cuando aún no hay selección (primera). */
+export function opcionResaltada(paso: Passo | undefined, seleccion: number | undefined): number | undefined {
+  if (!paso || seleccion !== undefined) return undefined;
+  return paso.opciones[0]?.valueId;
 }

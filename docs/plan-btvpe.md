@@ -157,14 +157,18 @@ Ejes comunes a los BTVPE:
 > variante vendible al confirmar. `Capacidad de Botella` (mL) → `notas` + eje `Tamaño de Botella`.
 > Cepillo Silicon tiene eje `Color de Cepillo Silicon` (Blanco/Negro); el nylon usa
 > `Color de Cerda de Cepillo`; los BTVPE usan `Forma de Sobretapa`.
-> **Textos de paso breves (v2):** "Selecciona la botella", "Selecciona el color de la
-> botella", "Selecciona un vástago", "Selecciona el color del vástago", etc. El wizard
-> **preselecciona** la primera opción disponible de cada paso.
+> **Textos de paso breves (v2/v3):** "Selecciona la botella", "Selecciona el color de la
+> botella", "Selecciona un vástago", "Selecciona el color del vástago", etc.
+> **Un paso por sub-pregunta** (`panel` único por paso): botella, color de botella,
+> vástago, color de vástago, … no se combinan. El wizard **resalta** la primera opción
+> (borde rojo `--brand`) pero **no la selecciona**: el usuario debe hacer clic y solo
+> entonces "Siguiente" se habilita. Los pasos con una sola opción también se muestran.
 > **Regla de compatibilidad (solo BTVPE):** la altura del vástago no puede exceder la
 > altura de la botella + 2mm (Botella 60mm → vástago ≤62mm; Botella 80mm → ≤82mm).
 > Se aplica en `getPasos` (filtra opciones) y en `resolverConfiguracion` (valida).
+> Referencia: `scripts/catalog/ops/btvpe-wizard-v3.yaml`.
 
-**Regla:** se usan pares **[característica, color] consecutivos** para cada componente, agrupados por `panel`.
+**Regla:** cada componente usa pasos separados por eje (característica y luego color). El agrupado se hace con `panel`; para los BTVPE cada paso tiene su propio `panel` (uno por sub-pregunta).
 
 **Comportamiento del color en el wizard:**
 - **≥2 colores** → se muestra selector de color junto a la característica.

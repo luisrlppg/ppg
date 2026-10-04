@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/ui/modal";
 import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
-import { buildPaneles, esPanelResuelto, resolver, seleccionActual, autoSeleccionar } from "@/lib/pasos-wizard";
+import { buildPaneles, esPanelResuelto, resolver, seleccionActual, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
 import type { ConfiguracionLinea, Passo, PassoOption, ProductoPublico } from "@/lib/types";
 
 export interface LineaConfigurada {
@@ -55,11 +55,11 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(selIdx)]);
 
-  // Auto-selección de pasos con una sola opción.
+  // Limpia selecciones que la cascada dejó inválidas (no preselecciona).
   useEffect(() => {
     if (!pasosListos || passos.length === 0) return;
     setSelIdx((prev) => {
-      const { next, changed } = autoSeleccionar(passos, prev);
+      const { next, changed } = limpiarSeleccionesInvalidas(passos, prev);
       return changed ? next : prev;
     });
   }, [passos, pasosListos]);
@@ -142,11 +142,12 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
     if (!paso) return null;
     const opts = paso.opciones;
     if (opts.length === 0) return null;
-    if (new Set(opts.map((o) => o.valueId)).size === 1) return null;
+    const resaltada = opcionResaltada(paso, selIdx[pasoIdx]);
     return (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
         {opts.map((opt, i) => {
           const sel = selIdx[pasoIdx] === opt.valueId;
+          const sug = !sel && resaltada === opt.valueId;
           return (
             <button
               key={`${paso.attributeId}-${opt.valueId}`}
@@ -154,17 +155,17 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
               onClick={() => elegirOpcion(pasoIdx, opt)}
               style={{
                 padding: "16px 12px",
-                border: sel ? "2px solid var(--brand)" : "1px solid #ccc",
+                border: sel || sug ? "2px solid var(--brand)" : "1px solid #ccc",
                 borderRadius: 8,
                 background: sel ? "#eff6ff" : "white",
                 cursor: "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center",
               }}
             >
-              <span style={{ fontSize: "2em", color: sel ? "var(--brand)" : "#aaa" }}>
+              <span style={{ fontSize: "2em", color: sel || sug ? "var(--brand)" : "#aaa" }}>
                 {iconosPlaceholder[i % iconosPlaceholder.length]}
               </span>
-              <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
+              <span style={{ fontWeight: sel || sug ? "bold" : "normal" }}>{opt.valor}</span>
               <span className="muted small">{opt.enStock ? "En stock" : "Sin stock"}</span>
             </button>
           );

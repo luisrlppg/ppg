@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
-import { buildPaneles, esPanelResuelto, resolver, seleccionActual, autoSeleccionar } from "@/lib/pasos-wizard";
+import { buildPaneles, esPanelResuelto, resolver, seleccionActual, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
 import type { Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
 
 interface ProductoBasico {
@@ -61,11 +61,11 @@ export default function TiendaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(selIdx)]);
 
-  // Auto-selección de pasos con una sola opción.
+  // Limpia selecciones que la cascada dejó inválidas (no preselecciona).
   useEffect(() => {
     if (passos.length === 0) return;
     setSelIdx((prev) => {
-      const { next, changed } = autoSeleccionar(passos, prev);
+      const { next, changed } = limpiarSeleccionesInvalidas(passos, prev);
       return changed ? next : prev;
     });
   }, [passos]);
@@ -140,18 +140,19 @@ export default function TiendaPage() {
     if (!paso) return null;
     const opts = paso.opciones;
     if (opts.length === 0) return null;
-    if (new Set(opts.map((o) => o.valueId)).size === 1) return null;
+    const resaltada = opcionResaltada(paso, selIdx[stepIdx]);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {opts.map((opt) => {
           const sel = selIdx[stepIdx] === opt.valueId;
+          const sug = !sel && resaltada === opt.valueId;
           return (
             <button
               key={`${paso.attributeId}-${opt.valueId}`}
               onClick={() => seleccionarOpcion(stepIdx, opt)}
               style={{
                 padding: "12px 16px",
-                border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
+                border: sel || sug ? "2px solid var(--brand)" : "1px solid #ccc",
                 borderRadius: 8,
                 background: sel ? "#eff6ff" : "white",
                 cursor: "pointer",
@@ -159,7 +160,7 @@ export default function TiendaPage() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}
             >
-              <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
+              <span style={{ fontWeight: sel || sug ? "bold" : "normal" }}>{opt.valor}</span>
               <span style={{ fontSize: "0.8em", color: opt.enStock ? "var(--success)" : "var(--warning)" }}>
                 {opt.enStock ? "En stock" : "Sin stock"}
               </span>
@@ -180,7 +181,7 @@ export default function TiendaPage() {
       <div style={{ background: "white", borderBottom: "1px solid #ddd", padding: "12px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontWeight: "bold", fontSize: "1.1em" }}>PPG ERP</span>
-          <a href="/productos" style={{ color: "var(--primary)", textDecoration: "none" }}>Admin</a>
+          <a href="/productos" style={{ color: "var(--brand)", textDecoration: "none" }}>Admin</a>
         </div>
       </div>
 
@@ -193,7 +194,7 @@ export default function TiendaPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {Array.from({ length: totalPasos }).map((_, i) => (
-              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= panelActual ? "var(--primary)" : "#ddd" }} />
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= panelActual ? "var(--brand)" : "#ddd" }} />
             ))}
           </div>
           <p className="muted small" style={{ marginTop: 6 }}>

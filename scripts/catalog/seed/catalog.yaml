@@ -1257,42 +1257,42 @@ ops:
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
-        panel: 1
+        panel: 2
         pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
-        panel: 2
+        panel: 3
         pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
-        panel: 2
+        panel: 4
         pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
-        panel: 3
+        panel: 5
         pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
-        panel: 3
+        panel: 6
         pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
-        panel: 4
+        panel: 7
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
       - sortOrder: 8
-        panel: 5
+        panel: 8
         pregunta: Selecciona un cepillo
         attribute: Forma de cepillo silicon
         variantProduct: Cepillo Silicon
       - sortOrder: 9
-        panel: 5
+        panel: 9
         pregunta: Selecciona el color del cepillo
         attribute: Color de Cepillo Silicon
         variantProduct: Cepillo Silicon
@@ -1323,42 +1323,42 @@ ops:
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
-        panel: 1
+        panel: 2
         pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
-        panel: 2
+        panel: 3
         pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
-        panel: 2
+        panel: 4
         pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
-        panel: 3
+        panel: 5
         pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
-        panel: 3
+        panel: 6
         pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
-        panel: 4
+        panel: 7
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
       - sortOrder: 8
-        panel: 5
+        panel: 8
         pregunta: Selecciona un cepillo
         attribute: Forma de cepillo nylon
         variantProduct: Cepillo Nylon
       - sortOrder: 9
-        panel: 5
+        panel: 9
         pregunta: Selecciona el color del cepillo
         attribute: Color de Cerda de Cepillo
         variantProduct: Cepillo Nylon
@@ -1389,32 +1389,32 @@ ops:
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
-        panel: 1
+        panel: 2
         pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
-        panel: 2
+        panel: 3
         pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
-        panel: 2
+        panel: 4
         pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
-        panel: 3
+        panel: 5
         pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
-        panel: 3
+        panel: 6
         pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
-        panel: 4
+        panel: 7
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
@@ -1445,32 +1445,32 @@ ops:
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
-        panel: 1
+        panel: 2
         pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
-        panel: 2
+        panel: 3
         pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
-        panel: 2
+        panel: 4
         pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
-        panel: 3
+        panel: 5
         pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
-        panel: 3
+        panel: 6
         pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
-        panel: 4
+        panel: 7
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
@@ -1506,32 +1506,32 @@ ops:
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 3
-        panel: 2
+        panel: 3
         pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 4
-        panel: 3
+        panel: 4
         pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 5
-        panel: 3
+        panel: 5
         pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 6
-        panel: 4
+        panel: 6
         pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
-        panel: 4
+        panel: 7
         pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 8
-        panel: 5
+        panel: 8
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
