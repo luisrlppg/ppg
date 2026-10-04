@@ -1,0 +1,220 @@
+# Wizard v2: textos breves de pasos para los BTVPE (Modelo B)
+version: 1
+name: btvpe-wizard-v2
+description: "Reemplaza las preguntas por instrucciones breves de selección"
+ops:
+  - op: step.set
+    product: "Rimel Silicon"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona la botella"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "Selecciona el color de la botella"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "Selecciona un vástago"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "Selecciona el color del vástago"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "Selecciona una tapa"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "Selecciona el color de la tapa"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "Selecciona un escurridor"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "Selecciona un cepillo"
+        attribute: "Forma de cepillo silicon"
+        variantProduct: "Cepillo Silicon"
+      - sortOrder: 9
+        panel: 5
+        pregunta: "Selecciona el color del cepillo"
+        attribute: "Color de Cepillo Silicon"
+        variantProduct: "Cepillo Silicon"
+  - op: step.set
+    product: "Rimel Nylon"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona la botella"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "Selecciona el color de la botella"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "Selecciona un vástago"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "Selecciona el color del vástago"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "Selecciona una tapa"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "Selecciona el color de la tapa"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "Selecciona un escurridor"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "Selecciona un cepillo"
+        attribute: "Forma de cepillo nylon"
+        variantProduct: "Cepillo Nylon"
+      - sortOrder: 9
+        panel: 5
+        pregunta: "Selecciona el color del cepillo"
+        attribute: "Color de Cerda de Cepillo"
+        variantProduct: "Cepillo Nylon"
+  - op: step.set
+    product: "Delineador"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona la botella"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "Selecciona el color de la botella"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "Selecciona un vástago"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "Selecciona el color del vástago"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "Selecciona una tapa"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "Selecciona el color de la tapa"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "Selecciona un escurridor"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+  - op: step.set
+    product: "Tratamiento de Noche"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona la botella"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "Selecciona el color de la botella"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "Selecciona un vástago"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "Selecciona el color del vástago"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "Selecciona una tapa"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "Selecciona el color de la tapa"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "Selecciona un escurridor"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+  - op: step.set
+    product: "Lip Gloss"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona una punta"
+        attribute: "Tipo de Punta"
+        variantProduct: "Punta Lip Gloss"
+      - sortOrder: 2
+        panel: 2
+        pregunta: "Selecciona la botella"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "Selecciona el color de la botella"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 4
+        panel: 3
+        pregunta: "Selecciona un vástago"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "Selecciona el color del vástago"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 6
+        panel: 4
+        pregunta: "Selecciona una tapa"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "Selecciona el color de la tapa"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "Selecciona un escurridor"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"

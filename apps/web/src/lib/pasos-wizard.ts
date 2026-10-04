@@ -52,7 +52,11 @@ export function resolver(
   });
 }
 
-/** Auto-selecciona un paso cuando solo queda una opción posible. */
+/**
+ * Preselecciona la primera opción disponible de cada paso (incluida la botella).
+ * También limpia una selección que dejó de ser válida tras recargar opciones
+ * (cascada): si el valueId guardado ya no está entre las opciones, se re-elige.
+ */
 export function autoSeleccionar(
   passos: Passo[],
   selecciones: Record<number, number | undefined>,
@@ -60,9 +64,14 @@ export function autoSeleccionar(
   let changed = false;
   const next = { ...selecciones };
   passos.forEach((p, i) => {
-    if (next[i] !== undefined) return;
-    if (p.opciones.length === 1) {
+    const actual = next[i];
+    const valido = actual !== undefined && p.opciones.some((o) => o.valueId === actual);
+    if (valido) return;
+    if (p.opciones.length > 0) {
       next[i] = p.opciones[0].valueId;
+      changed = true;
+    } else if (actual !== undefined) {
+      delete next[i];
       changed = true;
     }
   });

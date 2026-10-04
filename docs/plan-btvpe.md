@@ -157,6 +157,12 @@ Ejes comunes a los BTVPE:
 > variante vendible al confirmar. `Capacidad de Botella` (mL) → `notas` + eje `Tamaño de Botella`.
 > Cepillo Silicon tiene eje `Color de Cepillo Silicon` (Blanco/Negro); el nylon usa
 > `Color de Cerda de Cepillo`; los BTVPE usan `Forma de Sobretapa`.
+> **Textos de paso breves (v2):** "Selecciona la botella", "Selecciona el color de la
+> botella", "Selecciona un vástago", "Selecciona el color del vástago", etc. El wizard
+> **preselecciona** la primera opción disponible de cada paso.
+> **Regla de compatibilidad (solo BTVPE):** la altura del vástago no puede exceder la
+> altura de la botella + 2mm (Botella 60mm → vástago ≤62mm; Botella 80mm → ≤82mm).
+> Se aplica en `getPasos` (filtra opciones) y en `resolverConfiguracion` (valida).
 
 **Regla:** se usan pares **[característica, color] consecutivos** para cada componente, agrupados por `panel`.
 

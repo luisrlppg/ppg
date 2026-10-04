@@ -1253,47 +1253,47 @@ ops:
     steps:
       - sortOrder: 1
         panel: 1
-        pregunta: ¿Qué tamaño de botella prefieres?
+        pregunta: Selecciona la botella
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
         panel: 1
-        pregunta: ¿De qué color quieres la botella?
+        pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
         panel: 2
-        pregunta: ¿Qué altura de vástago prefieres?
+        pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
         panel: 2
-        pregunta: ¿De qué color quieres el vástago?
+        pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
         panel: 3
-        pregunta: ¿Qué forma de tapa prefieres?
+        pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
         panel: 3
-        pregunta: ¿De qué color quieres la tapa?
+        pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
         panel: 4
-        pregunta: ¿De qué color quieres el escurridor?
+        pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
       - sortOrder: 8
         panel: 5
-        pregunta: ¿Qué forma de cepillo prefieres?
+        pregunta: Selecciona un cepillo
         attribute: Forma de cepillo silicon
         variantProduct: Cepillo Silicon
       - sortOrder: 9
         panel: 5
-        pregunta: ¿De qué color quieres el cepillo?
+        pregunta: Selecciona el color del cepillo
         attribute: Color de Cepillo Silicon
         variantProduct: Cepillo Silicon
   - op: bom.set
@@ -1319,47 +1319,47 @@ ops:
     steps:
       - sortOrder: 1
         panel: 1
-        pregunta: ¿Qué tamaño de botella prefieres?
+        pregunta: Selecciona la botella
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
         panel: 1
-        pregunta: ¿De qué color quieres la botella?
+        pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
         panel: 2
-        pregunta: ¿Qué altura de vástago prefieres?
+        pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
         panel: 2
-        pregunta: ¿De qué color quieres el vástago?
+        pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
         panel: 3
-        pregunta: ¿Qué forma de tapa prefieres?
+        pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
         panel: 3
-        pregunta: ¿De qué color quieres la tapa?
+        pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
         panel: 4
-        pregunta: ¿De qué color quieres el escurridor?
+        pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
       - sortOrder: 8
         panel: 5
-        pregunta: ¿Qué forma de cepillo prefieres?
+        pregunta: Selecciona un cepillo
         attribute: Forma de cepillo nylon
         variantProduct: Cepillo Nylon
       - sortOrder: 9
         panel: 5
-        pregunta: ¿De qué color quieres el cepillo?
+        pregunta: Selecciona el color del cepillo
         attribute: Color de Cerda de Cepillo
         variantProduct: Cepillo Nylon
   - op: bom.set
@@ -1385,37 +1385,37 @@ ops:
     steps:
       - sortOrder: 1
         panel: 1
-        pregunta: ¿Qué tamaño de botella prefieres?
+        pregunta: Selecciona la botella
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
         panel: 1
-        pregunta: ¿De qué color quieres la botella?
+        pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
         panel: 2
-        pregunta: ¿Qué altura de vástago prefieres?
+        pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
         panel: 2
-        pregunta: ¿De qué color quieres el vástago?
+        pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
         panel: 3
-        pregunta: ¿Qué forma de tapa prefieres?
+        pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
         panel: 3
-        pregunta: ¿De qué color quieres la tapa?
+        pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
         panel: 4
-        pregunta: ¿De qué color quieres el escurridor?
+        pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
   - op: bom.set
@@ -1441,37 +1441,37 @@ ops:
     steps:
       - sortOrder: 1
         panel: 1
-        pregunta: ¿Qué tamaño de botella prefieres?
+        pregunta: Selecciona la botella
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
         panel: 1
-        pregunta: ¿De qué color quieres la botella?
+        pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
         panel: 2
-        pregunta: ¿Qué altura de vástago prefieres?
+        pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
         panel: 2
-        pregunta: ¿De qué color quieres el vástago?
+        pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
         panel: 3
-        pregunta: ¿Qué forma de tapa prefieres?
+        pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
         panel: 3
-        pregunta: ¿De qué color quieres la tapa?
+        pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
         panel: 4
-        pregunta: ¿De qué color quieres el escurridor?
+        pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
   - op: bom.set
@@ -1497,42 +1497,42 @@ ops:
     steps:
       - sortOrder: 1
         panel: 1
-        pregunta: ¿Qué tipo de punta prefieres?
+        pregunta: Selecciona una punta
         attribute: Tipo de Punta
         variantProduct: Punta Lip Gloss
       - sortOrder: 2
         panel: 2
-        pregunta: ¿Qué tamaño de botella prefieres?
+        pregunta: Selecciona la botella
         attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 3
         panel: 2
-        pregunta: ¿De qué color quieres la botella?
+        pregunta: Selecciona el color de la botella
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 4
         panel: 3
-        pregunta: ¿Qué altura de vástago prefieres?
+        pregunta: Selecciona un vástago
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 5
         panel: 3
-        pregunta: ¿De qué color quieres el vástago?
+        pregunta: Selecciona el color del vástago
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 6
         panel: 4
-        pregunta: ¿Qué forma de tapa prefieres?
+        pregunta: Selecciona una tapa
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
         panel: 4
-        pregunta: ¿De qué color quieres la tapa?
+        pregunta: Selecciona el color de la tapa
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 8
         panel: 5
-        pregunta: ¿De qué color quieres el escurridor?
+        pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
   - op: bom.set
