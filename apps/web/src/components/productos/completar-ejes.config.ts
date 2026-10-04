@@ -9,8 +9,8 @@ export const DERIVACIONES: Record<string, DerivacionRule[]> = {};
 
 /** Valores por defecto por producto y atributo. */
 export const DEFAULTS: Record<string, Record<string, string>> = {
-  Mango: { Ceja: "Gruesa", "Tipo de Mango": "Normal", "Agujero de Mango": "Normal" },
-  Pincel: { Ceja: "Gruesa", "Tipo de Mango": "Normal", "Color de Cerda de Pincel": "Negro" },
+  Mango: { Ceja: "Gruesa", "Agujero de Mango": "Normal" },
+  Pincel: { Ceja: "Gruesa", "Color de Cerda de Pincel": "Negro" },
 };
 
 export function normalizar(s: string): string {
