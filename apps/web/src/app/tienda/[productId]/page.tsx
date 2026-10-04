@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
-import { buildPaneles, esPanelResuelto, resolver, seleccionHasta, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
-import type { Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
+import { opcionResaltada } from "@/lib/pasos-wizard";
+import { usePasosWizard } from "@/lib/use-pasos-wizard";
+import type { PassoOption, ConfiguracionLinea } from "@/lib/types";
 
 interface ProductoBasico {
   id: number;
@@ -20,12 +20,11 @@ export default function TiendaPage() {
   const pid = Number(productId);
 
   const [producto, setProducto] = useState<ProductoBasico | null>(null);
-  const [passos, setPassos] = useState<Passo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selIdx, setSelIdx] = useState<Record<number, number | undefined>>({});
-  const [panelActual, setPanelActual] = useState(0);
+  const w = usePasosWizard(pid);
+
   const [cantidad, setCantidad] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoNumero, setPedidoNumero] = useState<string | null>(null);
@@ -38,9 +37,7 @@ export default function TiendaPage() {
 
   const cargar = useCallback(async () => {
     try {
-      const [p, ps] = await Promise.all([api<ProductoBasico>(`/productos/${pid}`), getPasosCached(pid)]);
-      setProducto(p);
-      setPassos(ps);
+      setProducto(await api<ProductoBasico>(`/productos/${pid}`));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -50,66 +47,21 @@ export default function TiendaPage() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const paneles = useMemo(() => buildPaneles(passos), [passos]);
-  const totalPasos = paneles.length + 1;
-  const esRevision = panelActual >= paneles.length;
-
-  // Al elegir una opción NO se recarga: la lista del paso queda completa.
-  function seleccionarOpcion(pasoIdx: number, opt: PassoOption) {
-    setSelIdx((prev) => ({ ...prev, [pasoIdx]: opt.valueId }));
-  }
-
-  // Avanza aplicando la cascada (opciones del siguiente paso según lo confirmado).
-  async function avanzar() {
-    const pasoActual = paneles[panelActual];
-    if (!pasoActual) return;
-    const ultimoIdx = pasoActual.pasos[pasoActual.pasos.length - 1];
-    const sel = seleccionHasta(passos, selIdx, ultimoIdx);
-    let nuevos = passos;
-    if (sel.length > 0) {
-      try { nuevos = await getPasosConSeleccion(pid, sel); } catch { nuevos = passos; }
-    }
-    setPassos(nuevos);
-    // Limpia en silencio las selecciones posteriores que dejaron de ser válidas.
-    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, ultimoIdx + 1).next);
-    setPanelActual(panelActual + 1);
-  }
-
-  // Retrocede reofreciendo todas las opciones del paso anterior (cascada hasta el anterior).
-  async function retroceder() {
-    if (panelActual === 0) return;
-    const objetivo = panelActual - 1;
-    const panelObj = paneles[objetivo];
-    const ultimoIdxAntes = paneles[objetivo - 1]?.pasos[paneles[objetivo - 1].pasos.length - 1] ?? -1;
-    const sel = seleccionHasta(passos, selIdx, ultimoIdxAntes);
-    let nuevos = passos;
-    if (sel.length > 0 || ultimoIdxAntes === -1) {
-      try { nuevos = await getPasosConSeleccion(pid, sel); } catch { nuevos = passos; }
-    }
-    setPassos(nuevos);
-    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, panelObj.pasos[0]).next);
-    setPanelActual(objetivo);
-  }
-
-  function panelResuelto(p: { pasos: number[] }): boolean {
-    return esPanelResuelto(p, selIdx);
-  }
-
-  function puedeAvanzar(): boolean {
-    if (!esRevision) return panelResuelto(paneles[panelActual]);
-    return cantidad > 0;
-  }
+  // En pasos intermedios basta con que el panel tenga opciones (se toma la resaltada).
+  const puedeAvanzar = w.esRevision
+    ? cantidad > 0
+    : (w.panel?.pasos.some((i) => (w.passos[i]?.opciones.length ?? 0) > 0) ?? false);
 
   async function confirmarPedido() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const r = await resolver(pid, passos, selIdx, true);
+      const r = await w.resolverSeleccion(true);
       if (!r.variantId) { setSubmitError("No se pudo armar esa configuración."); return; }
       setSkuFinal(r.sku ?? "");
       const cfg: ConfiguracionLinea = {
-        pasos: passos.map((p, i) => {
-          const opt = p.opciones.find((o) => o.valueId === selIdx[i]);
+        pasos: w.passos.map((p, i) => {
+          const opt = p.opciones.find((o) => o.valueId === w.selIdx[i]);
           return { pregunta: p.pregunta, opciones: [], seleccion: opt?.valor ?? "" };
         }),
       };
@@ -130,8 +82,8 @@ export default function TiendaPage() {
     }
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: "center" }}><p>Cargando producto…</p></div>;
-  if (error || !producto) return <div style={{ padding: 40, textAlign: "center" }}><p style={{ color: "red" }}>{error || "Producto no encontrado."}</p></div>;
+  if (loading || w.cargando) return <div style={{ padding: 40, textAlign: "center" }}><p>Cargando producto…</p></div>;
+  if (error || w.error || !producto) return <div style={{ padding: 40, textAlign: "center" }}><p style={{ color: "red" }}>{error || w.error || "Producto no encontrado."}</p></div>;
 
   if (pedidoNumero) {
     return (
@@ -146,23 +98,25 @@ export default function TiendaPage() {
     );
   }
 
-  const panel = paneles[panelActual];
+  const panel = w.panel;
+  const totalPasos = w.paneles.length + 1;
+  const esRevision = w.esRevision;
 
   const renderOpciones = (stepIdx: number) => {
-    const paso = passos[stepIdx];
+    const paso = w.passos[stepIdx];
     if (!paso) return null;
     const opts = paso.opciones;
     if (opts.length === 0) return null;
-    const resaltada = opcionResaltada(paso, selIdx[stepIdx]);
+    const resaltada = opcionResaltada(paso, w.selIdx[stepIdx]);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {opts.map((opt) => {
-          const sel = selIdx[stepIdx] === opt.valueId;
+          const sel = w.selIdx[stepIdx] === opt.valueId;
           const sug = !sel && resaltada === opt.valueId;
           return (
             <button
               key={`${paso.attributeId}-${opt.valueId}`}
-              onClick={() => seleccionarOpcion(stepIdx, opt)}
+              onClick={() => w.seleccionarOpcion(stepIdx, opt)}
               style={{
                 padding: "12px 16px",
                 border: sel || sug ? "2px solid var(--brand)" : "1px solid #ccc",
@@ -186,7 +140,7 @@ export default function TiendaPage() {
 
   const panelTitle = (() => {
     const firstIdx = panel?.pasos[0];
-    return firstIdx != null ? passos[firstIdx]?.pregunta ?? "" : "";
+    return firstIdx != null ? w.passos[firstIdx]?.pregunta ?? "" : "";
   })();
 
   return (
@@ -207,11 +161,11 @@ export default function TiendaPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {Array.from({ length: totalPasos }).map((_, i) => (
-              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= panelActual ? "var(--brand)" : "#ddd" }} />
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= w.panelActual ? "var(--brand)" : "#ddd" }} />
             ))}
           </div>
           <p className="muted small" style={{ marginTop: 6 }}>
-            Paso {Math.min(panelActual + 1, totalPasos)} de {totalPasos}
+            Paso {Math.min(w.panelActual + 1, totalPasos)} de {totalPasos}
             {esRevision ? " — Revisar" : panel ? ` — ${panelTitle}` : ""}
           </p>
         </div>
@@ -223,11 +177,11 @@ export default function TiendaPage() {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {panel.pasos.map((stepIdx) => (
                   <div key={stepIdx} style={{ marginBottom: 16 }}>
-                    <h4 style={{ margin: "0 0 8px", fontSize: "0.95em" }}>{passos[stepIdx]?.pregunta}</h4>
+                    <h4 style={{ margin: "0 0 8px", fontSize: "0.95em" }}>{w.passos[stepIdx]?.pregunta}</h4>
                     {renderOpciones(stepIdx)}
                   </div>
                 ))}
-                {panel.pasos.every((i) => (passos[i]?.opciones.length ?? 0) === 0) && (
+                {panel.pasos.every((i) => (w.passos[i]?.opciones.length ?? 0) === 0) && (
                   <p className="muted">Completa el paso anterior primero.</p>
                 )}
               </div>
@@ -239,8 +193,8 @@ export default function TiendaPage() {
               <h3 style={{ marginTop: 0 }}>Revisa tu pedido</h3>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
-                  {passos.map((s, i) => {
-                    const opt = s.opciones.find((o) => o.valueId === selIdx[i]);
+                  {w.passos.map((s, i) => {
+                    const opt = s.opciones.find((o) => o.valueId === w.selIdx[i]);
                     return (
                       <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
                         <td style={{ padding: "8px 0", color: "#666" }}>{s.pregunta}</td>
@@ -285,15 +239,15 @@ export default function TiendaPage() {
           )}
 
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-            {panelActual > 0 ? (
-              <button className="btn ghost" onClick={retroceder}>← Atrás</button>
+            {w.panelActual > 0 ? (
+              <button className="btn ghost" onClick={w.retroceder}>← Atrás</button>
             ) : <span />}
             {!esRevision ? (
-              <button className="btn primary" onClick={avanzar} disabled={!puedeAvanzar()}>
-                {panelActual === paneles.length - 1 ? "Revisar →" : "Siguiente →"}
+              <button className="btn primary" onClick={w.avanzar} disabled={!puedeAvanzar}>
+                {w.panelActual === w.paneles.length - 1 ? "Revisar →" : "Siguiente →"}
               </button>
             ) : (
-              <button className="btn primary" onClick={confirmarPedido} disabled={submitting || !passos.every((_, i) => selIdx[i] !== undefined)}>
+              <button className="btn primary" onClick={confirmarPedido} disabled={submitting || !w.passos.every((_, i) => w.selIdx[i] !== undefined)}>
                 {submitting ? "Enviando…" : "Confirmar pedido"}
               </button>
             )}

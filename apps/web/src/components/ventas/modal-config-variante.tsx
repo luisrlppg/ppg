@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Modal from "@/components/ui/modal";
-import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
-import { buildPaneles, esPanelResuelto, resolver, seleccionHasta, limpiarSeleccionesInvalidas, opcionResaltada } from "@/lib/pasos-wizard";
-import type { ConfiguracionLinea, Passo, PassoOption, ProductoPublico } from "@/lib/types";
+import { opcionResaltada } from "@/lib/pasos-wizard";
+import { usePasosWizard } from "@/lib/use-pasos-wizard";
+import type { ConfiguracionLinea, PassoOption, ProductoPublico } from "@/lib/types";
 
 export interface LineaConfigurada {
   variantId: number;
@@ -28,82 +28,23 @@ interface Props {
 const iconosPlaceholder = ["▣", "◉", "▲", "■", "◆", "●", "▢", "★"];
 
 export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }: Props) {
-  const [passos, setPassos] = useState<Passo[]>([]);
-  const [panelActual, setPanelActual] = useState(0);
-  const [selIdx, setSelIdx] = useState<Record<number, number | undefined>>({});
+  const w = usePasosWizard(producto.productId);
   const [cantidad, setCantidad] = useState("1");
-  const [pasosListos, setPasosListos] = useState(false);
   const [error, setError] = useState("");
   const [creando, setCreando] = useState(false);
 
-  useEffect(() => {
-    getPasosCached(producto.productId)
-      .then((ps) => { setPassos(ps); setPasosListos(true); })
-      .catch((e) => { setError((e as Error).message); setPasosListos(true); });
-  }, [producto.productId]);
-
-  const paneles = useMemo(() => buildPaneles(passos), [passos]);
-  const esRevision = panelActual >= paneles.length;
-
-  // Al elegir una opción NO se recarga: la lista del paso queda completa.
-  function elegirOpcion(pasoIdx: number, opt: PassoOption) {
-    setSelIdx((prev) => ({ ...prev, [pasoIdx]: opt.valueId }));
-  }
-
-  // Avanza aplicando la cascada (opciones del siguiente paso según lo confirmado).
-  async function avanzar() {
-    const pasoActual = paneles[panelActual];
-    if (!pasoActual) return;
-    const ultimoIdx = pasoActual.pasos[pasoActual.pasos.length - 1];
-    const sel = seleccionHasta(passos, selIdx, ultimoIdx);
-    let nuevos = passos;
-    if (sel.length > 0) {
-      try { nuevos = await getPasosConSeleccion(producto.productId, sel); } catch { nuevos = passos; }
-    }
-    setPassos(nuevos);
-    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, ultimoIdx + 1).next);
-    setPanelActual(panelActual + 1);
-  }
-
-  // Retrocede reofreciendo todas las opciones del paso anterior (cascada hasta el anterior).
-  async function retroceder() {
-    if (panelActual === 0) return;
-    const objetivo = panelActual - 1;
-    const panelObj = paneles[objetivo];
-    const panelPrevio = paneles[objetivo - 1];
-    const ultimoIdxAntes = panelPrevio ? panelPrevio.pasos[panelPrevio.pasos.length - 1] : -1;
-    const sel = seleccionHasta(passos, selIdx, ultimoIdxAntes);
-    let nuevos = passos;
-    if (sel.length > 0) {
-      try { nuevos = await getPasosConSeleccion(producto.productId, sel); } catch { nuevos = passos; }
-    }
-    setPassos(nuevos);
-    setSelIdx((prev) => limpiarSeleccionesInvalidas(nuevos, prev, panelObj.pasos[0]).next);
-    setPanelActual(objetivo);
-  }
-
-  function panelResuelto(p: { pasos: number[] }): boolean {
-    return esPanelResuelto(p, selIdx);
-  }
-
-  function puedeAvanzar(): boolean {
-    if (!esRevision) return panelResuelto(paneles[panelActual]);
-    return Number(cantidad) > 0;
-  }
-
   async function confirmar(crear: boolean) {
-    if (!passos.length) return;
+    if (!w.passos.length) return;
     setError("");
     try {
-      const r = await resolver(producto.productId, passos, selIdx, crear);
+      const r = await w.resolverSeleccion(crear);
       if (!r.variantId) {
         setError("No se pudo resolver la variante con esa combinación.");
         return;
       }
       const cfg: ConfiguracionLinea = {
-        pasos: passos.map((p, i) => {
-          const valueId = selIdx[i];
-          const opt = valueId !== undefined ? p.opciones.find((o) => o.valueId === valueId) : undefined;
+        pasos: w.passos.map((p, i) => {
+          const opt = p.opciones.find((o) => o.valueId === w.selIdx[i]);
           return { pregunta: p.pregunta, opciones: [], seleccion: opt?.valor ?? "" };
         }),
       };
@@ -126,7 +67,7 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
 
   function confirmarConCreacion() {
     setCreando(true);
-    resolver(producto.productId, passos, selIdx, false)
+    w.resolverSeleccion(false)
       .then((r) => {
         if (r.variantId) { void confirmar(false); return; }
         if (window.confirm("Esta configuración aún no existe como variante. ¿Deseas crearla?")) {
@@ -137,7 +78,7 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
       .finally(() => setCreando(false));
   }
 
-  if (!pasosListos) {
+  if (w.cargando) {
     return (
       <Modal onClose={onCerrar}>
         <p className="muted">Cargando opciones…</p>
@@ -145,25 +86,26 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
     );
   }
 
-  const totalPasos = paneles.length + 1;
-  const panel = paneles[panelActual];
+  const totalPasos = w.paneles.length + 1;
+  const panel = w.panel;
+  const esRevision = w.esRevision;
 
   const renderOpcionesGrid = (pasoIdx: number) => {
-    const paso = passos[pasoIdx];
+    const paso = w.passos[pasoIdx];
     if (!paso) return null;
     const opts = paso.opciones;
     if (opts.length === 0) return null;
-    const resaltada = opcionResaltada(paso, selIdx[pasoIdx]);
+    const resaltada = opcionResaltada(paso, w.selIdx[pasoIdx]);
     return (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
         {opts.map((opt, i) => {
-          const sel = selIdx[pasoIdx] === opt.valueId;
+          const sel = w.selIdx[pasoIdx] === opt.valueId;
           const sug = !sel && resaltada === opt.valueId;
           return (
             <button
               key={`${paso.attributeId}-${opt.valueId}`}
               type="button"
-              onClick={() => elegirOpcion(pasoIdx, opt)}
+              onClick={() => w.seleccionarOpcion(pasoIdx, opt)}
               style={{
                 padding: "16px 12px",
                 border: sel || sug ? "2px solid var(--brand)" : "1px solid #ccc",
@@ -187,19 +129,22 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
 
   const panelTitle = (() => {
     const firstIdx = panel?.pasos[0];
-    return firstIdx != null ? passos[firstIdx]?.pregunta ?? "" : "";
+    return firstIdx != null ? w.passos[firstIdx]?.pregunta ?? "" : "";
   })();
+
+  // En pasos intermedios basta con que el panel tenga opciones (se toma la resaltada).
+  const puedeAvanzar = panel?.pasos.some((i) => (w.passos[i]?.opciones.length ?? 0) > 0) ?? false;
 
   return (
     <Modal title={producto.nombre} onClose={onCerrar} size="lg">
       <p className="muted small" style={{ margin: "4px 0 16px" }}>
-        Paso {Math.min(panelActual + 1, totalPasos)} de {totalPasos}
+        Paso {Math.min(w.panelActual + 1, totalPasos)} de {totalPasos}
         {!esRevision && panel ? ` — ${panelTitle}` : ""}
       </p>
 
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
         {Array.from({ length: totalPasos }).map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < panelActual ? "var(--brand)" : i === panelActual && !esRevision ? "var(--brand)" : "#ddd" }} />
+          <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < w.panelActual ? "var(--brand)" : i === w.panelActual && !esRevision ? "var(--brand)" : "#ddd" }} />
         ))}
       </div>
 
@@ -210,11 +155,11 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
           <h4 style={{ marginTop: 0, marginBottom: 12 }}>{panelTitle}</h4>
           {panel.pasos.map((pasoIdx) => (
             <div key={pasoIdx} style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: "0.85em", color: "#666", marginBottom: 6 }}>{passos[pasoIdx]?.pregunta}</div>
+              <div style={{ fontSize: "0.85em", color: "#666", marginBottom: 6 }}>{w.passos[pasoIdx]?.pregunta}</div>
               {renderOpcionesGrid(pasoIdx)}
             </div>
           ))}
-          {panel.pasos.every((i) => (passos[i]?.opciones.length ?? 0) === 0) && (
+          {panel.pasos.every((i) => (w.passos[i]?.opciones.length ?? 0) === 0) && (
             <p className="muted">Selecciona una opción del paso anterior primero.</p>
           )}
         </>
@@ -225,8 +170,8 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
           <h4 style={{ marginTop: 0 }}>Revisa tu configuración</h4>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
-              {passos.map((p, i) => {
-                const opt = p.opciones.find((o) => o.valueId === selIdx[i]);
+              {w.passos.map((p, i) => {
+                const opt = p.opciones.find((o) => o.valueId === w.selIdx[i]);
                 return (
                   <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
                     <td style={{ padding: "8px 0", color: "#666" }}>{p.pregunta}</td>
@@ -254,23 +199,19 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-        {panelActual > 0 ? (
-          <button type="button" className="btn ghost" onClick={retroceder}>← Atrás</button>
+        {w.panelActual > 0 ? (
+          <button type="button" className="btn ghost" onClick={w.retroceder}>← Atrás</button>
         ) : <span />}
         {!esRevision ? (
-          <button type="button" className="btn primary" onClick={avanzar} disabled={!puedeAvanzar()}>
-            {panelActual === paneles.length - 1 ? "Revisar →" : "Siguiente →"}
+          <button type="button" className="btn primary" onClick={w.avanzar} disabled={!puedeAvanzar}>
+            {w.panelActual === w.paneles.length - 1 ? "Revisar →" : "Siguiente →"}
           </button>
         ) : (
-          <button type="button" className="btn primary" onClick={confirmarConCreacion} disabled={creando || !panelResueltoCompleto()}>
+          <button type="button" className="btn primary" onClick={confirmarConCreacion} disabled={creando || !w.passos.every((_, i) => w.selIdx[i] !== undefined)}>
             {creando ? "Verificando…" : "Confirmar"}
           </button>
         )}
       </div>
     </Modal>
   );
-
-  function panelResueltoCompleto(): boolean {
-    return passos.every((_, i) => selIdx[i] !== undefined);
-  }
 }

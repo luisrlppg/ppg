@@ -164,9 +164,11 @@ Ejes comunes a los BTVPE:
 > (borde rojo `--brand`) pero **no la selecciona**: el usuario debe hacer clic y solo
 > entonces "Siguiente" se habilita. Los pasos con una sola opción también se muestran.
 > **Cascada al avanzar:** elegir una opción NO recarga la lista (puedes cambiar libremente
-> dentro del paso). Las opciones del siguiente paso se calculan al pulsar "Siguiente".
-> "Atrás" reofrece todas las opciones del paso anterior; si cambias una selección, los
-> pasos posteriores que sigan siendo válidos se conservan y los inválidos se limpian en silencio.
+> dentro del paso). Al pulsar "Siguiente" se acepta la opción **resaltada** si no hubo clic,
+> y las opciones del siguiente paso se calculan con la selección de los pasos **anteriores**
+> (el paso mostrado siempre trae TODAS sus opciones). "Atrás" reofrece todas las opciones del
+> paso anterior **conservando la elección previa**; los pasos posteriores válidos se conservan
+> y los inválidos se limpian en silencio. Lógica compartida en `lib/use-pasos-wizard.ts`.
 > **Regla de compatibilidad (solo BTVPE):** la altura del vástago no puede exceder la
 > altura de la botella + 2mm (Botella 60mm → vástago ≤62mm; Botella 80mm → ≤82mm).
 > Se aplica en `getPasos` (filtra opciones) y en `resolverConfiguracion` (valida).

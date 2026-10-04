@@ -55,6 +55,37 @@ export function seleccionHasta(
   return out;
 }
 
+/**
+ * Selección de los pasos ANTERIORES al panel que empieza en `primerIdxPanel`.
+ * Es la que se envía al servidor para que el paso a mostrar traiga TODAS sus
+ * opciones (sin filtrarse por su propia elección).
+ */
+export function seleccionAntesDe(
+  passos: Passo[],
+  selecciones: Record<number, number | undefined>,
+  primerIdxPanel: number,
+): SeleccionPaso[] {
+  return seleccionHasta(passos, selecciones, primerIdxPanel - 1);
+}
+
+/**
+ * Copia de `selecciones` donde cada paso del panel sin elegir toma su opción
+ * resaltada (la primera). Se usa al pulsar "Siguiente" para aceptar la sugerida.
+ */
+export function seleccionResaltadaDe(
+  passos: Passo[],
+  selecciones: Record<number, number | undefined>,
+  panel: Panel,
+): Record<number, number | undefined> {
+  const next = { ...selecciones };
+  for (const i of panel.pasos) {
+    if (next[i] !== undefined) continue;
+    const opt = passos[i]?.opciones[0];
+    if (opt) next[i] = opt.valueId;
+  }
+  return next;
+}
+
 export function resolver(
   productId: number,
   passos: Passo[],

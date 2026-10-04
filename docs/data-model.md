@@ -101,9 +101,10 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 - Los **5 BTVPE** (Rimel Silicon/Nylon, Delineador, Tratamiento de Noche, Lip Gloss) usan Modelo B:
   primer paso = `Tamaño de Botella` (componente Botella), que deriva `Tamaño rosca` y altura.
 - **Regla BTVPE:** la altura del vástago ≤ altura de la botella + 2mm (hardcoded para SKU `BTVPE-*`
-  en `public.service.ts`). El wizard muestra **un paso por sub-pregunta** (`panel` único) y **resalta**
-  la primera opción sin seleccionarla (la elige el usuario). La **cascada se aplica al avanzar**
-  (no al seleccionar); "Atrás" reofrece el paso y limpia en silencio los posteriores inválidos.
+  en `public.service.ts`). El wizard muestra **un paso por sub-pregunta** (`panel` único), resalta la
+  primera opción y **"Siguiente" la acepta** si no hubo clic. La **cascada se aplica al avanzar** (no al
+  seleccionar), pidiendo las opciones del paso con la selección de los pasos **anteriores**. "Atrás"
+  reofrece el paso conservando la elección previa y limpia en silencio los posteriores inválidos.
 
 ## Reglas de negocio relevantes
 
