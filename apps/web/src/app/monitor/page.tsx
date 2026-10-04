@@ -34,9 +34,9 @@ export default function MonitorPage() {
   const [creando, setCreando] = useState(false);
 
   function abrirOF(v: StockBajo) {
-    const faltante = v.deficit > 0 ? v.deficit : 1;
+    const sugerida = Math.max(v.objetivo - v.stockActual, 0);
     setOfPara(v);
-    setOfCantidad(String(faltante));
+    setOfCantidad(String(Number(sugerida.toFixed(3))));
     setOfNotas("");
     setError("");
     setMsg("");
@@ -122,9 +122,22 @@ export default function MonitorPage() {
                   <span className={`badge ${v.longLead ? "critico" : "bajo"}`}>{v.longLead ? "crítico" : "bajo"}</span>
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  <button className="btn secondary sm" onClick={() => abrirOF(v)}>
-                    Crear OF
-                  </button>
+                  {(() => {
+                    const cubierto = v.stockActual + v.cantidadEnOF >= v.objetivo;
+                    return (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                        <button
+                          className="btn secondary sm"
+                          disabled={cubierto}
+                          title={cubierto ? `Ya hay ${formatCantidad(v.cantidadEnOF)} en OF` : undefined}
+                          onClick={() => abrirOF(v)}
+                        >
+                          {cubierto ? "OF en curso" : "Crear OF"}
+                        </button>
+                        {v.cantidadEnOF > 0 && <span className="small muted">En OF: {formatCantidad(v.cantidadEnOF)}</span>}
+                      </div>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}
@@ -145,7 +158,14 @@ export default function MonitorPage() {
             <p className="muted small" style={{ marginTop: 0 }}>
               <strong>{ofPara.producto}</strong> · {ofPara.nombre} ({ofPara.sku})
               <br />
-              Existencia: {formatCantidad(ofPara.stockActual)} · Mínimo: {formatCantidad(ofPara.stockMin)}
+              Existencia: {formatCantidad(ofPara.stockActual)} · Mínimo: {formatCantidad(ofPara.stockMin)} · Objetivo:{" "}
+              {formatCantidad(ofPara.objetivo)}
+              {ofPara.cantidadEnOF > 0 && (
+                <>
+                  <br />
+                  En OF (en curso): {formatCantidad(ofPara.cantidadEnOF)}
+                </>
+              )}
             </p>
             <div className="row">
               <label>

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Prisma } from "@ppg/db";
+import { dec } from "../common/util";
 import { formatCantidad } from "@ppg/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { Notificadores } from "./monitor.notificadores";
@@ -18,6 +19,8 @@ export interface LowVariant {
   stockActual: number;
   longLead: boolean;
   deficit: number;
+  cantidadEnOF: number;
+  objetivo: number;
 }
 
 @Injectable()
@@ -73,25 +76,44 @@ export class MonitorService {
       },
     });
     const result: LowVariant[] = [];
+    const bajos: typeof variants = [];
     for (const v of variants) {
       if (!v.product.activo) continue;
       const stockMin = Number(v.stockMin);
       if (stockMin <= 0) continue;
       const stockActual = v.stockLevels.reduce((a, l) => a + Number(l.qty), 0);
-      if (stockActual <= stockMin) {
-        result.push({
-          variantId: v.id,
-          sku: v.sku,
-          nombre: v.nombre,
-          producto: v.product.nombre,
-          uom: v.product.uom,
-          stockMin,
-          stockMax: Number(v.stockMax),
-          stockActual,
-          longLead: v.longLead,
-          deficit: stockMin - stockActual,
-        });
-      }
+      if (stockActual <= stockMin) bajos.push(v);
+    }
+
+    const ids = bajos.map((v) => v.id);
+    const enOF = new Map<number, number>();
+    if (ids.length > 0) {
+      const sums = await this.prisma.manufacturingOrder.groupBy({
+        by: ["variantId"],
+        where: { variantId: { in: ids }, estado: { notIn: ["cancelada", "hecha"] } },
+        _sum: { cantidad: true },
+      });
+      for (const s of sums) enOF.set(s.variantId, dec(s._sum.cantidad));
+    }
+
+    for (const v of bajos) {
+      const stockMin = Number(v.stockMin);
+      const stockMax = Number(v.stockMax);
+      const stockActual = v.stockLevels.reduce((a, l) => a + Number(l.qty), 0);
+      result.push({
+        variantId: v.id,
+        sku: v.sku,
+        nombre: v.nombre,
+        producto: v.product.nombre,
+        uom: v.product.uom,
+        stockMin,
+        stockMax,
+        stockActual,
+        longLead: v.longLead,
+        deficit: stockMin - stockActual,
+        cantidadEnOF: enOF.get(v.id) ?? 0,
+        objetivo: stockMax > 0 ? stockMax : stockMin,
+      });
     }
     result.sort((a, b) => b.deficit - a.deficit);
     return result;
@@ -130,6 +152,11 @@ export class MonitorService {
     if (low) {
       const nuevo = !wasLow;
       if (nuevo) {
+        const enOFSum = await this.prisma.manufacturingOrder.aggregate({
+          where: { variantId, estado: { notIn: ["cancelada", "hecha"] } },
+          _sum: { cantidad: true },
+        });
+        const stockMax = Number(v.stockMax);
         const lowData: LowVariant = {
           variantId: v.id,
           sku: v.sku,
@@ -137,10 +164,12 @@ export class MonitorService {
           producto: v.product.nombre,
           uom: v.product.uom,
           stockMin,
-          stockMax: Number(v.stockMax),
+          stockMax,
           stockActual,
           longLead: v.longLead,
           deficit: stockMin - stockActual,
+          cantidadEnOF: dec(enOFSum._sum.cantidad),
+          objetivo: stockMax > 0 ? stockMax : stockMin,
         };
         canales = await this.enviarAlerta(lowData);
         state.lastLowStockIds = [...new Set([...state.lastLowStockIds, variantId])];

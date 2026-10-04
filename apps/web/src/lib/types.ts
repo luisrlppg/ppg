@@ -159,6 +159,8 @@ export interface StockBajo {
   stockActual: number;
   longLead: boolean;
   deficit: number;
+  cantidadEnOF: number;
+  objetivo: number;
 }
 
 export interface Movimiento {
