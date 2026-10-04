@@ -160,7 +160,7 @@ y `AppShell` (excepto tienda y login).
 | Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin) |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
-| Shell | `components/app-shell.tsx` | 105 | layout auth-gated: sidebar, `GET /auth/me`, logout |
+| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), `useAuth()` del `PreferencesProvider` global, logout |
 
 ### 3.2 Librerías compartidas (`apps/web/src/lib/`)
 - `api.ts` (31) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`.
@@ -169,7 +169,7 @@ y `AppShell` (excepto tienda y login).
 - `pasos-wizard.ts` — lógica compartida del wizard (paneles por `panel`, auto-selección, resolver).
 - `csv.ts` (14) — `descargarCSV(nombre, filas)` con BOM para Excel.
 - `local-store.ts` (81) — preferencias de UI en `localStorage` (`ppg.*`).
-- `preferences.tsx` — `PreferencesProvider` + `usePreferences`/`useFormatCantidad` (separador de miles por usuario, persistido en BD).
+- `preferences.tsx` — `PreferencesProvider` (montado en `app/layout.tsx`, raíz) que hace el `GET /auth/me` y expone `useAuth`/`usePreferences`/`useFormatCantidad` (separador de miles por usuario, persistido en BD). **Debe quedar por encima del shell y las páginas**: el contexto sólo fluye hacia abajo.
 - `avatar.ts` (13) — iniciales para avatares de clientes.
 
 ### 3.3 Componentes UI compartidos (`components/ui/`)

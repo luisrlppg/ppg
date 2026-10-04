@@ -100,7 +100,7 @@ export default function MonitorPage() {
               <th>SKU</th>
               <th>Existencia</th>
               <th>Mínimo</th>
-              <th>Faltan</th>
+              <th>Máximo</th>
               <th>Tipo</th>
               <th></th>
             </tr>
@@ -117,7 +117,7 @@ export default function MonitorPage() {
                   <strong>{formatCantidad(v.stockActual)}</strong>
                 </td>
                 <td>{formatCantidad(v.stockMin)}</td>
-                <td>{formatCantidad(v.deficit)}</td>
+                <td>{formatCantidad(v.stockMax)}</td>
                 <td>
                   <span className={`badge ${v.longLead ? "critico" : "bajo"}`}>{v.longLead ? "crítico" : "bajo"}</span>
                 </td>
