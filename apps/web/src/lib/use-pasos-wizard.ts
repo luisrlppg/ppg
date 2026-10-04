@@ -58,9 +58,7 @@ export function usePasosWizard(productId: number) {
     let nuevos = passos;
     if (primerIdxSiguiente !== undefined) {
       const sel = seleccionAntesDe(passos, conSugeridas, primerIdxSiguiente);
-      if (sel.length > 0) {
-        try { nuevos = await getPasosConSeleccion(productId, sel); } catch { nuevos = passos; }
-      }
+      try { nuevos = await getPasosConSeleccion(productId, sel); } catch { nuevos = passos; }
     }
     setPassos(nuevos);
     setSelIdx(limpiarSeleccionesInvalidas(nuevos, conSugeridas, (primerIdxSiguiente ?? passos.length)).next);
@@ -74,9 +72,8 @@ export function usePasosWizard(productId: number) {
     const primerIdxObjetivo = panelObjetivo.pasos[0];
     const sel = seleccionAntesDe(passos, selIdx, primerIdxObjetivo);
     let nuevos = passos;
-    if (sel.length > 0) {
-      try { nuevos = await getPasosConSeleccion(productId, sel); } catch { nuevos = passos; }
-    }
+    // Recarga siempre (incluso con selección vacía) para recuperar todas las opciones del panel.
+    try { nuevos = await getPasosConSeleccion(productId, sel); } catch { nuevos = passos; }
     setPassos(nuevos);
     // Conserva la elección del panel objetivo; limpia en silencio los posteriores inválidos.
     setSelIdx(limpiarSeleccionesInvalidas(nuevos, selIdx, primerIdxObjetivo + panelObjetivo.pasos.length).next);
