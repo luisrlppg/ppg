@@ -171,6 +171,7 @@ ops:
     category: Taparroscas
     basePrice: 40
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Botella
     sku: BOT
@@ -231,30 +232,35 @@ ops:
     category: Envases
     basePrice: 50
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Rimel Nylon
     sku: BTVPE-N
     category: Envases
     basePrice: 50
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Delineador
     sku: BTVPE-D
     category: Envases
     basePrice: 50
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Tratamiento de Noche
     sku: BTVPE-TN
     category: Envases
     basePrice: 50
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Lip Gloss
     sku: BTVPE-LG
     category: Envases
     basePrice: 50
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Alambre Acero Inoxidable
     sku: P0001

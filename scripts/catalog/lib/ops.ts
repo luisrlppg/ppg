@@ -33,6 +33,7 @@ export type Op =
       category?: string | null;
       basePrice?: number;
       hasVariants?: boolean;
+      vendible?: boolean;
       imagen?: string | null;
       activo?: boolean;
     }
@@ -45,7 +46,6 @@ export type Op =
       price?: number | null;
       min?: number;
       max?: number;
-      published?: boolean;
       longLead?: boolean;
       activo?: boolean;
       imagen?: string | null;

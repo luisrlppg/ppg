@@ -108,21 +108,16 @@ export class PublicService {
     };
   }
 
-  // Para consumidores externos futuros (catálogo público) — E5/tienda.
+  // Productos marcados como vendibles: alimentan el selector del modal de Ventas.
   async productosPublicos() {
     const rows = await this.prisma.product.findMany({
-      where: {
-        activo: true,
-        OR: [
-          { variants: { some: { activo: true, published: true } } },
-          { passos: { some: {} } },
-        ],
-      },
+      where: { activo: true, vendible: true },
       include: {
         variants: {
-          where: { activo: true, published: true },
+          where: { activo: true },
           orderBy: { nombre: "asc" },
         },
+        _count: { select: { passos: true } },
       },
       orderBy: { nombre: "asc" },
     });
@@ -133,7 +128,8 @@ export class PublicService {
       uom: p.uom,
       basePrice: dec(p.basePrice),
       hasVariants: p.hasVariants,
-      variantesPublicadas: p.variants.map((v) => ({
+      tienePasos: p._count.passos > 0,
+      variantes: p.variants.map((v) => ({
         id: v.id,
         nombre: v.nombre,
         sku: v.sku,
@@ -142,9 +138,10 @@ export class PublicService {
     }));
   }
 
+  // Para consumidores externos futuros (catálogo público) — E5/tienda.
   async catalogo() {
     const rows = await this.prisma.productVariant.findMany({
-      where: { activo: true, published: true },
+      where: { activo: true, product: { activo: true, vendible: true } },
       include: { product: true, packagings: { include: { packaging: true } } },
       orderBy: { nombre: "asc" },
     });
@@ -155,7 +152,6 @@ export class PublicService {
       producto: v.product.nombre,
       uom: v.product.uom,
       precio: v.price === null ? dec(v.product.basePrice) : dec(v.price),
-      publicado: v.published,
       empaques: v.packagings.map((p) => ({ nombre: p.packaging.nombre, cantidad: dec(p.cantidad) })),
     }));
   }

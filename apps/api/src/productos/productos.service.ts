@@ -62,6 +62,7 @@ export class ProductosService {
       uom: p.uom,
       basePrice: dec(p.basePrice),
       hasVariants: p.hasVariants,
+      vendible: p.vendible,
       activo: p.activo,
       imagen: p.imagen,
       categoria: p.category?.nombre ?? null,
@@ -135,6 +136,7 @@ export class ProductosService {
     uom?: string;
     basePrice?: number;
     hasVariants?: boolean;
+    vendible?: boolean;
     imagen?: string;
   }) {
     const skuBase = data.skuBase.trim();
@@ -150,6 +152,7 @@ export class ProductosService {
         uom: toUom(data.uom),
         basePrice: data.basePrice ?? 0,
         hasVariants: data.hasVariants ?? false,
+        vendible: data.vendible ?? false,
         imagen: data.imagen ?? null,
       },
     });
@@ -171,6 +174,7 @@ export class ProductosService {
       uom?: string;
       basePrice?: number;
       hasVariants?: boolean;
+      vendible?: boolean;
       imagen?: string | null;
       activo?: boolean;
     }>,
@@ -188,6 +192,7 @@ export class ProductosService {
         ...(data.uom !== undefined ? { uom: toUom(data.uom) } : {}),
         ...(data.basePrice !== undefined ? { basePrice: data.basePrice } : {}),
         ...(data.hasVariants !== undefined ? { hasVariants: data.hasVariants } : {}),
+        ...(data.vendible !== undefined ? { vendible: data.vendible } : {}),
         ...(data.imagen !== undefined ? { imagen: data.imagen } : {}),
         ...(data.activo !== undefined ? { activo: data.activo } : {}),
       },
@@ -395,7 +400,7 @@ export class ProductosService {
     return variant;
   }
 
-  async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; published: boolean; activo: boolean; imagen: string | null; notas: string | null }>) {
+  async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; activo: boolean; imagen: string | null; notas: string | null }>) {
     return this.prisma.productVariant.update({
       where: { id: variantId },
       data: { ...data },

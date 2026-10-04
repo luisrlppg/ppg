@@ -100,7 +100,7 @@ Registrados en `app.module.ts`.
   - `GET public/productos` · `GET public/productos/:id/pasos` · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
 - `public.service.ts`:
   - `crearPedido` (precio recalculado en servidor) · `consultarPedido`
-  - `productosPublicos` (≥1 variante publicada **o** con pasos) · `catalogo`
+  - `productosPublicos` (productos `vendible: true` + sus variantes activas; `tienePasos` decide wizard vs selección directa) · `catalogo`
   - **`getPasos(productId, seleccion?)`**: Modelo B — opciones de las **variantes activas del componente** (`variantProductId`), filtradas por valores permitidos y por compatibilidad con la selección (cascada, ej. rosca). Devuelve `panel`.
   - **`resolverConfiguracion(productId, seleccion, {crear})`**: une la selección + ejes derivados y materializa/reutiliza la variante vendible.
 - `public.controller.ts`: `GET/POST public/productos/:id/pasos` · `POST public/productos/:id/resolver`.
@@ -191,7 +191,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |
 | Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`, `resolverConfiguracion`) · `public.controller.ts` · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` · `lib/pasos-wizard.ts` |
 | Editar los pasos guiados de un producto | `productos.service.ts` (`getPasos`/`setPasos`) · `app/productos/[id]/page.tsx` (sección "Pasos guiados") |
-| Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos` 98) · `public.controller.ts` |
+| Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos` ~98, filtra `Product.vendible`) · `public.controller.ts` |
 | Precios / catálogo público | `public.service.ts` (`catalogo` 128) · `productos.service.ts` (`setVariantPrice` 378) |
 | Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` |
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |

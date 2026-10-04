@@ -19,6 +19,9 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
 - Atributos **propios vs heredados** (de componentes del BOM).
 - **`ProductVariant.notas`** — texto libre **interno** por variante (p. ej. medidas del cepillo).
   No es eje ni se expone en la tienda.
+- **`Product.vendible`** — el producto aparece en el selector del **modal de Ventas** con sus
+  variantes activas; se marca con el checkbox "Vendible en Ventas" (detalle y lista de productos).
+  Sustituye al retirado `ProductVariant.published`.
 - **`ProductPasso`** — pasos del storefront (ver abajo).
 - **`ProductComponent`** — BOM; componentes `exacto` vs `consumible`.
 

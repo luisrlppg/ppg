@@ -5,6 +5,9 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 
 ## Decisiones vigentes (reorgs ya aplicados)
 
+- **Vendible (2026-10-04):** el selector de Ventas usa `Product.vendible` (no `ProductVariant.published`,
+  retirado). Están marcados los 6 con pasos: TP, BTVPE-D/LG/N/S/TN. Se exporta a `catalog.yaml`
+  (`product.define` con `vendible: true`).
 - **Taparrosca (2026-10-04):** `Altura de Taparrosca` se fusionó dentro de `Forma de
   Taparrosca` (el número es la forma; `Bala`/`Rebeca` conservan nombre; su altura va a
   `notas`). Se eliminó la variante errónea `TPR-0016`. El color del ensamble usa

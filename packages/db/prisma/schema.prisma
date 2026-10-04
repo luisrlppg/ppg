@@ -112,6 +112,7 @@ model Product {
   uom             Uom                   @default(pieza)
   basePrice       Decimal               @default(0) // neto, sin IVA
   hasVariants     Boolean               @default(false) // true = familia con grid (combo/perezoso)
+  vendible        Boolean               @default(false) // seleccionado para vender en Ventas
   imagen          String?
   activo          Boolean               @default(true)
   createdAt       DateTime              @default(now())
@@ -137,7 +138,6 @@ model ProductVariant {
   stockMin         Decimal             @default(0)
   stockMax         Decimal             @default(0)
   longLead         Boolean             @default(false)
-  published        Boolean             @default(false) // visible en tienda pública (§7.7)
   imagen           String?
   notas            String?             // anotación interna (ej. medidas del cepillo)
   activo           Boolean             @default(true)

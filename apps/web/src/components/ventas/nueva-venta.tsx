@@ -38,6 +38,7 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
   const [productos, setProductos] = useState<ProductoPublico[]>([]);
   const [busquedaProducto, setBusquedaProducto] = useState("");
   const [lineas, setLineas] = useState<LineaConfigurada[]>([]);
+  const [varianteSel, setVarianteSel] = useState<Record<number, number>>({});
 
   const [guardando, setGuardando] = useState(false);
   const [configurando, setConfigurando] = useState<{ producto: ProductoPublico; idx: number | null } | null>(null);
@@ -65,6 +66,25 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
 
   function abrirConfig(producto: ProductoPublico, idx: number | null) {
     setConfigurando({ producto, idx });
+  }
+
+  function agregarDirecto(p: ProductoPublico) {
+    const v = p.variantes.find((x) => x.id === varianteSel[p.productId]);
+    if (!v) {
+      onError("Elige una variante para agregar el producto.");
+      return;
+    }
+    onError("");
+    guardarLinea({
+      variantId: v.id,
+      productId: p.productId,
+      sku: v.sku,
+      nombre: v.nombre,
+      producto: p.nombre,
+      uom: p.uom,
+      cantidad: "1",
+      configVariantId: v.id,
+    });
   }
 
   function guardarLinea(linea: LineaConfigurada) {
@@ -194,9 +214,31 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
                       <strong>{p.nombre}</strong>
                       <div className="muted small">{p.skuBase} · {p.uom}</div>
                     </div>
-                    <button type="button" className="btn primary sm" onClick={() => abrirConfig(p, null)}>
-                      Configurar
-                    </button>
+                    {p.tienePasos ? (
+                      <button type="button" className="btn primary sm" onClick={() => abrirConfig(p, null)}>
+                        Configurar
+                      </button>
+                    ) : p.variantes.length === 0 ? (
+                      <span className="muted small">Sin variantes activas.</span>
+                    ) : (
+                      <>
+                        <label className="small" style={{ margin: 0 }}>
+                          Variante
+                          <select
+                            value={varianteSel[p.productId] ?? ""}
+                            onChange={(e) => setVarianteSel((prev) => ({ ...prev, [p.productId]: Number(e.target.value) }))}
+                          >
+                            <option value="">— Elegir —</option>
+                            {p.variantes.map((v) => (
+                              <option key={v.id} value={v.id}>{v.nombre} · {v.sku}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <button type="button" className="btn primary sm" onClick={() => agregarDirecto(p)}>
+                          Agregar
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

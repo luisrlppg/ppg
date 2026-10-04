@@ -101,8 +101,8 @@ Alcances:
 #### Producto
 | Tabla | Campos | Notas |
 |---|---|---|
-| `products` | id, nombre, category_id, `uom`, `base_price`, imagen, activo, notas, timestamps | Familia o producto simple |
-| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo, published (bool) | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock). `published` = visible en tienda pública (§7.7) |
+| `products` | id, nombre, category_id, `uom`, `base_price`, imagen, activo, `vendible` (bool), notas, timestamps | Familia o producto simple. `vendible` = aparece en el selector de Ventas con sus variantes activas (§7.2) |
+| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock) |
 | `attributes` | id, nombre | Ej. "Tamaño de vástago", "Color de cerda", "Tipo de agujero" |
 | `attribute_values` | id, attribute_id, valor | Ej. "4.5mm", "Negro", "Circular" |
 | `product_attribute_lines` | id, product_id, attribute_id | Ejes del grid de una familia |
@@ -302,9 +302,9 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 - **Estado actual (2026-08-31):** existe la tienda guiada dentro de `apps/web` en la ruta **`/tienda/[productId]`** (pública, sin login). Una app separada `apps/storefront` en dominio propio **sigue siendo futura**; hoy la tienda convive en el panel web pero se sirve sin AppShell.
 - **NO se conecta a la DB**: consume solo `/api/public/*` de `apps/api` (se mantiene §2: DB propiedad exclusiva de la API).
 - Endpoints públicos (implementados en `apps/api`):
-  - `GET /api/public/productos` → productos con ≥1 variante `published=true` (grid de tienda/venta).
-  - `GET /api/public/productos/:id/pasos` → pasos guiados con opciones (variantes **publicadas** del producto navegado) → alimenta la tienda y el modal de venta.
-  - `GET /api/public/catalog` → variantes `published=true` con precio efectivo y empaques.
+  - `GET /api/public/productos` → productos `vendible=true` con sus variantes activas (selector del modal de Ventas).
+  - `GET /api/public/productos/:id/pasos` → pasos guiados con opciones (variantes **activas** del componente) → alimenta la tienda y el modal de venta.
+  - `GET /api/public/catalog` → variantes activas de productos `vendible=true` con precio efectivo y empaques.
   - `POST /api/public/orders` → alta de orden **pendiente**, `origen='web'`, datos de invitado (nombre, teléfono, email).
   - `GET /api/public/orders/:numero` → el cliente consulta el estado de su pedido.
 - Reglas: los **precios se recalculan en servidor** (nunca se confía en el precio que manda el cliente); límite de peticiones/rate-limit; **sin** inventario, usuarios, reportes ni datos internos.

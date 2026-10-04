@@ -16,7 +16,6 @@ export interface SnapshotVariant {
   id: number;
   sku: string;
   nombre: string;
-  published: boolean;
   activo: boolean;
   stockMin: number;
   stockMax: number;
@@ -89,7 +88,6 @@ export async function buildSnapshot(
         id: v.id,
         sku: v.sku,
         nombre: v.nombre,
-        published: v.published,
         activo: v.activo,
         stockMin: num(v.stockMin),
         stockMax: num(v.stockMax),

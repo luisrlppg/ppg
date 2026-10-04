@@ -365,7 +365,7 @@ export default function ProductoDetallePage() {
     finally { setGuardandoVar(false); }
   }
 
-  async function toggle(v: Variante, campo: "published" | "longLead" | "activo") {
+  async function toggle(v: Variante, campo: "longLead" | "activo") {
     try {
       await api(`/productos/variantes/${v.id}`, { method: "PATCH", body: JSON.stringify({ [campo]: !v[campo] }) });
       await cargar();
@@ -591,6 +591,20 @@ export default function ProductoDetallePage() {
             </select>
           </label>
         </div>
+        <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 12 }}>
+          <input
+            type="checkbox"
+            checked={d.vendible}
+            onChange={(e) => {
+              api(`/productos/${prodId}`, { method: "PATCH", body: JSON.stringify({ vendible: e.target.checked }) })
+                .then(() => cargar())
+                .catch((err) => notify(err as Error, ""));
+            }}
+            style={{ width: "auto", margin: 0 }}
+          />
+          <span>Vendible en Ventas</span>
+          <span className="muted small">Se ofrece en el modal de nueva venta con sus variantes activas.</span>
+        </label>
       </div>
 
       {/* --- Atributos y valores --- */}
@@ -1041,7 +1055,6 @@ export default function ProductoDetallePage() {
                 <th>SKU</th>
                 <th>Atributos</th>
                 <th>Stock</th>
-                <th>Publicada</th>
                 <th>Crítico</th>
                 <th></th>
               </tr>
@@ -1070,9 +1083,6 @@ export default function ProductoDetallePage() {
                   </td>
                   <td>{v.stockActual}</td>
                   <td onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={v.published} onChange={() => toggle(v, "published")} style={{ width: "auto" }} />
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={v.longLead} onChange={() => toggle(v, "longLead")} style={{ width: "auto" }} />
                   </td>
                   <td onClick={(e) => e.stopPropagation()}>
@@ -1083,7 +1093,7 @@ export default function ProductoDetallePage() {
                 </tr>
               ))}
               {d.variantes.length === 0 && (
-                <tr><td colSpan={7} className="empty">Sin variantes. Crea una desde el grid de combinaciones arriba.</td></tr>
+                <tr><td colSpan={6} className="empty">Sin variantes. Crea una desde el grid de combinaciones arriba.</td></tr>
               )}
             </tbody>
           </table>

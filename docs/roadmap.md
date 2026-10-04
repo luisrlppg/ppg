@@ -20,6 +20,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Vendible en Ventas + retiro de `published` (2026-10-04):** el selector del modal de Ventas
+  ahora lista solo productos con `Product.vendible = true` (`public.service.productosPublicos`);
+  se marca con el checkbox "Vendible en Ventas" en el detalle y en la lista de productos. Se
+  eliminó `ProductVariant.published` (columna, checkboxes y usos en catálogo/seed); el modal vende
+  los productos sin pasos eligiendo una variante activa directo, y mantiene el wizard para los que
+  tienen `ProductPasso`. Migración backfillea `vendible=true` en los 6 productos con pasos.
 - **Wizard de Taparrosca (2026-10-04):** "Taparrosca con Pincel" pasó a Modelo B. Se fusionó
   `Altura de Taparrosca` dentro de `Forma de Taparrosca` (el número es la forma; `Bala`/`Rebeca`
   conservan nombre, altura a `notas`); se eliminó la variante errónea `TPR-0016`; el color del

@@ -80,7 +80,7 @@ export default function VariantePage() {
     finally { setGuardando(false); }
   }
 
-  async function toggle(campo: "published" | "longLead" | "activo") {
+  async function toggle(campo: "longLead" | "activo") {
     try {
       await api(`/productos/variantes/${variantId}`, { method: "PATCH", body: JSON.stringify({ [campo]: !v?.[campo] }) });
       await cargar();
@@ -157,10 +157,6 @@ export default function VariantePage() {
         </label>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <div className="row" style={{ gap: 16 }}>
-            <label className="row" style={{ gap: 6, alignItems: "center" }}>
-              <input type="checkbox" checked={v.published} onChange={() => toggle("published")} style={{ width: "auto" }} />
-              Publicada
-            </label>
             <label className="row" style={{ gap: 6, alignItems: "center" }}>
               <input type="checkbox" checked={v.longLead} onChange={() => toggle("longLead")} style={{ width: "auto" }} />
               Crítico (long lead)

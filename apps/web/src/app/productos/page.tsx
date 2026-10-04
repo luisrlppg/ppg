@@ -66,6 +66,18 @@ export default function ProductosPage() {
     }
   }
 
+  async function toggleVendible(p: ProductoLite) {
+    setError("");
+    setMsg("");
+    try {
+      await api(`/productos/${p.id}`, { method: "PATCH", body: JSON.stringify({ vendible: !p.vendible }) });
+      await cargar();
+      setMsg(`"${p.nombre}" ${!p.vendible ? "marcado como vendible" : "ya no es vendible"}.`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   // --------------------------------------------------------------- Alta
   const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -73,6 +85,7 @@ export default function ProductosPage() {
   const [uom, setUom] = useState("pieza");
   const [basePrice, setBasePrice] = useState("");
   const [hasVariants, setHasVariants] = useState(false);
+  const [vendible, setVendible] = useState(false);
   const [catAlta, setCatAlta] = useState("");
   const [nuevaCat, setNuevaCat] = useState("");
   const [showNuevaCat, setShowNuevaCat] = useState(false);
@@ -84,6 +97,7 @@ export default function ProductosPage() {
     setSku("");
     setBasePrice("");
     setHasVariants(false);
+    setVendible(false);
     setCatAlta("");
     setNuevaCat("");
     setShowNuevaCat(false);
@@ -104,6 +118,7 @@ export default function ProductosPage() {
           basePrice: basePrice === "" ? 0 : Number(basePrice),
           categoryId: catAlta ? Number(catAlta) : undefined,
           hasVariants,
+          vendible,
         }),
       });
       resetForm();
@@ -246,6 +261,7 @@ export default function ProductosPage() {
                 <th>UOM</th>
                 <th className="num">Precio</th>
                 <th>Categoría</th>
+                <th>Vendible</th>
                 <th className="num">Variantes</th>
                 <th className="num">Stock</th>
                 <th></th>
@@ -261,6 +277,15 @@ export default function ProductosPage() {
                   <td>{p.uom}</td>
                   <td className="num">${Number(p.basePrice).toFixed(2)}</td>
                   <td>{p.categoria ?? "—"}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={p.vendible}
+                      onChange={() => toggleVendible(p)}
+                      style={{ width: "auto" }}
+                      title="Vender en el modal de Ventas"
+                    />
+                  </td>
                   <td className="num">{p.variantes}</td>
                   <td className="num">{p.stockTotal}</td>
                   <td>
@@ -272,7 +297,7 @@ export default function ProductosPage() {
               ))}
               {productos.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="empty">
+                  <td colSpan={9} className="empty">
                     Sin productos todavía. Usa “Nuevo producto” para crear el primero.
                   </td>
                 </tr>
@@ -320,6 +345,10 @@ export default function ProductosPage() {
                 Tiene variantes (grid de combos)
               </label>
             </div>
+            <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
+              <input type="checkbox" checked={vendible} onChange={(e) => setVendible(e.target.checked)} style={{ width: "auto", margin: 0 }} />{" "}
+              <span>Vendible en Ventas</span>
+            </label>
             <div className="row" style={{ alignItems: "flex-end" }}>
               <label style={{ flex: 2 }}>
                 Categoría

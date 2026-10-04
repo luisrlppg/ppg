@@ -74,6 +74,7 @@ async function main() {
       ...(p.category ? { category: p.category.nombre } : {}),
       ...(Number(p.basePrice) !== 0 ? { basePrice: Number(p.basePrice) } : {}),
       ...(p.hasVariants ? { hasVariants: true } : {}),
+      ...(p.vendible ? { vendible: true } : {}),
       ...(p.imagen ? { imagen: p.imagen } : {}),
       ...(!p.activo ? { activo: false } : {}),
     });
@@ -129,7 +130,6 @@ async function main() {
         ...(v.price !== null ? { price: Number(v.price) } : {}),
         ...(Number(v.stockMin) !== 0 ? { min: Number(v.stockMin) } : {}),
         ...(Number(v.stockMax) !== 0 ? { max: Number(v.stockMax) } : {}),
-        ...(v.published ? { published: true } : {}),
         ...(v.longLead ? { longLead: true } : {}),
         ...(!v.activo ? { activo: false } : {}),
         ...(v.imagen ? { imagen: v.imagen } : {}),

@@ -66,7 +66,6 @@ export class InventarioService {
           stockMin: dec(v.stockMin),
           stockMax: dec(v.stockMax),
           longLead: v.longLead,
-          publicado: v.published,
           estado: total <= dec(v.stockMin) && dec(v.stockMin) > 0 ? (v.longLead ? "critico" : "bajo") : "normal",
           porUbicacion,
         };
@@ -96,7 +95,6 @@ export class InventarioService {
       stockMin: dec(v.stockMin),
       stockMax: dec(v.stockMax),
       longLead: v.longLead,
-      published: v.published,
       activo: v.activo,
       notas: v.notas,
       valoracion: v.variantAttributes

@@ -235,7 +235,7 @@ Ejes comunes a los BTVPE:
 
 - **Valores de color por componente** (Negro/Transparente/Blanco) son **valores iniciales editables** por el usuario.
 - **Botella (BOT)** = producto `hasVariants=true` **sin variantes materializadas** aún (las crea el usuario manualmente o con seed posterior).
-- **No se materializan variantes de BTVPE por el agente** — las crea el usuario para probar. La **publicación** (`published=true`) de variantes válidas las hace visibles en el wizard (Opción C).
+- **No se materializan variantes de BTVPE por el agente** — las crea el usuario para probar. Marcar el producto como **`vendible`** (checkbox "Vendible en Ventas") lo hace visible en el selector de Ventas; conserva sus pasos guiados.
 - **Altura del escurridor** = metadata del componente (no seleccionable por el cliente).
 - **Logo de la sobretapa** NO es atributo del sistema; se maneja por WhatsApp (trabajo costoso).
 

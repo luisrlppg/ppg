@@ -27,6 +27,7 @@ class CreateProductoDto {
   @IsOptional() @IsString() uom?: string;
   @IsOptional() @IsNumber() basePrice?: number;
   @IsOptional() @IsBoolean() hasVariants?: boolean;
+  @IsOptional() @IsBoolean() vendible?: boolean;
   @IsOptional() @IsString() imagen?: string;
 }
 
@@ -36,6 +37,7 @@ class UpdateProductoDto {
   @IsOptional() @IsString() uom?: string;
   @IsOptional() @IsNumber() basePrice?: number;
   @IsOptional() @IsBoolean() hasVariants?: boolean;
+  @IsOptional() @IsBoolean() vendible?: boolean;
   @IsOptional() @IsString() imagen?: string;
   @IsOptional() @IsBoolean() activo?: boolean;
 }
@@ -78,7 +80,6 @@ class UpdateVarianteDto {
   @IsOptional() @IsNumber() stockMin?: number;
   @IsOptional() @IsNumber() stockMax?: number;
   @IsOptional() @IsBoolean() longLead?: boolean;
-  @IsOptional() @IsBoolean() published?: boolean;
   @IsOptional() @IsBoolean() activo?: boolean;
   @IsOptional() @IsString() imagen?: string;
   @IsOptional() @IsString() notas?: string | null;
