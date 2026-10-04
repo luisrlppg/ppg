@@ -21,7 +21,40 @@ export type Op =
   | { op: "variant.copy"; from: string; sku: string; overrides?: Record<string, string> }
   | { op: "variant.deriveFrom"; target: string; source: string; on: string[]; inherit: string[] }
   | { op: "variant.delete"; sku: string; allowStock?: boolean }
-  | { op: "step.repoint"; product: string; fromAttribute: string; toAttribute: string };
+  | { op: "step.repoint"; product: string; fromAttribute: string; toAttribute: string }
+  | { op: "category.ensure"; nombre: string }
+  | { op: "location.ensure"; nombre: string; tipo?: "almacen" | "temporal" }
+  | { op: "packaging.ensure"; nombre: string }
+  | {
+      op: "product.define";
+      nombre: string;
+      sku: string;
+      uom?: "pieza" | "metro" | "kg";
+      category?: string | null;
+      basePrice?: number;
+      hasVariants?: boolean;
+      imagen?: string | null;
+      activo?: boolean;
+    }
+  | {
+      op: "variant.define";
+      sku: string;
+      product: string;
+      nombre?: string;
+      attrs: Record<string, string>;
+      price?: number | null;
+      min?: number;
+      max?: number;
+      published?: boolean;
+      longLead?: boolean;
+      activo?: boolean;
+      imagen?: string | null;
+      notas?: string | null;
+    }
+  | { op: "bom.set"; product: string; components: { component: string; cantidad: number; tipo: "exacto" | "consumible" }[] }
+  | { op: "step.set"; product: string; steps: { sortOrder: number; pregunta: string; attribute?: string | null; variantProduct?: string | null; isQtyStep?: boolean }[] }
+  | { op: "packaging.set"; sku: string; empaques: { nombre: string; cantidad: number }[] }
+  | { op: "stock.set"; sku: string; location: string; qty: number };
 
 export interface OpsFile {
   version: number;
@@ -51,6 +84,15 @@ const REQUIRED: Record<string, string[]> = {
   "variant.deriveFrom": ["target", "source", "on", "inherit"],
   "variant.delete": ["sku"],
   "step.repoint": ["product", "fromAttribute", "toAttribute"],
+  "category.ensure": ["nombre"],
+  "location.ensure": ["nombre"],
+  "packaging.ensure": ["nombre"],
+  "product.define": ["nombre", "sku"],
+  "variant.define": ["sku", "product", "attrs"],
+  "bom.set": ["product", "components"],
+  "step.set": ["product", "steps"],
+  "packaging.set": ["sku", "empaques"],
+  "stock.set": ["sku", "location", "qty"],
 };
 
 export function loadOpsFile(path: string): OpsFile {

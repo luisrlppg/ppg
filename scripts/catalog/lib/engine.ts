@@ -30,6 +30,15 @@ async function productByName(tx: Tx, nombre: string) {
 async function variantBySku(tx: Tx, sku: string) {
   return tx.productVariant.findUnique({ where: { sku } });
 }
+async function ensureCategory(tx: Tx, nombre: string) {
+  return (await tx.category.findUnique({ where: { nombre } })) ?? (await tx.category.create({ data: { nombre } }));
+}
+async function ensureLocation(tx: Tx, nombre: string, tipo: "almacen" | "temporal" = "almacen") {
+  return (await tx.location.findUnique({ where: { nombre } })) ?? (await tx.location.create({ data: { nombre, tipo } }));
+}
+async function ensurePackaging(tx: Tx, nombre: string) {
+  return (await tx.packaging.findUnique({ where: { nombre } })) ?? (await tx.packaging.create({ data: { nombre } }));
+}
 async function setAttr(tx: Tx, variantId: number, attributeId: number, valueId: number) {
   return tx.variantAttribute.upsert({
     where: { variantId_attributeId: { variantId, attributeId } },
@@ -100,9 +109,18 @@ async function bloqueos(tx: Tx, variantId: number) {
 async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) => void): Promise<void> {
   switch (o.op) {
     case "attr.ensure": {
-      const a = await ensureAttr(tx, o.name);
-      for (const v of o.values ?? []) await ensureValue(tx, a.id, v);
-      log(`attr.ensure: ${o.name}${o.values?.length ? ` (+${o.values.length} valores)` : ""}`);
+      const a = await attrBy(tx, o.name);
+      if (!a) {
+        const creado = await tx.attribute.create({ data: { nombre: o.name } });
+        for (const v of o.values ?? []) await ensureValue(tx, creado.id, v);
+        log(`attr.ensure: ${o.name} creado${o.values?.length ? ` (+${o.values.length} valores)` : ""}`);
+        return;
+      }
+      let added = 0;
+      for (const v of o.values ?? []) {
+        if (!(await findValue(tx, a.id, v))) { await ensureValue(tx, a.id, v); added++; }
+      }
+      log(added ? `attr.ensure: ${o.name} +${added} valores` : `attr.ensure ya estaba: ${o.name}`);
       return;
     }
     case "attr.rename": {
@@ -177,8 +195,10 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       const a = await ensureAttr(tx, o.attribute);
       const p = await productByName(tx, o.product);
       if (!p) throw new Error(`attr.assignAxis: no existe el producto "${o.product}"`);
+      const existing = await tx.productAttributeLine.findUnique({ where: { productId_attributeId: { productId: p.id, attributeId: a.id } } });
       const max = await tx.productAttributeLine.aggregate({ where: { productId: p.id }, _max: { sortOrder: true } });
       const sortOrder = o.sortOrder ?? (max._max.sortOrder ?? -1) + 1;
+      if (existing && existing.sortOrder === sortOrder) { log(`attr.assignAxis ya estaba: ${o.attribute} -> ${o.product}`); return; }
       await tx.productAttributeLine.upsert({
         where: { productId_attributeId: { productId: p.id, attributeId: a.id } },
         update: { sortOrder },
@@ -447,6 +467,215 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
         data: { attributeId: to.id },
       });
       log(`step.repoint: ${o.fromAttribute} -> ${o.toAttribute} (${o.product}, ${r.count})`);
+      return;
+    }
+    case "category.ensure": {
+      if (await tx.category.findUnique({ where: { nombre: o.nombre } })) { log(`category.ensure ya estaba: ${o.nombre}`); return; }
+      await tx.category.create({ data: { nombre: o.nombre } });
+      log(`category.ensure: ${o.nombre} creada`);
+      return;
+    }
+    case "location.ensure": {
+      const prev = await tx.location.findUnique({ where: { nombre: o.nombre } });
+      if (prev) {
+        if (o.tipo && String(prev.tipo) !== o.tipo) { await tx.location.update({ where: { id: prev.id }, data: { tipo: o.tipo } }); log(`location.ensure: ${o.nombre} tipo -> ${o.tipo}`); }
+        else log(`location.ensure ya estaba: ${o.nombre}`);
+        return;
+      }
+      await tx.location.create({ data: { nombre: o.nombre, tipo: o.tipo ?? "almacen" } });
+      log(`location.ensure: ${o.nombre} creada`);
+      return;
+    }
+    case "packaging.ensure": {
+      if (await tx.packaging.findUnique({ where: { nombre: o.nombre } })) { log(`packaging.ensure ya estaba: ${o.nombre}`); return; }
+      await tx.packaging.create({ data: { nombre: o.nombre } });
+      log(`packaging.ensure: ${o.nombre} creado`);
+      return;
+    }
+    case "product.define": {
+      const existing = await tx.product.findUnique({ where: { skuBase: o.sku } });
+      const categoryId = o.category ? (await ensureCategory(tx, o.category)).id : existing?.categoryId ?? null;
+      const nombre = o.nombre;
+      const uom = o.uom ?? existing?.uom ?? "pieza";
+      const basePrice = o.basePrice ?? (existing ? Number(existing.basePrice) : 0);
+      const hasVariants = o.hasVariants ?? existing?.hasVariants ?? false;
+      const imagen = o.imagen !== undefined ? o.imagen : existing?.imagen ?? null;
+      const activo = o.activo ?? existing?.activo ?? true;
+      if (!existing) {
+        await tx.product.create({ data: { nombre, skuBase: o.sku, categoryId, uom: uom as never, basePrice, hasVariants, imagen, activo } });
+        log(`product.define: ${o.sku} creado`);
+        return;
+      }
+      const same =
+        existing.nombre === nombre &&
+        String(existing.uom) === String(uom) &&
+        Number(existing.basePrice) === Number(basePrice) &&
+        existing.hasVariants === hasVariants &&
+        existing.imagen === imagen &&
+        existing.activo === activo &&
+        existing.categoryId === categoryId;
+      if (same) { log(`product.define ya estaba: ${o.sku}`); return; }
+      await tx.product.update({ where: { id: existing.id }, data: { nombre, categoryId, uom: uom as never, basePrice, hasVariants, imagen, activo } });
+      log(`product.define: ${o.sku} actualizado`);
+      return;
+    }
+    case "variant.define": {
+      const p = await productByName(tx, o.product);
+      if (!p) throw new Error(`variant.define: no existe el producto "${o.product}"`);
+      const desired = new Map<number, number>();
+      for (const [attrName, valueName] of Object.entries(o.attrs)) {
+        const a = await attrBy(tx, attrName);
+        if (!a) throw new Error(`variant.define: no existe el atributo "${attrName}"`);
+        desired.set(a.id, (await ensureValue(tx, a.id, valueName)).id);
+      }
+      let v = await variantBySku(tx, o.sku);
+      if (!v) {
+        v = await tx.productVariant.create({
+          data: {
+            productId: p.id,
+            nombre: o.nombre ?? p.nombre,
+            sku: o.sku,
+            price: o.price ?? null,
+            stockMin: o.min ?? 0,
+            stockMax: o.max ?? 0,
+            published: o.published ?? false,
+            longLead: o.longLead ?? false,
+            imagen: o.imagen ?? null,
+            notas: o.notas ?? null,
+            activo: o.activo ?? true,
+          },
+        });
+        log(`variant.define: ${o.sku} creada`);
+      } else {
+        const meta = {
+          nombre: o.nombre ?? v.nombre,
+          price: o.price !== undefined ? o.price : (v.price === null ? null : Number(v.price)),
+          stockMin: o.min ?? Number(v.stockMin),
+          stockMax: o.max ?? Number(v.stockMax),
+          published: o.published ?? v.published,
+          longLead: o.longLead ?? v.longLead,
+          imagen: o.imagen !== undefined ? o.imagen : v.imagen,
+          notas: o.notas !== undefined ? o.notas : v.notas,
+          activo: o.activo ?? v.activo,
+        };
+        const same =
+          v.nombre === meta.nombre &&
+          (v.price === null ? null : Number(v.price)) === meta.price &&
+          Number(v.stockMin) === meta.stockMin &&
+          Number(v.stockMax) === meta.stockMax &&
+          v.published === meta.published &&
+          v.longLead === meta.longLead &&
+          v.imagen === meta.imagen &&
+          v.notas === meta.notas &&
+          v.activo === meta.activo;
+        if (!same) {
+          await tx.productVariant.update({ where: { id: v.id }, data: meta });
+          log(`variant.define: ${o.sku} meta actualizada`);
+        } else {
+          log(`variant.define ya estaba: ${o.sku}`);
+        }
+      }
+      const existingVa = await tx.variantAttribute.findMany({ where: { variantId: v.id } });
+      let attrChanges = 0;
+      for (const va of existingVa) {
+        if (!desired.has(va.attributeId)) {
+          await tx.variantAttribute.delete({ where: { id: va.id } });
+          attrChanges++;
+        }
+      }
+      for (const [attrId, valueId] of desired) {
+        const cur = existingVa.find((x) => x.attributeId === attrId);
+        if (cur && cur.valueId === valueId) continue;
+        await setAttr(tx, v.id, attrId, valueId);
+        attrChanges++;
+      }
+      if (attrChanges) log(`variant.define: ${o.sku} ${attrChanges} valor(es) ajustado(s)`);
+      return;
+    }
+    case "bom.set": {
+      const p = await productByName(tx, o.product);
+      if (!p) throw new Error(`bom.set: no existe el producto "${o.product}"`);
+      const desired: { componentId: number; cantidad: number; tipo: string }[] = [];
+      for (const c of o.components) {
+        const comp = await productByName(tx, c.component);
+        if (!comp) throw new Error(`bom.set: no existe el componente "${c.component}"`);
+        desired.push({ componentId: comp.id, cantidad: c.cantidad, tipo: c.tipo });
+      }
+      const existing = await tx.productComponent.findMany({ where: { productId: p.id } });
+      const same =
+        existing.length === desired.length &&
+        desired.every((d) => existing.some((e) => e.componentId === d.componentId && Number(e.cantidad) === d.cantidad && String(e.tipo) === d.tipo));
+      if (same) { log(`bom.set ya estaba: ${o.product}`); return; }
+      await tx.productComponent.deleteMany({ where: { productId: p.id } });
+      for (const d of desired) {
+        await tx.productComponent.create({ data: { productId: p.id, componentId: d.componentId, cantidad: d.cantidad, tipo: d.tipo as never } });
+      }
+      log(`bom.set: ${o.product} (${desired.length} componentes)`);
+      return;
+    }
+    case "step.set": {
+      const p = await productByName(tx, o.product);
+      if (!p) throw new Error(`step.set: no existe el producto "${o.product}"`);
+      const desired: { sortOrder: number; pregunta: string; attributeId: number | null; variantProductId: number | null; isQtyStep: boolean }[] = [];
+      for (const s of o.steps) {
+        const a = s.attribute ? await attrBy(tx, s.attribute) : null;
+        if (s.attribute && !a) throw new Error(`step.set: no existe el atributo "${s.attribute}"`);
+        const vp = s.variantProduct ? await productByName(tx, s.variantProduct) : null;
+        if (s.variantProduct && !vp) throw new Error(`step.set: no existe el producto "${s.variantProduct}"`);
+        desired.push({ sortOrder: s.sortOrder, pregunta: s.pregunta, attributeId: a?.id ?? null, variantProductId: vp?.id ?? null, isQtyStep: s.isQtyStep ?? false });
+      }
+      const existing = await tx.productPasso.findMany({ where: { productId: p.id } });
+      const same =
+        existing.length === desired.length &&
+        desired.every((d) =>
+          existing.some(
+            (e) =>
+              e.sortOrder === d.sortOrder &&
+              e.pregunta === d.pregunta &&
+              e.attributeId === d.attributeId &&
+              e.variantProductId === d.variantProductId &&
+              e.isQtyStep === d.isQtyStep,
+          ),
+        );
+      if (same) { log(`step.set ya estaba: ${o.product}`); return; }
+      await tx.productPasso.deleteMany({ where: { productId: p.id } });
+      for (const d of desired) await tx.productPasso.create({ data: { productId: p.id, ...d } });
+      log(`step.set: ${o.product} (${desired.length} pasos)`);
+      return;
+    }
+    case "packaging.set": {
+      const v = await variantBySku(tx, o.sku);
+      if (!v) throw new Error(`packaging.set: no existe la variante "${o.sku}"`);
+      const desired: { packagingId: number; cantidad: number }[] = [];
+      for (const e of o.empaques) {
+        const pk = await ensurePackaging(tx, e.nombre);
+        desired.push({ packagingId: pk.id, cantidad: e.cantidad });
+      }
+      const existing = await tx.variantPackaging.findMany({ where: { variantId: v.id } });
+      const same =
+        existing.length === desired.length &&
+        desired.every((d) => existing.some((e) => e.packagingId === d.packagingId && Number(e.cantidad) === d.cantidad));
+      if (same) { log(`packaging.set ya estaba: ${o.sku}`); return; }
+      await tx.variantPackaging.deleteMany({ where: { variantId: v.id } });
+      for (const d of desired) await tx.variantPackaging.create({ data: { variantId: v.id, packagingId: d.packagingId, cantidad: d.cantidad } });
+      log(`packaging.set: ${o.sku} (${desired.length} empaques)`);
+      return;
+    }
+    case "stock.set": {
+      const v = await variantBySku(tx, o.sku);
+      if (!v) throw new Error(`stock.set: no existe la variante "${o.sku}"`);
+      const loc = await tx.location.findUnique({ where: { nombre: o.location } });
+      if (!loc) throw new Error(`stock.set: no existe la ubicación "${o.location}"`);
+      const current = await tx.stockLevel.findUnique({ where: { variantId_locationId: { variantId: v.id, locationId: loc.id } } });
+      const currentQty = current ? Number(current.qty) : 0;
+      if (currentQty === o.qty) { log(`stock.set ya estaba: ${o.sku}@${o.location}=${o.qty}`); return; }
+      await tx.stockLevel.upsert({
+        where: { variantId_locationId: { variantId: v.id, locationId: loc.id } },
+        update: { qty: o.qty },
+        create: { variantId: v.id, locationId: loc.id, qty: o.qty },
+      });
+      await tx.stockMove.create({ data: { variantId: v.id, locationId: loc.id, qty: o.qty - currentQty, motivo: "apertura", ref: "seed" } });
+      log(`stock.set: ${o.sku}@${o.location}=${o.qty}`);
       return;
     }
     default: {

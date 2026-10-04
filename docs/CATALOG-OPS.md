@@ -67,6 +67,15 @@ ops:
 | `variant.deriveFrom` | `target`, `source`, `on`, `inherit` | Hereda valores del producto fuente por combinación de `on` (solo si es único). |
 | `variant.delete` | `sku`, `allowStock?` | Borra la variante (aborta con historial; `allowStock` borra stock/movimientos). |
 | `step.repoint` | `product`, `fromAttribute`, `toAttribute` | Re-apunta `ProductPasso` de un atributo a otro. |
+| `category.ensure` | `nombre` | Crea la categoría si no existe. |
+| `location.ensure` | `nombre`, `tipo?` | Crea la ubicación si no existe. |
+| `packaging.ensure` | `nombre` | Crea el empaque si no existe. |
+| `product.define` | `nombre`, `sku`, `uom?`, `category?`, `basePrice?`, `hasVariants?`, `imagen?`, `activo?` | Crea/actualiza un producto (meta). |
+| `variant.define` | `sku`, `product`, `nombre?`, `attrs`, `price?`, `min?`, `max?`, `published?`, `longLead?`, `activo?`, `imagen?`, `notas?` | Crea/actualiza una variante y **define** sus valores de eje + meta. |
+| `bom.set` | `product`, `components: [{ component, cantidad, tipo }]` | Reemplaza el BOM del producto. |
+| `step.set` | `product`, `steps: [{ sortOrder, pregunta, attribute?, variantProduct?, isQtyStep? }]` | Reemplaza los pasos de tienda del producto. |
+| `packaging.set` | `sku`, `empaques: [{ nombre, cantidad }]` | Reemplaza los empaques de la variante. |
+| `stock.set` | `sku`, `location`, `qty` | Fija el stock (apertura) y registra el movimiento. |
 
 ## Garantías
 
@@ -88,6 +97,25 @@ y compara contra el snapshot. Genera:
   los conflictos van **solo** al reporte para revisión.
 
 No escribe en la base de datos.
+
+## Seed declarativo (catálogo + stock)
+
+El catálogo completo se puede **exportar** desde la BD a ops *ensure/define* y luego **aplicar**
+para reproducirlo en otra base (o tras un reset), sin depender de scripts one-off.
+
+```bash
+pnpm cat:export-seed     # genera scripts/catalog/seed/catalog.yaml + stock.yaml desde la BD actual
+pnpm cat:seed            # aplica catalog.yaml (dry-run; usa --apply para escribir)
+pnpm cat:stock           # aplica stock.yaml (dry-run; usa --apply para escribir)
+```
+
+- `catalog.yaml`: categorías, ubicaciones, empaques, productos, atributos+valores, ejes
+  (+ permitidos), BOM, pasos y variantes (valores + meta). **Versionado.**
+- `stock.yaml`: stock por variante+ubicación. Es una **foto** (se vuelve obsoleta con los
+  movimientos); por eso va aparte.
+- El export es fiel a la BD: correr `cat:seed`/`cat:stock` sobre la misma base da **0 cambios**.
+- Reconstrucción desde cero verificada: migrar en un schema vacío + `cat:seed` + `cat:stock`
+  reproduce los mismos conteos que la BD actual.
 
 ## Notas
 

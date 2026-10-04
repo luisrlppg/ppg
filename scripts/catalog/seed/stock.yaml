@@ -1,0 +1,1096 @@
+version: 1
+name: stock
+description: Stock inicial (generado por export-seed.ts)
+ops:
+  - op: stock.set
+    sku: CNI-0010
+    location: B2
+    qty: 9000
+  - op: stock.set
+    sku: CNI-0011
+    location: A2
+    qty: 44802
+  - op: stock.set
+    sku: CNI-0017
+    location: B2
+    qty: 10680
+  - op: stock.set
+    sku: CNI-0013
+    location: A2
+    qty: 3263
+  - op: stock.set
+    sku: CNI-0018
+    location: A2
+    qty: 57266
+  - op: stock.set
+    sku: LGL-00002
+    location: C6
+    qty: 59850
+  - op: stock.set
+    sku: CNI-0011
+    location: A1
+    qty: 950
+  - op: stock.set
+    sku: CNI-0022
+    location: A2
+    qty: 8000
+  - op: stock.set
+    sku: CNI-0023
+    location: A2
+    qty: 78509
+  - op: stock.set
+    sku: CNI-0021
+    location: A2
+    qty: 2400
+  - op: stock.set
+    sku: CSI-0006
+    location: B2
+    qty: 119210
+  - op: stock.set
+    sku: CSI-0004
+    location: B2
+    qty: 64995
+  - op: stock.set
+    sku: CSI-0002
+    location: B2
+    qty: 46005
+  - op: stock.set
+    sku: CSI-0007
+    location: C6
+    qty: 364963
+  - op: stock.set
+    sku: CSI-0001
+    location: C6
+    qty: 16000
+  - op: stock.set
+    sku: TPR-0031
+    location: D2
+    qty: 18000
+  - op: stock.set
+    sku: TPR-0038
+    location: D2
+    qty: 5500
+  - op: stock.set
+    sku: TPR-0033
+    location: D2
+    qty: 2223
+  - op: stock.set
+    sku: TPR-0035
+    location: D2
+    qty: 1114
+  - op: stock.set
+    sku: TPR-0040
+    location: D2
+    qty: 1000
+  - op: stock.set
+    sku: TPR-0041
+    location: D2
+    qty: 1000
+  - op: stock.set
+    sku: TPR-0039
+    location: D2
+    qty: 900
+  - op: stock.set
+    sku: TPR-0034
+    location: D2
+    qty: 500
+  - op: stock.set
+    sku: TPR-0036
+    location: D2
+    qty: 500
+  - op: stock.set
+    sku: TPR-0037
+    location: D2
+    qty: 380
+  - op: stock.set
+    sku: TPR-0032
+    location: D2
+    qty: 336
+  - op: stock.set
+    sku: ESC-0001
+    location: E1
+    qty: 361430
+  - op: stock.set
+    sku: ESC-0003
+    location: E1
+    qty: 174900
+  - op: stock.set
+    sku: ESC-0004
+    location: E1
+    qty: 31932
+  - op: stock.set
+    sku: ESC-0002
+    location: E1
+    qty: 46250
+  - op: stock.set
+    sku: ESC-0007
+    location: E1
+    qty: 101500
+  - op: stock.set
+    sku: ESC-0009
+    location: E1
+    qty: 82859
+  - op: stock.set
+    sku: ESC-0005
+    location: E1
+    qty: 11500
+  - op: stock.set
+    sku: STP-0013
+    location: E2
+    qty: 500
+  - op: stock.set
+    sku: STP-0015
+    location: E2
+    qty: 480
+  - op: stock.set
+    sku: STP-0004
+    location: F3
+    qty: 34000
+  - op: stock.set
+    sku: STP-0008
+    location: F3
+    qty: 27000
+  - op: stock.set
+    sku: STP-0007
+    location: F3
+    qty: 7500
+  - op: stock.set
+    sku: PIN-0011
+    location: G1
+    qty: 13000
+  - op: stock.set
+    sku: PIN-0005
+    location: G1
+    qty: 4747
+  - op: stock.set
+    sku: PIN-0006
+    location: G1
+    qty: 1500
+  - op: stock.set
+    sku: PIN-0004
+    location: G1
+    qty: 1000
+  - op: stock.set
+    sku: TPR-0044
+    location: G2
+    qty: 15000
+  - op: stock.set
+    sku: CNI-0004
+    location: B2
+    qty: 31311
+  - op: stock.set
+    sku: CNI-0003
+    location: B2
+    qty: 84198
+  - op: stock.set
+    sku: CNI-0002
+    location: A2
+    qty: 56438
+  - op: stock.set
+    sku: CNI-0009
+    location: A2
+    qty: 21850
+  - op: stock.set
+    sku: CNI-0020
+    location: A2
+    qty: 4353
+  - op: stock.set
+    sku: CNI-0019
+    location: B2
+    qty: 140218
+  - op: stock.set
+    sku: TPR-0029
+    location: H2
+    qty: 48000
+  - op: stock.set
+    sku: P0016-0001
+    location: H3
+    qty: 8
+  - op: stock.set
+    sku: TPR-0003
+    location: I2
+    qty: 12000
+  - op: stock.set
+    sku: TPR-0002
+    location: I2
+    qty: 5000
+  - op: stock.set
+    sku: TPR-0025
+    location: I2
+    qty: 12000
+  - op: stock.set
+    sku: TPR-0001
+    location: I2
+    qty: 13000
+  - op: stock.set
+    sku: P0021-0002
+    location: I3
+    qty: 70
+  - op: stock.set
+    sku: P0021-0003
+    location: I3
+    qty: 200
+  - op: stock.set
+    sku: P0021-0004
+    location: I3
+    qty: 618
+  - op: stock.set
+    sku: P0021-0005
+    location: I3
+    qty: 720
+  - op: stock.set
+    sku: P0021-0006
+    location: I3
+    qty: 1137
+  - op: stock.set
+    sku: TPR-0004
+    location: I3
+    qty: 1668
+  - op: stock.set
+    sku: TPR-0016
+    location: I3
+    qty: 6000
+  - op: stock.set
+    sku: TPR-0017
+    location: I3
+    qty: 8000
+  - op: stock.set
+    sku: TPR-0005
+    location: I3
+    qty: 15000
+  - op: stock.set
+    sku: P0021-0001
+    location: I3
+    qty: 15700
+  - op: stock.set
+    sku: VST-0015
+    location: J2
+    qty: 180
+  - op: stock.set
+    sku: TPR-0045
+    location: J2
+    qty: 200
+  - op: stock.set
+    sku: TPR-0046
+    location: J2
+    qty: 200
+  - op: stock.set
+    sku: TPR-0009
+    location: J2
+    qty: 1214
+  - op: stock.set
+    sku: TPR-0015
+    location: J2
+    qty: 1574
+  - op: stock.set
+    sku: VST-0013
+    location: J2
+    qty: 3900
+  - op: stock.set
+    sku: VST-0001
+    location: J2
+    qty: 4394
+  - op: stock.set
+    sku: TPR-0019
+    location: J2
+    qty: 5170
+  - op: stock.set
+    sku: TPR-0010
+    location: J2
+    qty: 6800
+  - op: stock.set
+    sku: TPR-0013
+    location: J2
+    qty: 8660
+  - op: stock.set
+    sku: TPR-0014
+    location: J2
+    qty: 10000
+  - op: stock.set
+    sku: VST-0002
+    location: J2
+    qty: 10053
+  - op: stock.set
+    sku: VAST-0003
+    location: N1
+    qty: 20000
+  - op: stock.set
+    sku: P0006-0001
+    location: O1
+    qty: 165
+  - op: stock.set
+    sku: P0005-0001
+    location: O1
+    qty: 1300
+  - op: stock.set
+    sku: P0007-0001
+    location: O1
+    qty: 175
+  - op: stock.set
+    sku: P0008-0001
+    location: O1
+    qty: 23
+  - op: stock.set
+    sku: P0010-0001
+    location: O1
+    qty: 1
+  - op: stock.set
+    sku: BOT-0019
+    location: O3
+    qty: 5300
+  - op: stock.set
+    sku: BOT-0011
+    location: O3
+    qty: 836
+  - op: stock.set
+    sku: BOT-0023
+    location: O4
+    qty: 500
+  - op: stock.set
+    sku: BOT-0004
+    location: P1
+    qty: 4942
+  - op: stock.set
+    sku: BOT-0007
+    location: P1
+    qty: 5844
+  - op: stock.set
+    sku: BOT-0008
+    location: P1
+    qty: 4870
+  - op: stock.set
+    sku: BOT-0005
+    location: P1
+    qty: 900
+  - op: stock.set
+    sku: BOT-0017
+    location: P2
+    qty: 8568
+  - op: stock.set
+    sku: BOT-0025
+    location: P2
+    qty: 4536
+  - op: stock.set
+    sku: BOT-0026
+    location: P2
+    qty: 7000
+  - op: stock.set
+    sku: BOT-0024
+    location: P2
+    qty: 3024
+  - op: stock.set
+    sku: BOT-0022
+    location: P2
+    qty: 1512
+  - op: stock.set
+    sku: BOT-0020
+    location: P3
+    qty: 9072
+  - op: stock.set
+    sku: BOT-0021
+    location: P3
+    qty: 6552
+  - op: stock.set
+    sku: BOT-0016
+    location: P3
+    qty: 3528
+  - op: stock.set
+    sku: P0019-0001
+    location: J2
+    qty: 100
+  - op: stock.set
+    sku: P0019-0004
+    location: J2
+    qty: 680
+  - op: stock.set
+    sku: P0019-0005
+    location: J2
+    qty: 1098
+  - op: stock.set
+    sku: P0019-0006
+    location: J2
+    qty: 1680
+  - op: stock.set
+    sku: P0019-0007
+    location: J2
+    qty: 8500
+  - op: stock.set
+    sku: P0019-0008
+    location: K2
+    qty: 12000
+  - op: stock.set
+    sku: P0004-0001
+    location: O1
+    qty: 25
+  - op: stock.set
+    sku: P0001-0001
+    location: C1
+    qty: 12
+  - op: stock.set
+    sku: P0003-0001
+    location: C1
+    qty: 1
+  - op: stock.set
+    sku: VST-0010
+    location: L2
+    qty: 1900
+  - op: stock.set
+    sku: VST-0017
+    location: J2
+    qty: 5000
+  - op: stock.set
+    sku: VST-0004
+    location: J2
+    qty: 4300
+  - op: stock.set
+    sku: VST-0005
+    location: N2
+    qty: 2400
+  - op: stock.set
+    sku: VST-0006
+    location: N2
+    qty: 4000
+  - op: stock.set
+    sku: VST-0009
+    location: N2
+    qty: 1500
+  - op: stock.set
+    sku: VST-0011
+    location: N2
+    qty: 6950
+  - op: stock.set
+    sku: VST-0012
+    location: N2
+    qty: 13100
+  - op: stock.set
+    sku: VST-0016
+    location: L2
+    qty: 27000
+  - op: stock.set
+    sku: VST-0019
+    location: D1
+    qty: 9000
+  - op: stock.set
+    sku: P0032-0001
+    location: A2
+    qty: 328714
+  - op: stock.set
+    sku: STP-0017
+    location: E2
+    qty: 5500
+  - op: stock.set
+    sku: STP-0003
+    location: F3
+    qty: 1900
+  - op: stock.set
+    sku: VAST-0010
+    location: N1
+    qty: 8000
+  - op: stock.set
+    sku: CNI-0005
+    location: A1
+    qty: 26189
+  - op: stock.set
+    sku: CNI-0005
+    location: Revisión
+    qty: 7000
+  - op: stock.set
+    sku: STP-0024
+    location: E2
+    qty: 4500
+  - op: stock.set
+    sku: STP-0014
+    location: E2
+    qty: 200
+  - op: stock.set
+    sku: STP-0019
+    location: E2
+    qty: 2000
+  - op: stock.set
+    sku: P0033-0001
+    location: H1
+    qty: 1000
+  - op: stock.set
+    sku: CNI-0024
+    location: B2
+    qty: 5468
+  - op: stock.set
+    sku: STP-0016
+    location: E2
+    qty: 7000
+  - op: stock.set
+    sku: STP-0012
+    location: E2
+    qty: 103
+  - op: stock.set
+    sku: BOT-0013
+    location: O2
+    qty: 1200
+  - op: stock.set
+    sku: CNI-0008
+    location: D1
+    qty: 282183
+  - op: stock.set
+    sku: VAST-0009
+    location: F1
+    qty: 37800
+  - op: stock.set
+    sku: BOT-0030
+    location: O2
+    qty: 1400
+  - op: stock.set
+    sku: TPR-0047
+    location: F1
+    qty: 3200
+  - op: stock.set
+    sku: P0008-0002
+    location: A1
+    qty: 112
+  - op: stock.set
+    sku: TPR-0026
+    location: D2
+    qty: 39000
+  - op: stock.set
+    sku: VST-0025
+    location: N2
+    qty: 961
+  - op: stock.set
+    sku: BOT-0014
+    location: M2
+    qty: 5300
+  - op: stock.set
+    sku: STP-0009
+    location: D1
+    qty: 500
+  - op: stock.set
+    sku: VST-0007
+    location: N2
+    qty: 800
+  - op: stock.set
+    sku: BOT-0027
+    location: O4
+    qty: 2470
+  - op: stock.set
+    sku: VAST-0002
+    location: N1
+    qty: 95000
+  - op: stock.set
+    sku: STP-0018
+    location: Principal
+    qty: 10000
+  - op: stock.set
+    sku: VST-0007
+    location: L2
+    qty: 8000
+  - op: stock.set
+    sku: CNI-0016
+    location: A2
+    qty: 7450
+  - op: stock.set
+    sku: PIN-0001
+    location: G1
+    qty: 27154
+  - op: stock.set
+    sku: PIN-0008
+    location: G1
+    qty: 267
+  - op: stock.set
+    sku: TPR-0023
+    location: I2
+    qty: 11500
+  - op: stock.set
+    sku: STP-0020
+    location: E2
+    qty: 7000
+  - op: stock.set
+    sku: STP-0006
+    location: F2
+    qty: 500
+  - op: stock.set
+    sku: VAST-0008
+    location: N1
+    qty: 600
+  - op: stock.set
+    sku: CNI-0025
+    location: D1
+    qty: 11430
+  - op: stock.set
+    sku: BOT-0010
+    location: O2
+    qty: 1900
+  - op: stock.set
+    sku: P0033-0004
+    location: H1
+    qty: 479
+  - op: stock.set
+    sku: P0011-0001
+    location: O2
+    qty: 14000
+  - op: stock.set
+    sku: BOT-0001
+    location: O3
+    qty: 7677
+  - op: stock.set
+    sku: TPR-0048
+    location: AA
+    qty: 385
+  - op: stock.set
+    sku: BOT-0034
+    location: AA
+    qty: 243
+  - op: stock.set
+    sku: BOT-0033
+    location: AA
+    qty: 224
+  - op: stock.set
+    sku: BOT-0032
+    location: AA
+    qty: 167
+  - op: stock.set
+    sku: BOT-0031
+    location: AA
+    qty: 164
+  - op: stock.set
+    sku: VAST-0014
+    location: N1
+    qty: 1810
+  - op: stock.set
+    sku: TRN-00001
+    location: AA
+    qty: 55205
+  - op: stock.set
+    sku: VAST-0015
+    location: N1
+    qty: 239000
+  - op: stock.set
+    sku: TPR-0042
+    location: H2
+    qty: 300
+  - op: stock.set
+    sku: P0019-0017
+    location: Embarque
+    qty: 8500
+  - op: stock.set
+    sku: STP-0021
+    location: E2
+    qty: 4000
+  - op: stock.set
+    sku: STP-0025
+    location: E2
+    qty: 3000
+  - op: stock.set
+    sku: STP-0022
+    location: E2
+    qty: 840
+  - op: stock.set
+    sku: VST-0003
+    location: Principal
+    qty: 20000
+  - op: stock.set
+    sku: BOT-0002
+    location: Embarque
+    qty: 9000
+  - op: stock.set
+    sku: VAST-0006
+    location: F1
+    qty: 34000
+  - op: stock.set
+    sku: STP-0002
+    location: P4
+    qty: 13350
+  - op: stock.set
+    sku: VST-0024
+    location: N2
+    qty: 6000
+  - op: stock.set
+    sku: STP-0010
+    location: E2
+    qty: 12470
+  - op: stock.set
+    sku: ESC-0008
+    location: Principal
+    qty: 22000
+  - op: stock.set
+    sku: TPR-0027
+    location: H2
+    qty: 1000
+  - op: stock.set
+    sku: STP-0023
+    location: E2
+    qty: 25
+  - op: stock.set
+    sku: PIN-0015
+    location: Principal
+    qty: 1000
+  - op: stock.set
+    sku: P0019-0005
+    location: H1
+    qty: 538
+  - op: stock.set
+    sku: DPL-00001
+    location: Principal
+    qty: 55614
+  - op: stock.set
+    sku: VST-0005
+    location: Principal
+    qty: 7350
+  - op: stock.set
+    sku: VAST-0005
+    location: Principal
+    qty: 18500
+  - op: stock.set
+    sku: CNI-0026
+    location: D1
+    qty: 6300
+  - op: stock.set
+    sku: TPR-0049
+    location: O3
+    qty: 245
+  - op: stock.set
+    sku: TPR-0030
+    location: Principal
+    qty: 54000
+  - op: stock.set
+    sku: TPR-0011
+    location: F2
+    qty: 1500
+  - op: stock.set
+    sku: CERD-0001
+    location: C5
+    qty: 97.94
+  - op: stock.set
+    sku: CERD-0002
+    location: C5
+    qty: 13.6
+  - op: stock.set
+    sku: CERD-0004
+    location: C2
+    qty: 0.82
+  - op: stock.set
+    sku: CERD-0006
+    location: C2
+    qty: 111.96
+  - op: stock.set
+    sku: BOT-0018
+    location: P4
+    qty: 8000
+  - op: stock.set
+    sku: VST-0020
+    location: N2
+    qty: 2988
+  - op: stock.set
+    sku: VAST-0013
+    location: N1
+    qty: 158000
+  - op: stock.set
+    sku: VAST-0001
+    location: N1
+    qty: 110000
+  - op: stock.set
+    sku: PIN-0002
+    location: Principal
+    qty: 40500
+  - op: stock.set
+    sku: TPR-0006
+    location: I2
+    qty: 50000
+  - op: stock.set
+    sku: CERD-0001
+    location: C3
+    qty: 28.84
+  - op: stock.set
+    sku: P0019-0003
+    location: Principal
+    qty: 6000
+  - op: stock.set
+    sku: PIN-0007
+    location: G1
+    qty: 6550
+  - op: stock.set
+    sku: VAST-0004
+    location: N1
+    qty: 80000
+  - op: stock.set
+    sku: PIN-0010
+    location: G1
+    qty: 31500
+  - op: stock.set
+    sku: ESC-0006
+    location: Principal
+    qty: 28037
+  - op: stock.set
+    sku: TPR-0008
+    location: G2
+    qty: 16940
+  - op: stock.set
+    sku: TPR-0021
+    location: G2
+    qty: 26500
+  - op: stock.set
+    sku: TPR-0020
+    location: G2
+    qty: 13000
+  - op: stock.set
+    sku: TPR-0022
+    location: G2
+    qty: 3500
+  - op: stock.set
+    sku: BOT-0003
+    location: O4
+    qty: 7900
+  - op: stock.set
+    sku: TPR-0018
+    location: H2
+    qty: 33000
+  - op: stock.set
+    sku: P0014-0009
+    location: D1
+    qty: 35000
+  - op: stock.set
+    sku: STP-0005
+    location: E2
+    qty: 10000
+  - op: stock.set
+    sku: PIN-0012
+    location: F1
+    qty: 3000
+  - op: stock.set
+    sku: CNI-0012
+    location: Principal
+    qty: 20783
+  - op: stock.set
+    sku: VST-0008
+    location: N2
+    qty: 5100
+  - op: stock.set
+    sku: CSI-0005
+    location: C6
+    qty: 2970
+  - op: stock.set
+    sku: CSI-0008
+    location: C6
+    qty: 3500
+  - op: stock.set
+    sku: P0012-0001
+    location: C4
+    qty: 3
+  - op: stock.set
+    sku: P0002-0001
+    location: C4
+    qty: 3
+  - op: stock.set
+    sku: PIN-0009
+    location: G1
+    qty: 2356
+  - op: stock.set
+    sku: P0019-0019
+    location: Principal
+    qty: 1500
+  - op: stock.set
+    sku: CNI-0007
+    location: D1
+    qty: 134400
+  - op: stock.set
+    sku: TPR-0007
+    location: M1
+    qty: 62800
+  - op: stock.set
+    sku: BOT-0012
+    location: Principal
+    qty: 300
+  - op: stock.set
+    sku: P0033-0002
+    location: Principal
+    qty: 1184
+  - op: stock.set
+    sku: P0033-0003
+    location: Principal
+    qty: 9000
+  - op: stock.set
+    sku: PIN-0003
+    location: G1
+    qty: 6729
+  - op: stock.set
+    sku: PIN-0013
+    location: Principal
+    qty: 3000
+  - op: stock.set
+    sku: BOT-0009
+    location: P1
+    qty: 1500
+  - op: stock.set
+    sku: BOT-0006
+    location: O4
+    qty: 1900
+  - op: stock.set
+    sku: TPR-0028
+    location: F1
+    qty: 54000
+  - op: stock.set
+    sku: TPR-0043
+    location: F1
+    qty: 4000
+  - op: stock.set
+    sku: P0014-0011
+    location: M1
+    qty: 9000
+  - op: stock.set
+    sku: P0014-0012
+    location: M1
+    qty: 5000
+  - op: stock.set
+    sku: P0014-0008
+    location: M1
+    qty: 45000
+  - op: stock.set
+    sku: P0014-0007
+    location: M1
+    qty: 56000
+  - op: stock.set
+    sku: P0014-0010
+    location: M1
+    qty: 3000
+  - op: stock.set
+    sku: P0014-0013
+    location: M1
+    qty: 5000
+  - op: stock.set
+    sku: VAST-0007
+    location: M1
+    qty: 30000
+  - op: stock.set
+    sku: TPR-0012
+    location: Piso de almacén
+    qty: 4500
+  - op: stock.set
+    sku: P0014-0014
+    location: M1
+    qty: 183000
+  - op: stock.set
+    sku: P0019-0014
+    location: Principal
+    qty: 12000
+  - op: stock.set
+    sku: P0019-0015
+    location: Embarque
+    qty: 15000
+  - op: stock.set
+    sku: BOT-0028
+    location: O4
+    qty: 7200
+  - op: stock.set
+    sku: P0019-0018
+    location: Embarque
+    qty: 1500
+  - op: stock.set
+    sku: P0033-0005
+    location: Embarque
+    qty: 100000
+  - op: stock.set
+    sku: VAST-0012
+    location: N1
+    qty: 24000
+  - op: stock.set
+    sku: TPR-0050
+    location: G2
+    qty: 9500
+  - op: stock.set
+    sku: BOT-0015
+    location: O4
+    qty: 2000
+  - op: stock.set
+    sku: VST-0018
+    location: L2
+    qty: 28000
+  - op: stock.set
+    sku: BOT-0029
+    location: O4
+    qty: 2000
+  - op: stock.set
+    sku: PIN-0014
+    location: G1
+    qty: 4300
+  - op: stock.set
+    sku: CERD-0002
+    location: Principal
+    qty: 0.44
+  - op: stock.set
+    sku: CERD-0003
+    location: C3
+    qty: 33.28
+  - op: stock.set
+    sku: CERD-0005
+    location: C3
+    qty: 36.69
+  - op: stock.set
+    sku: BOT-0029
+    location: Embarque
+    qty: 26000
+  - op: stock.set
+    sku: PIN-0014
+    location: Principal
+    qty: 5700
+  - op: stock.set
+    sku: LGL-00001
+    location: C6
+    qty: 54951
+  - op: stock.set
+    sku: LGL-00003
+    location: C6
+    qty: 5000
+  - op: stock.set
+    sku: STP-0011
+    location: P4
+    qty: 41000
+  - op: stock.set
+    sku: TPR-0008
+    location: Piso de almacén
+    qty: 18160
+  - op: stock.set
+    sku: P0019-0011
+    location: Embarque
+    qty: 17000
+  - op: stock.set
+    sku: P0019-0013
+    location: Embarque
+    qty: 25500
+  - op: stock.set
+    sku: VAST-0011
+    location: Principal
+    qty: 85000
+  - op: stock.set
+    sku: BOT-0006
+    location: Piso de almacén
+    qty: 8000
+  - op: stock.set
+    sku: P0019-0002
+    location: Embarque
+    qty: 12000
+  - op: stock.set
+    sku: TPR-0008
+    location: Principal
+    qty: 35100
+  - op: stock.set
+    sku: P0019-0012
+    location: Embarque
+    qty: 25500
+  - op: stock.set
+    sku: P0019-0010
+    location: Embarque
+    qty: 30000
+  - op: stock.set
+    sku: TPR-0024
+    location: Piso de almacén
+    qty: 47994
+  - op: stock.set
+    sku: STP-0001
+    location: Piso de almacén
+    qty: 54900
+  - op: stock.set
+    sku: P0019-0009
+    location: Embarque
+    qty: 30000
+  - op: stock.set
+    sku: PIN-0012
+    location: Principal
+    qty: 60000

@@ -28,4 +28,14 @@ ops:
   # - { op: variant.delete,     sku: PIN-0099, allowStock: true }
   # --- Pasos de tienda ---
   # - { op: step.repoint, product: "Taparrosca con Pincel", fromAttribute: "Agujero vastago", toAttribute: "Agujero de Mango" }
+  # --- Estructura / seed (ops ensure/define) ---
+  # - { op: category.ensure,  nombre: Cepillos }
+  # - { op: location.ensure,  nombre: "Piso de almacén", tipo: almacen }
+  # - { op: packaging.ensure, nombre: "Caja de almacén" }
+  # - { op: product.define,   nombre: Pincel, sku: PIN, uom: pieza, basePrice: 20, hasVariants: true }
+  # - { op: variant.define,   sku: PIN-0001, product: Pincel, attrs: { "Tamaño rosca": 10mm, Ceja: Delgada } }
+  # - { op: bom.set,          product: Pincel, components: [{ component: Mango, cantidad: 1, tipo: exacto }] }
+  # - { op: step.set,         product: Pincel, steps: [{ sortOrder: 0, pregunta: "¿Qué altura?", attribute: "Altura de Mango" }] }
+  # - { op: packaging.set,    sku: PIN-0001, empaques: [{ nombre: "Bolsa individual", cantidad: 100 }] }
+  # - { op: stock.set,        sku: PIN-0001, location: Principal, qty: 0 }
   - { op: value.add, attribute: Ceja, value: Ejemplo }

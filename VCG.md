@@ -236,6 +236,7 @@ vez de inventar clases nuevas:
 | Reconciliación inventario Odoo↔PPG | `scripts/odoo-migration/reconcile-stock.ts` (mapea con `mapeo-odoo-ppg.csv`; difiere subensamblados; compara contra BD o `--ppg <csv>`; genera `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`; `--apply` ajusta sólo renglones `ajuste`; `--reset` borra stock y recarga el snapshot Odoo) |
 | Reorg / consolidación de atributos | `scripts/reorg-atributos.ts` + `scripts/consolidar-atributos.ts` (`--dry`/`--apply`) |
 | Migraciones de catálogo (estado + ops declarativas) | `scripts/catalog/` (`snapshot.ts`, `apply.ts`, `odoo-diff.ts`) + `scripts/catalog/ops/*.yaml` + `docs/CATALOG-OPS.md` |
+| Seed declarativo del catálogo/stock | `cat:export-seed` → `scripts/catalog/seed/{catalog,stock}.yaml`; `cat:seed` / `cat:stock` |
 | Producto PVC + forma Cepillo Pino | `scripts/finalizar-minmax.ts` |
 | Cepillos: forma en vez de Medidas/Estado/grosor | `scripts/reorg-cepillos.ts` + `scripts/reorg-cepillos-grosor.ts` (`--dry`/`--apply`); reconciliación resuelve cepillos por BD (`reconcile-stock.ts`) |
 | Notas internas de variante (medidas/grosor) | `ProductVariant.notas`; `scripts/seed-cepillos-notas.ts`; página de variante `app/productos/[id]/variantes/[vid]/page.tsx` |

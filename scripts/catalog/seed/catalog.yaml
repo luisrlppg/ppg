@@ -1,0 +1,3936 @@
+version: 1
+name: catalog
+description: Catálogo PPG (generado por export-seed.ts)
+ops:
+  - op: category.ensure
+    nombre: Alambre
+  - op: category.ensure
+    nombre: Botellas
+  - op: category.ensure
+    nombre: Cepillos
+  - op: category.ensure
+    nombre: Cerda
+  - op: category.ensure
+    nombre: Empaques
+  - op: category.ensure
+    nombre: Envases
+  - op: category.ensure
+    nombre: Escurridores
+  - op: category.ensure
+    nombre: Mangos
+  - op: category.ensure
+    nombre: Otros
+  - op: category.ensure
+    nombre: Palillos
+  - op: category.ensure
+    nombre: Pinceles
+  - op: category.ensure
+    nombre: Puntas
+  - op: category.ensure
+    nombre: Sobretapas
+  - op: category.ensure
+    nombre: Taparroscas
+  - op: category.ensure
+    nombre: Tapones
+  - op: category.ensure
+    nombre: Vástagos
+  - op: location.ensure
+    nombre: A1
+  - op: location.ensure
+    nombre: A2
+  - op: location.ensure
+    nombre: AA
+  - op: location.ensure
+    nombre: Almacén principal
+  - op: location.ensure
+    nombre: B2
+  - op: location.ensure
+    nombre: C1
+  - op: location.ensure
+    nombre: C2
+  - op: location.ensure
+    nombre: C3
+  - op: location.ensure
+    nombre: C4
+  - op: location.ensure
+    nombre: C5
+  - op: location.ensure
+    nombre: C6
+  - op: location.ensure
+    nombre: Compartimento 1
+  - op: location.ensure
+    nombre: Compartimento 2
+  - op: location.ensure
+    nombre: Compartimento 3
+  - op: location.ensure
+    nombre: D1
+  - op: location.ensure
+    nombre: D2
+  - op: location.ensure
+    nombre: E1
+  - op: location.ensure
+    nombre: E2
+  - op: location.ensure
+    nombre: Embarque
+  - op: location.ensure
+    nombre: F1
+  - op: location.ensure
+    nombre: F2
+  - op: location.ensure
+    nombre: F3
+  - op: location.ensure
+    nombre: G1
+  - op: location.ensure
+    nombre: G2
+  - op: location.ensure
+    nombre: H1
+  - op: location.ensure
+    nombre: H2
+  - op: location.ensure
+    nombre: H3
+  - op: location.ensure
+    nombre: I2
+  - op: location.ensure
+    nombre: I3
+  - op: location.ensure
+    nombre: J2
+  - op: location.ensure
+    nombre: K2
+  - op: location.ensure
+    nombre: L2
+  - op: location.ensure
+    nombre: M1
+  - op: location.ensure
+    nombre: M2
+  - op: location.ensure
+    nombre: N1
+  - op: location.ensure
+    nombre: N2
+  - op: location.ensure
+    nombre: O1
+  - op: location.ensure
+    nombre: O2
+  - op: location.ensure
+    nombre: O3
+  - op: location.ensure
+    nombre: O4
+  - op: location.ensure
+    nombre: P1
+  - op: location.ensure
+    nombre: P2
+  - op: location.ensure
+    nombre: P3
+  - op: location.ensure
+    nombre: P4
+  - op: location.ensure
+    nombre: PIG1
+  - op: location.ensure
+    nombre: PIG2
+  - op: location.ensure
+    nombre: PIG3
+  - op: location.ensure
+    nombre: Piso de almacén
+  - op: location.ensure
+    nombre: Principal
+  - op: location.ensure
+    nombre: Recibo de Producción
+    tipo: temporal
+  - op: location.ensure
+    nombre: Revisión
+  - op: packaging.ensure
+    nombre: Bolsa individual
+  - op: packaging.ensure
+    nombre: Caja de almacén
+  - op: product.define
+    nombre: Mango
+    sku: VAST
+    category: Mangos
+    basePrice: 5
+    hasVariants: true
+  - op: product.define
+    nombre: Cerda
+    sku: CERD
+    uom: kg
+    category: Cerda
+    basePrice: 80
+    hasVariants: true
+  - op: product.define
+    nombre: Pincel
+    sku: PIN
+    category: Pinceles
+    basePrice: 20
+    hasVariants: true
+  - op: product.define
+    nombre: Taparrosca
+    sku: TPR
+    category: Taparroscas
+    hasVariants: true
+  - op: product.define
+    nombre: Taparrosca con Pincel
+    sku: TP
+    category: Taparroscas
+    basePrice: 40
+    hasVariants: true
+  - op: product.define
+    nombre: Botella
+    sku: BOT
+    category: Botellas
+    basePrice: 8
+    hasVariants: true
+  - op: product.define
+    nombre: Vastago
+    sku: VST
+    category: Vástagos
+    basePrice: 5
+    hasVariants: true
+  - op: product.define
+    nombre: Sobretapa
+    sku: STP
+    category: Sobretapas
+    basePrice: 3
+    hasVariants: true
+  - op: product.define
+    nombre: Escurridor
+    sku: ESC
+    category: Escurridores
+    basePrice: 2
+    hasVariants: true
+  - op: product.define
+    nombre: Cepillo Silicon
+    sku: CSI
+    category: Cepillos
+    basePrice: 6
+    hasVariants: true
+  - op: product.define
+    nombre: Cepillo Nylon
+    sku: CNI
+    category: Cepillos
+    basePrice: 5
+    hasVariants: true
+  - op: product.define
+    nombre: Punta Delineador
+    sku: DPL
+    category: Cepillos
+    basePrice: 4
+    hasVariants: true
+  - op: product.define
+    nombre: Punta Tratamiento
+    sku: TRN
+    category: Cepillos
+    basePrice: 4
+    hasVariants: true
+  - op: product.define
+    nombre: Punta Lip Gloss
+    sku: LGL
+    category: Cepillos
+    basePrice: 6
+    hasVariants: true
+  - op: product.define
+    nombre: Rimel Silicon
+    sku: BTVPE-S
+    category: Envases
+    basePrice: 50
+    hasVariants: true
+  - op: product.define
+    nombre: Rimel Nylon
+    sku: BTVPE-N
+    category: Envases
+    basePrice: 50
+    hasVariants: true
+  - op: product.define
+    nombre: Delineador
+    sku: BTVPE-D
+    category: Envases
+    basePrice: 50
+    hasVariants: true
+  - op: product.define
+    nombre: Tratamiento de Noche
+    sku: BTVPE-TN
+    category: Envases
+    basePrice: 50
+    hasVariants: true
+  - op: product.define
+    nombre: Lip Gloss
+    sku: BTVPE-LG
+    category: Envases
+    basePrice: 50
+    hasVariants: true
+  - op: product.define
+    nombre: Alambre Acero Inoxidable
+    sku: P0001
+    category: Alambre
+  - op: product.define
+    nombre: Alambre Ensartado
+    sku: P0002
+    category: Alambre
+  - op: product.define
+    nombre: Alambre Kola Loka
+    sku: P0003
+    category: Alambre
+  - op: product.define
+    nombre: Bolsa Botella
+    sku: P0004
+    category: Empaques
+  - op: product.define
+    nombre: Bolsa Celofan
+    sku: P0005
+    category: Empaques
+  - op: product.define
+    nombre: Bolsa Hermetica
+    sku: P0006
+    category: Empaques
+  - op: product.define
+    nombre: Bolsa Jumbo
+    sku: P0007
+    category: Empaques
+  - op: product.define
+    nombre: Caja Cartón
+    sku: P0008
+    category: Empaques
+    hasVariants: true
+  - op: product.define
+    nombre: Esterato
+    sku: P0009
+    uom: kg
+    category: Otros
+  - op: product.define
+    nombre: Fleje
+    sku: P0010
+    category: Otros
+  - op: product.define
+    nombre: Galleta
+    sku: P0011
+    category: Otros
+  - op: product.define
+    nombre: Grapas
+    sku: P0012
+    category: Otros
+  - op: product.define
+    nombre: Opresor
+    sku: P0013
+    category: Otros
+  - op: product.define
+    nombre: Palillo Sin Cepillo
+    sku: P0014
+    category: Palillos
+    hasVariants: true
+  - op: product.define
+    nombre: Polietileno
+    sku: P0015
+    uom: kg
+    category: Otros
+    hasVariants: true
+  - op: product.define
+    nombre: Pulcera
+    sku: P0016
+    category: Otros
+  - op: product.define
+    nombre: Tapa con Pincel
+    sku: P0019
+    category: Taparroscas
+    hasVariants: true
+  - op: product.define
+    nombre: Tapa de Carrete
+    sku: P0020
+    category: Taparroscas
+  - op: product.define
+    nombre: Tapon
+    sku: P0021
+    category: Tapones
+    hasVariants: true
+  - op: product.define
+    nombre: PVC
+    sku: PVC
+    uom: kg
+    category: Otros
+    hasVariants: true
+  - op: product.define
+    nombre: Palillo Citologico Sin Cepillo
+    sku: P0032
+    category: Palillos
+    hasVariants: true
+  - op: product.define
+    nombre: Palillo con Cepillo
+    sku: P0033
+    category: Palillos
+    hasVariants: true
+  - op: product.define
+    nombre: Palillo Citologico con Cepillo
+    sku: P0034
+    category: Palillos
+    hasVariants: true
+  - op: attr.ensure
+    name: Agujero de Escurridor
+    values:
+      - Chico
+      - Grande
+  - op: attr.ensure
+    name: Agujero de Mango
+    values:
+      - Plano
+      - Normal
+  - op: attr.ensure
+    name: Altura de Botella
+    values:
+      - 48mm
+      - 80mm
+      - 60mm
+  - op: attr.ensure
+    name: Altura de Escurridor
+    values:
+      - 13mm
+      - 16mm
+  - op: attr.ensure
+    name: Altura de Mango
+    values:
+      - 18mm
+      - 19mm
+      - 24mm
+      - 28mm
+      - 30mm
+      - 33mm
+      - 35mm
+      - 58mm
+  - op: attr.ensure
+    name: Altura de Sobretapa
+    values:
+      - 40mm
+      - 44mm
+  - op: attr.ensure
+    name: Altura de Taparrosca
+    values:
+      - 30mm
+      - 38mm
+      - 44mm
+      - 25mm
+      - Desconocido
+      - 18mm
+      - 37mm
+      - 23mm
+      - 35mm
+      - 26mm
+  - op: attr.ensure
+    name: Altura de Vastago
+    values:
+      - 14mm
+      - 19mm
+      - 21mm
+      - 29mm
+      - 35mm
+      - 43mm
+      - 60mm
+      - 62mm
+      - 70mm
+      - 74mm
+      - 82mm
+      - 20mm
+      - 10mm
+  - op: attr.ensure
+    name: Capacidad de Botella
+    values:
+      - 10mL
+      - 15mL
+      - 30mL
+  - op: attr.ensure
+    name: Ceja
+    values:
+      - Delgada
+      - Gruesa
+      - Pelikan
+  - op: attr.ensure
+    name: Color de Botella
+    values:
+      - Amarillo keratina
+      - Beige
+      - Blanco
+      - Carbon black
+      - Chocolate
+      - Colageno
+      - Cromado azul
+      - Cromado oro
+      - Cromado plata
+      - Cromado rosa
+      - Hueso de mamey
+      - Lila
+      - Morado hipoalergenico
+      - Morado prosa
+      - Naranja
+      - Negro
+      - Rosa 1348
+      - Rosa 52377
+      - Rosa silicon
+      - Te verde
+      - Transparente
+  - op: attr.ensure
+    name: Color de Cepillo Nylon
+    values:
+      - Negro
+  - op: attr.ensure
+    name: Color de Cepillo Silicon
+    values:
+      - Blanco
+      - Negro
+      - Transparente
+  - op: attr.ensure
+    name: Color de Cerda de Cepillo
+    values:
+      - Negro
+      - Transparente
+      - Rosa
+      - Verde turquesa
+      - Lila
+  - op: attr.ensure
+    name: Color de Cerda de Pincel
+    values:
+      - Negro
+      - Transparente
+  - op: attr.ensure
+    name: Color de Escurridor
+    values:
+      - Negro
+      - Transparente
+  - op: attr.ensure
+    name: Color de Palillo
+    values:
+      - Amarillo
+      - Amarillo neon
+      - Blanco
+      - Lila
+      - Naranja neon
+      - Negro
+      - Rosa
+      - Rosa neon
+      - Verde neon
+  - op: attr.ensure
+    name: Color de Palillo Citologico
+    values:
+      - Blanco
+  - op: attr.ensure
+    name: Color de PVC
+    values:
+      - Violeta
+      - Transparente
+  - op: attr.ensure
+    name: Color de Sobretapa
+    values:
+      - Amarillo keratina
+      - Azul barradas
+      - Azul cielo
+      - Blanco
+      - Chocolate
+      - Fiusha
+      - Gris 134
+      - Gris 2170
+      - Lila
+      - Morado hipoalergenico
+      - Naranja barradas
+      - Naranja rohs 52622
+      - Negro
+      - Rojo jorge diaz
+      - Rosa 0708
+      - Rosa lili
+      - Steel green
+      - Verde barradas
+      - Verde t5g1878
+      - Violeta
+      - Azul nacar
+  - op: attr.ensure
+    name: Color de Tapa con Pincel
+    values:
+      - Blanco
+      - Gris
+      - Negro
+      - Rosa glither
+      - Rosa ultra
+      - Transparente
+  - op: attr.ensure
+    name: Color de Taparrosca
+    values:
+      - Amatista
+      - Blanco
+      - Bugambilia
+      - Desconocido
+      - Menta
+      - Morado satin
+      - Negro
+      - Negro mate
+      - Oro
+      - Orquidea
+      - Plata
+      - Plata cromada
+      - Rosa 0992
+      - Rosa glither
+      - Sara
+      - Transparente
+      - Tutifruti
+      - Vegas
+      - Vino
+      - Watermelon
+      - Rosa erika rubio
+      - Rosa ultra
+  - op: attr.ensure
+    name: Color de Tapon
+    values:
+      - Fiusha
+      - Lila
+      - Naranja
+      - Negro
+      - Rosa
+      - Verde
+  - op: attr.ensure
+    name: Color de Vastago
+    values:
+      - Blanco
+      - Negro
+      - Transparente
+  - op: attr.ensure
+    name: Cuello
+    values:
+      - Corto
+  - op: attr.ensure
+    name: Densidad
+    values:
+      - Alta
+      - Baja
+  - op: attr.ensure
+    name: Forma de cepillo nylon
+    values:
+      - Pino
+      - Cacahuate
+      - Balita
+      - Pino mini
+      - Pino delgado
+      - Bala
+      - Bala Prosa
+      - Balita Prosa
+      - Citologico
+      - Pino Prosa
+      - Recto Chico
+      - Recto XG
+      - Recto Grande
+      - Recto Mediano
+      - Recto Mini
+      - Bala Barradas
+      - Pino Barradas
+      - Cacahuate Prosa
+  - op: attr.ensure
+    name: Forma de cepillo silicon
+    values:
+      - Balita
+      - Barril
+      - Barril grueso
+      - Cacahuate
+      - Espiral
+      - Peine
+      - Pino
+  - op: attr.ensure
+    name: Forma de Sobretapa
+    values:
+      - Normal
+      - Yadis
+  - op: attr.ensure
+    name: Forma de Taparrosca
+    values:
+      - Hexagonal
+      - Bala
+      - Rebeca
+      - Yadis
+      - Normal
+      - Triangular
+  - op: attr.ensure
+    name: Grosor cerda
+    values:
+      - 0.0025"
+      - 0.003"
+      - 0.004"
+      - 0.005"
+      - 0.00575"
+      - 4"
+      - 5"
+      - 5.75"
+      - 3"
+  - op: attr.ensure
+    name: Logo
+    values:
+      - Sin logo
+  - op: attr.ensure
+    name: Medida pincel
+    values:
+      - "24"
+      - "33"
+      - "35"
+      - 35 plano
+  - op: attr.ensure
+    name: Punta
+    values:
+      - Delineador
+      - Gloss
+      - Nylon
+      - Silicon chico
+      - Silicon grande
+  - op: attr.ensure
+    name: Tamaño de Caja de Cartón
+    values:
+      - Chico
+      - Grande
+  - op: attr.ensure
+    name: Tamaño rosca
+    values:
+      - 10mm
+      - 13mm
+      - 15mm
+      - 18mm
+  - op: attr.ensure
+    name: Tipo de Botella
+    values:
+      - Conica
+      - Corta
+      - Delineador
+      - Mini
+      - Normal
+  - op: attr.ensure
+    name: Tipo de Punta
+    values:
+      - Delineador
+      - Punta lip gloss
+      - Punta lip gloss grande
+      - Punta lip gloss tipo hoja
+      - Tratamiento nocturno
+  - op: attr.ensure
+    name: Tipo de Tapa con Pincel
+    values:
+      - Gg
+      - Hexagonal
+      - Normal
+      - Rebeca
+      - Yadis
+  - op: attr.ensure
+    name: Tipo de Vastago
+    values:
+      - Normal
+      - Mod-prosa
+  - op: attr.ensure
+    name: Versión del vástago
+    values:
+      - Nuevo
+      - Viejo
+  - op: attr.assignAxis
+    product: Mango
+    attribute: Agujero de Mango
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Mango
+    attribute: Altura de Mango
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Mango
+    attribute: Ceja
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Mango
+    attribute: Tamaño rosca
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Cerda
+    attribute: Color de Cerda de Cepillo
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Cerda
+    attribute: Grosor cerda
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Pincel
+    attribute: Agujero de Mango
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Pincel
+    attribute: Altura de Mango
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Pincel
+    attribute: Ceja
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Pincel
+    attribute: Color de Cerda de Pincel
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Pincel
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Taparrosca
+    attribute: Altura de Taparrosca
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Taparrosca
+    attribute: Color de Taparrosca
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Taparrosca
+    attribute: Forma de Taparrosca
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Taparrosca
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Tamaño rosca
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Altura de Vastago
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Agujero de Mango
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Forma de Taparrosca
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Color de Tapa con Pincel
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Botella
+    attribute: Altura de Botella
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Botella
+    attribute: Color de Botella
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Botella
+    attribute: Cuello
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Botella
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Botella
+    attribute: Tipo de Botella
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Vastago
+    attribute: Altura de Vastago
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Vastago
+    attribute: Color de Vastago
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Vastago
+    attribute: Punta
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Vastago
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Vastago
+    attribute: Tipo de Vastago
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Sobretapa
+    attribute: Altura de Sobretapa
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Sobretapa
+    attribute: Color de Sobretapa
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Sobretapa
+    attribute: Logo
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Sobretapa
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Sobretapa
+    attribute: Forma de Sobretapa
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Escurridor
+    attribute: Agujero de Escurridor
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Escurridor
+    attribute: Altura de Escurridor
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Escurridor
+    attribute: Color de Escurridor
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Escurridor
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Escurridor
+    attribute: Versión del vástago
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Cepillo Silicon
+    attribute: Forma de cepillo silicon
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Cepillo Nylon
+    attribute: Color de Cerda de Cepillo
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Cepillo Nylon
+    attribute: Forma de cepillo nylon
+    sortOrder: 90
+  - op: attr.assignAxis
+    product: Punta Delineador
+    attribute: Tipo de Punta
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Punta Tratamiento
+    attribute: Tipo de Punta
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Punta Lip Gloss
+    attribute: Tipo de Punta
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Forma de cepillo nylon
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Cepillo Silicon
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Capacidad de Botella
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Botella
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Tamaño rosca
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Altura de Vastago
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Vastago
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Forma de Taparrosca
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Sobretapa
+    sortOrder: 9
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Escurridor
+    sortOrder: 10
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Forma de cepillo nylon
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Cepillo Nylon
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Capacidad de Botella
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Botella
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Tamaño rosca
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Altura de Vastago
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Vastago
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Forma de Taparrosca
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Sobretapa
+    sortOrder: 9
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Escurridor
+    sortOrder: 10
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Capacidad de Botella
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Color de Botella
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Altura de Vastago
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Color de Vastago
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Forma de Taparrosca
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Color de Sobretapa
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Delineador
+    attribute: Color de Escurridor
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Capacidad de Botella
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Color de Botella
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Altura de Vastago
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Color de Vastago
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Forma de Taparrosca
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Color de Sobretapa
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Tratamiento de Noche
+    attribute: Color de Escurridor
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Capacidad de Botella
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Color de Botella
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Tamaño rosca
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Altura de Vastago
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Color de Vastago
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Forma de Taparrosca
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Color de Sobretapa
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Color de Escurridor
+    sortOrder: 9
+  - op: attr.assignAxis
+    product: Caja Cartón
+    attribute: Tamaño de Caja de Cartón
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Palillo Sin Cepillo
+    attribute: Color de Palillo
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Polietileno
+    attribute: Densidad
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Altura de Taparrosca
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Color de Tapa con Pincel
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Color de Cerda de Pincel
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Medida pincel
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Tamaño rosca
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Tapa con Pincel
+    attribute: Tipo de Tapa con Pincel
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Tapon
+    attribute: Color de Tapon
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: PVC
+    attribute: Color de PVC
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Palillo Citologico Sin Cepillo
+    attribute: Color de Palillo Citologico
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Palillo con Cepillo
+    attribute: Color de Palillo
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Palillo con Cepillo
+    attribute: Color de Cerda de Cepillo
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Palillo con Cepillo
+    attribute: Forma de cepillo nylon
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Palillo Citologico con Cepillo
+    attribute: Color de Palillo Citologico
+    sortOrder: 0
+  - op: attr.assignAxis
+    product: Palillo Citologico con Cepillo
+    attribute: Color de Cerda de Cepillo
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Palillo Citologico con Cepillo
+    attribute: Forma de cepillo nylon
+    sortOrder: 2
+  - op: bom.set
+    product: Taparrosca con Pincel
+    components:
+      - component: Pincel
+        cantidad: 1
+        tipo: exacto
+      - component: Taparrosca
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Taparrosca con Pincel
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué tamaño de rosca necesitas?
+        attribute: Tamaño rosca
+        variantProduct: Mango
+      - sortOrder: 2
+        pregunta: ¿Qué altura de vastago prefieres?
+        attribute: Altura de Mango
+        variantProduct: Mango
+      - sortOrder: 3
+        pregunta: ¿Qué tipo de agujero tiene el vastago?
+        attribute: Agujero de Mango
+        variantProduct: Mango
+      - sortOrder: 4
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Taparrosca
+        variantProduct: Pincel
+      - sortOrder: 5
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Tapa con Pincel
+        variantProduct: Taparrosca con Pincel
+      - sortOrder: 6
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Taparrosca con Pincel
+        isQtyStep: true
+  - op: bom.set
+    product: Rimel Silicon
+    components:
+      - component: Vastago
+        cantidad: 1
+        tipo: exacto
+      - component: Botella
+        cantidad: 1
+        tipo: exacto
+      - component: Sobretapa
+        cantidad: 1
+        tipo: exacto
+      - component: Escurridor
+        cantidad: 1
+        tipo: exacto
+      - component: Cepillo Silicon
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Rimel Silicon
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué forma de cepillo prefieres?
+        attribute: Forma de cepillo silicon
+        variantProduct: Cepillo Silicon
+      - sortOrder: 2
+        pregunta: ¿De qué color quieres el cepillo?
+        attribute: Color de Cepillo Silicon
+        variantProduct: Cepillo Silicon
+      - sortOrder: 3
+        pregunta: ¿Qué botella prefieres?
+        attribute: Capacidad de Botella
+        variantProduct: Botella
+      - sortOrder: 4
+        pregunta: ¿De qué color quieres la botella?
+        attribute: Color de Botella
+        variantProduct: Botella
+      - sortOrder: 5
+        pregunta: ¿Qué altura de vástago prefieres?
+        attribute: Altura de Vastago
+        variantProduct: Vastago
+      - sortOrder: 6
+        pregunta: ¿De qué color quieres el vástago?
+        attribute: Color de Vastago
+        variantProduct: Vastago
+      - sortOrder: 7
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 8
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 9
+        pregunta: ¿De qué color quieres el escurridor?
+        attribute: Color de Escurridor
+        variantProduct: Escurridor
+      - sortOrder: 10
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Rimel Silicon
+        isQtyStep: true
+  - op: bom.set
+    product: Rimel Nylon
+    components:
+      - component: Vastago
+        cantidad: 1
+        tipo: exacto
+      - component: Botella
+        cantidad: 1
+        tipo: exacto
+      - component: Sobretapa
+        cantidad: 1
+        tipo: exacto
+      - component: Escurridor
+        cantidad: 1
+        tipo: exacto
+      - component: Cepillo Nylon
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Rimel Nylon
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué forma de cepillo prefieres?
+        attribute: Forma de cepillo nylon
+        variantProduct: Cepillo Nylon
+      - sortOrder: 2
+        pregunta: ¿De qué color quieres el cepillo?
+        attribute: Color de Cepillo Nylon
+        variantProduct: Cepillo Nylon
+      - sortOrder: 3
+        pregunta: ¿Qué botella prefieres?
+        attribute: Capacidad de Botella
+        variantProduct: Botella
+      - sortOrder: 4
+        pregunta: ¿De qué color quieres la botella?
+        attribute: Color de Botella
+        variantProduct: Botella
+      - sortOrder: 5
+        pregunta: ¿Qué altura de vástago prefieres?
+        attribute: Altura de Vastago
+        variantProduct: Vastago
+      - sortOrder: 6
+        pregunta: ¿De qué color quieres el vástago?
+        attribute: Color de Vastago
+        variantProduct: Vastago
+      - sortOrder: 7
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 8
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 9
+        pregunta: ¿De qué color quieres el escurridor?
+        attribute: Color de Escurridor
+        variantProduct: Escurridor
+      - sortOrder: 10
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Rimel Nylon
+        isQtyStep: true
+  - op: bom.set
+    product: Delineador
+    components:
+      - component: Vastago
+        cantidad: 1
+        tipo: exacto
+      - component: Botella
+        cantidad: 1
+        tipo: exacto
+      - component: Sobretapa
+        cantidad: 1
+        tipo: exacto
+      - component: Escurridor
+        cantidad: 1
+        tipo: exacto
+      - component: Punta Delineador
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Delineador
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué botella prefieres?
+        attribute: Capacidad de Botella
+        variantProduct: Botella
+      - sortOrder: 2
+        pregunta: ¿De qué color quieres la botella?
+        attribute: Color de Botella
+        variantProduct: Botella
+      - sortOrder: 3
+        pregunta: ¿Qué altura de vástago prefieres?
+        attribute: Altura de Vastago
+        variantProduct: Vastago
+      - sortOrder: 4
+        pregunta: ¿De qué color quieres el vástago?
+        attribute: Color de Vastago
+        variantProduct: Vastago
+      - sortOrder: 5
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 6
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 7
+        pregunta: ¿De qué color quieres el escurridor?
+        attribute: Color de Escurridor
+        variantProduct: Escurridor
+      - sortOrder: 8
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Delineador
+        isQtyStep: true
+  - op: bom.set
+    product: Tratamiento de Noche
+    components:
+      - component: Vastago
+        cantidad: 1
+        tipo: exacto
+      - component: Botella
+        cantidad: 1
+        tipo: exacto
+      - component: Sobretapa
+        cantidad: 1
+        tipo: exacto
+      - component: Escurridor
+        cantidad: 1
+        tipo: exacto
+      - component: Punta Tratamiento
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Tratamiento de Noche
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué botella prefieres?
+        attribute: Capacidad de Botella
+        variantProduct: Botella
+      - sortOrder: 2
+        pregunta: ¿De qué color quieres la botella?
+        attribute: Color de Botella
+        variantProduct: Botella
+      - sortOrder: 3
+        pregunta: ¿Qué altura de vástago prefieres?
+        attribute: Altura de Vastago
+        variantProduct: Vastago
+      - sortOrder: 4
+        pregunta: ¿De qué color quieres el vástago?
+        attribute: Color de Vastago
+        variantProduct: Vastago
+      - sortOrder: 5
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 6
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 7
+        pregunta: ¿De qué color quieres el escurridor?
+        attribute: Color de Escurridor
+        variantProduct: Escurridor
+      - sortOrder: 8
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Tratamiento de Noche
+        isQtyStep: true
+  - op: bom.set
+    product: Lip Gloss
+    components:
+      - component: Vastago
+        cantidad: 1
+        tipo: exacto
+      - component: Botella
+        cantidad: 1
+        tipo: exacto
+      - component: Sobretapa
+        cantidad: 1
+        tipo: exacto
+      - component: Escurridor
+        cantidad: 1
+        tipo: exacto
+      - component: Punta Lip Gloss
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Lip Gloss
+    steps:
+      - sortOrder: 1
+        pregunta: ¿Qué tipo de punta de lip gloss prefieres?
+        attribute: Tipo de Punta
+        variantProduct: Punta Lip Gloss
+      - sortOrder: 2
+        pregunta: ¿Qué botella prefieres?
+        attribute: Capacidad de Botella
+        variantProduct: Botella
+      - sortOrder: 3
+        pregunta: ¿De qué color quieres la botella?
+        attribute: Color de Botella
+        variantProduct: Botella
+      - sortOrder: 4
+        pregunta: ¿Qué altura de vástago prefieres?
+        attribute: Altura de Vastago
+        variantProduct: Vastago
+      - sortOrder: 5
+        pregunta: ¿De qué color quieres el vástago?
+        attribute: Color de Vastago
+        variantProduct: Vastago
+      - sortOrder: 6
+        pregunta: ¿Qué forma de tapa prefieres?
+        attribute: Forma de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 7
+        pregunta: ¿De qué color quieres la tapa?
+        attribute: Color de Sobretapa
+        variantProduct: Sobretapa
+      - sortOrder: 8
+        pregunta: ¿De qué color quieres el escurridor?
+        attribute: Color de Escurridor
+        variantProduct: Escurridor
+      - sortOrder: 9
+        pregunta: ¿Cuántas unidades necesitas?
+        variantProduct: Lip Gloss
+        isQtyStep: true
+  - op: bom.set
+    product: Palillo con Cepillo
+    components:
+      - component: Palillo Sin Cepillo
+        cantidad: 1
+        tipo: exacto
+      - component: Cepillo Nylon
+        cantidad: 1
+        tipo: exacto
+  - op: bom.set
+    product: Palillo Citologico con Cepillo
+    components:
+      - component: Palillo Citologico Sin Cepillo
+        cantidad: 1
+        tipo: exacto
+      - component: Cepillo Nylon
+        cantidad: 1
+        tipo: exacto
+  - op: variant.define
+    sku: VAST-0001
+    product: Mango
+    attrs:
+      Altura de Mango: 19mm
+      Ceja: Delgada
+      Tamaño rosca: 13mm
+      Agujero de Mango: Normal
+    min: 10000
+    max: 30000
+  - op: variant.define
+    sku: VAST-0002
+    product: Mango
+    attrs:
+      Agujero de Mango: Normal
+      Tamaño rosca: 13mm
+      Ceja: Gruesa
+      Altura de Mango: 19mm
+    min: 30000
+    max: 100000
+  - op: variant.define
+    sku: VAST-0003
+    product: Mango
+    attrs:
+      Agujero de Mango: Plano
+      Ceja: Delgada
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: VAST-0004
+    product: Mango
+    attrs:
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Tamaño rosca: 13mm
+      Altura de Mango: 28mm
+    min: 90000
+    max: 180000
+  - op: variant.define
+    sku: VAST-0005
+    product: Mango
+    attrs:
+      Altura de Mango: 30mm
+      Agujero de Mango: Plano
+      Ceja: Delgada
+      Tamaño rosca: 13mm
+    min: 8500
+    max: 8500
+  - op: variant.define
+    sku: VAST-0006
+    product: Mango
+    attrs:
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Tamaño rosca: 13mm
+    min: 200000
+    max: 650000
+  - op: variant.define
+    sku: VAST-0007
+    product: Mango
+    attrs:
+      Altura de Mango: 35mm
+      Tamaño rosca: 13mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+    min: 30000
+    max: 60000
+  - op: variant.define
+    sku: VAST-0008
+    product: Mango
+    attrs:
+      Altura de Mango: 35mm
+      Agujero de Mango: Plano
+      Tamaño rosca: 13mm
+      Ceja: Delgada
+    min: 30000
+    max: 60000
+  - op: variant.define
+    sku: VAST-0009
+    product: Mango
+    attrs:
+      Altura de Mango: 24mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Tamaño rosca: 15mm
+    max: 13000
+  - op: variant.define
+    sku: VAST-0010
+    product: Mango
+    attrs:
+      Altura de Mango: 30mm
+      Tamaño rosca: 15mm
+      Agujero de Mango: Plano
+      Ceja: Delgada
+  - op: variant.define
+    sku: VAST-0011
+    product: Mango
+    attrs:
+      Altura de Mango: 33mm
+      Tamaño rosca: 15mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+    min: 90000
+    max: 180000
+  - op: variant.define
+    sku: VAST-0012
+    product: Mango
+    attrs:
+      Altura de Mango: 35mm
+      Tamaño rosca: 15mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+    max: 12000
+  - op: variant.define
+    sku: VAST-0013
+    product: Mango
+    attrs:
+      Altura de Mango: 35mm
+      Agujero de Mango: Plano
+      Tamaño rosca: 15mm
+      Ceja: Delgada
+    min: 50000
+    max: 250000
+  - op: variant.define
+    sku: VAST-0014
+    product: Mango
+    attrs:
+      Altura de Mango: 58mm
+      Tamaño rosca: 18mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+  - op: variant.define
+    sku: VAST-0015
+    product: Mango
+    attrs:
+      Ceja: Pelikan
+    min: 120000
+    max: 250000
+  - op: variant.define
+    sku: VAST-10mm-18mm
+    product: Mango
+    attrs:
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Tamaño rosca: 10mm
+      Altura de Mango: 18mm
+    min: 8000
+    max: 30000
+  - op: variant.define
+    sku: VAST-13mm-24mm-normal
+    product: Mango
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+      Agujero de Mango: Plano
+      Ceja: Delgada
+    min: 35000
+    max: 65000
+  - op: variant.define
+    sku: CERD-0001
+    product: Cerda
+    attrs:
+      Color de Cerda de Cepillo: Negro
+      Grosor cerda: 0.0025"
+  - op: variant.define
+    sku: CERD-0002
+    product: Cerda
+    attrs:
+      Color de Cerda de Cepillo: Transparente
+      Grosor cerda: 0.0025"
+  - op: variant.define
+    sku: CERD-0003
+    product: Cerda
+    attrs:
+      Grosor cerda: 0.003"
+      Color de Cerda de Cepillo: Transparente
+  - op: variant.define
+    sku: CERD-0004
+    product: Cerda
+    attrs:
+      Grosor cerda: 0.004"
+      Color de Cerda de Cepillo: Negro
+  - op: variant.define
+    sku: CERD-0005
+    product: Cerda
+    attrs:
+      Grosor cerda: 0.005"
+      Color de Cerda de Cepillo: Transparente
+  - op: variant.define
+    sku: CERD-0006
+    product: Cerda
+    attrs:
+      Grosor cerda: 0.00575"
+  - op: variant.define
+    sku: PIN-0001
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Color de Cerda de Pincel: Negro
+      Altura de Mango: 18mm
+      Tamaño rosca: 10mm
+  - op: variant.define
+    sku: PIN-0002
+    product: Pincel
+    attrs:
+      Agujero de Mango: Normal
+      Tamaño rosca: 13mm
+      Ceja: Delgada
+      Color de Cerda de Pincel: Negro
+      Altura de Mango: 19mm
+  - op: variant.define
+    sku: PIN-0003
+    product: Pincel
+    attrs:
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+  - op: variant.define
+    sku: PIN-0004
+    product: Pincel
+    attrs:
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Color de Cerda de Pincel: Transparente
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+  - op: variant.define
+    sku: PIN-0005
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Color de Cerda de Pincel: Negro
+      Agujero de Mango: Plano
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+  - op: variant.define
+    sku: PIN-0006
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Color de Cerda de Pincel: Transparente
+      Agujero de Mango: Plano
+      Tamaño rosca: 13mm
+      Altura de Mango: 24mm
+  - op: variant.define
+    sku: PIN-0007
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Altura de Mango: 28mm
+    max: 60000
+  - op: variant.define
+    sku: PIN-0008
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Color de Cerda de Pincel: Negro
+      Agujero de Mango: Plano
+      Tamaño rosca: 13mm
+      Altura de Mango: 30mm
+    max: 17000
+  - op: variant.define
+    sku: PIN-0009
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Color de Cerda de Pincel: Transparente
+      Tamaño rosca: 13mm
+      Altura de Mango: 33mm
+    max: 1000
+  - op: variant.define
+    sku: PIN-0010
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Altura de Mango: 35mm
+  - op: variant.define
+    sku: PIN-0011
+    product: Pincel
+    attrs:
+      Tamaño rosca: 15mm
+      Agujero de Mango: Normal
+      Ceja: Delgada
+      Color de Cerda de Pincel: Negro
+      Altura de Mango: 28mm
+  - op: variant.define
+    sku: PIN-0012
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Tamaño rosca: 15mm
+      Color de Cerda de Pincel: Negro
+      Altura de Mango: 33mm
+    max: 30000
+  - op: variant.define
+    sku: PIN-0013
+    product: Pincel
+    attrs:
+      Ceja: Delgada
+      Agujero de Mango: Plano
+      Tamaño rosca: 15mm
+      Color de Cerda de Pincel: Negro
+      Altura de Mango: 35mm
+    max: 250000
+  - op: variant.define
+    sku: PIN-0014
+    product: Pincel
+    attrs:
+      Color de Cerda de Pincel: Transparente
+      Ceja: Delgada
+      Agujero de Mango: Normal
+      Altura de Mango: 58mm
+      Tamaño rosca: 18mm
+  - op: variant.define
+    sku: PIN-0015
+    product: Pincel
+    attrs:
+      Ceja: Pelikan
+  - op: variant.define
+    sku: PIN-13mm-35mm-plano
+    product: Pincel
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Mango: 35mm
+      Ceja: Delgada
+      Agujero de Mango: Plano
+      Color de Cerda de Pincel: Negro
+  - op: variant.define
+    sku: PIN-13mm-negro-33mm
+    product: Pincel
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Mango: 33mm
+      Color de Cerda de Pincel: Negro
+      Ceja: Delgada
+      Agujero de Mango: Normal
+    max: 150000
+  - op: variant.define
+    sku: TPR-0001
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Normal
+      Tamaño rosca: 10mm
+      Altura de Taparrosca: 18mm
+      Color de Taparrosca: Negro
+  - op: variant.define
+    sku: TPR-0002
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 10mm
+      Altura de Taparrosca: 18mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+  - op: variant.define
+    sku: TPR-0003
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Normal
+      Tamaño rosca: 10mm
+      Altura de Taparrosca: 18mm
+      Color de Taparrosca: Transparente
+  - op: variant.define
+    sku: TPR-0004
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 10mm
+      Altura de Taparrosca: 37mm
+      Color de Taparrosca: Negro
+      Forma de Taparrosca: Normal
+    min: 10
+    max: 100
+  - op: variant.define
+    sku: TPR-0005
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Normal
+      Tamaño rosca: 10mm
+      Altura de Taparrosca: 37mm
+      Color de Taparrosca: Transparente
+    min: 10
+    max: 100
+  - op: variant.define
+    sku: TPR-0006
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Taparrosca: 23mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+    min: 8500
+    max: 25500
+  - op: variant.define
+    sku: TPR-0007
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Taparrosca: 30mm
+      Color de Taparrosca: Negro
+      Forma de Taparrosca: Normal
+    min: 50000
+    max: 150000
+  - op: variant.define
+    sku: TPR-0008
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 30mm
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+    min: 30000
+    max: 60000
+  - op: variant.define
+    sku: TPR-0009
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Altura de Taparrosca: 30mm
+      Color de Taparrosca: Oro
+      Forma de Taparrosca: Normal
+  - op: variant.define
+    sku: TPR-0010
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: Normal
+      Altura de Taparrosca: 30mm
+      Color de Taparrosca: Plata
+  - op: variant.define
+    sku: TPR-0011
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 30mm
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Negro
+    min: 8500
+    max: 17000
+  - op: variant.define
+    sku: TPR-0012
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 30mm
+      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Rosa 0992
+  - op: variant.define
+    sku: TPR-0013
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 35mm
+      Forma de Taparrosca: Bala
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Negro
+  - op: variant.define
+    sku: TPR-0014
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 35mm
+      Forma de Taparrosca: Bala
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Blanco
+  - op: variant.define
+    sku: TPR-0015
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 35mm
+      Forma de Taparrosca: Bala
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Plata
+  - op: variant.define
+    sku: TPR-0016
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Negro
+      Forma de Taparrosca: Yadis
+  - op: variant.define
+    sku: TPR-0017
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 44mm
+      Forma de Taparrosca: Triangular
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Negro
+    min: 22000
+    max: 44000
+  - op: variant.define
+    sku: TPR-0018
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 44mm
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+    min: 8000
+    max: 12000
+  - op: variant.define
+    sku: TPR-0019
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 44mm
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Triangular
+    min: 8000
+    max: 12000
+  - op: variant.define
+    sku: TPR-0020
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Normal
+      Altura de Taparrosca: 25mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Negro
+  - op: variant.define
+    sku: TPR-0021
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 25mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Normal
+      Color de Taparrosca: Blanco
+  - op: variant.define
+    sku: TPR-0022
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 25mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Normal
+      Color de Taparrosca: Transparente
+  - op: variant.define
+    sku: TPR-0023
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 26mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+  - op: variant.define
+    sku: TPR-0024
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Normal
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Negro
+    min: 30000
+    max: 75000
+  - op: variant.define
+    sku: TPR-0025
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Hexagonal
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Negro
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0026
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Yadis
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Negro
+    min: 27000
+    max: 51000
+  - op: variant.define
+    sku: TPR-0027
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Transparente
+      Forma de Taparrosca: Normal
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0028
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Transparente
+      Forma de Taparrosca: Yadis
+    min: 24000
+    max: 130000
+  - op: variant.define
+    sku: TPR-0029
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Normal
+    min: 24000
+    max: 50000
+  - op: variant.define
+    sku: TPR-0030
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Hexagonal
+    min: 18000
+    max: 54000
+  - op: variant.define
+    sku: TPR-0031
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Blanco
+      Forma de Taparrosca: Yadis
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0032
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Amatista
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0033
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Yadis
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Menta
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0034
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Yadis
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Morado satin
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0035
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Forma de Taparrosca: Yadis
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Orquidea
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0036
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Rosa glither
+      Forma de Taparrosca: Yadis
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0037
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Sara
+      Forma de Taparrosca: Yadis
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0038
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Tutifruti
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0039
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Vegas
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0040
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Vino
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0041
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Watermelon
+    min: 12000
+    max: 30000
+  - op: variant.define
+    sku: TPR-0042
+    product: Taparrosca
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 18mm
+      Forma de Taparrosca: Normal
+      Color de Taparrosca: Transparente
+  - op: variant.define
+    sku: TPR-0043
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Negro
+    min: 20000
+    max: 80000
+  - op: variant.define
+    sku: TPR-0044
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Blanco
+    min: 12000
+    max: 50000
+  - op: variant.define
+    sku: TPR-0045
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Bugambilia
+  - op: variant.define
+    sku: TPR-0046
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Desconocido
+  - op: variant.define
+    sku: TPR-0047
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Transparente
+  - op: variant.define
+    sku: TPR-0048
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Plata cromada
+  - op: variant.define
+    sku: TPR-0049
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Negro mate
+  - op: variant.define
+    sku: TPR-0050
+    product: Taparrosca
+    attrs:
+      Forma de Taparrosca: Rebeca
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Negro
+    min: 15000
+    max: 30000
+  - op: variant.define
+    sku: TPR-13mm-rebeca-rosa-erika-rubio
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Color de Taparrosca: Rosa erika rubio
+      Forma de Taparrosca: Rebeca
+    min: 120000
+    max: 360000
+  - op: variant.define
+    sku: TPR-rebeca-15mm-rosa-ultra
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 15mm
+      Color de Taparrosca: Rosa ultra
+      Forma de Taparrosca: Rebeca
+    min: 12000
+    max: 15000
+  - op: variant.define
+    sku: TP-10mm-10mm-plano-hexagonal-negro
+    product: Taparrosca con Pincel
+    nombre: 10mm 10mm Plano Hexagonal Negro
+    attrs:
+      Tamaño rosca: 10mm
+      Forma de Taparrosca: Hexagonal
+      Agujero de Mango: Plano
+      Altura de Vastago: 10mm
+      Color de Tapa con Pincel: Negro
+  - op: variant.define
+    sku: BOT-0001
+    product: Botella
+    attrs:
+      Altura de Botella: 48mm
+      Color de Botella: Negro
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Mini
+    min: 6000
+    max: 12000
+  - op: variant.define
+    sku: BOT-0002
+    product: Botella
+    attrs:
+      Altura de Botella: 48mm
+      Color de Botella: Blanco
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Mini
+    min: 6000
+    max: 12000
+  - op: variant.define
+    sku: BOT-0003
+    product: Botella
+    attrs:
+      Altura de Botella: 48mm
+      Color de Botella: Transparente
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Mini
+    min: 6000
+    max: 12000
+  - op: variant.define
+    sku: BOT-0004
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Negro
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0005
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Blanco
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0006
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Transparente
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Delineador
+    min: 35064
+    max: 70128
+  - op: variant.define
+    sku: BOT-0007
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Lila
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0008
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Chocolate
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0009
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Color de Botella: Rosa 1348
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0010
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 10mm
+      Cuello: Corto
+      Color de Botella: Rosa 52377
+      Tipo de Botella: Delineador
+  - op: variant.define
+    sku: BOT-0011
+    product: Botella
+    attrs:
+      Altura de Botella: 60mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Negro
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0012
+    product: Botella
+    attrs:
+      Altura de Botella: 60mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Rosa 1348
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0013
+    product: Botella
+    attrs:
+      Altura de Botella: 60mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Transparente
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0014
+    product: Botella
+    attrs:
+      Altura de Botella: 60mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Beige
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0015
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Negro
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0016
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Morado hipoalergenico
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0017
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Amarillo keratina
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0018
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Lila
+      Tipo de Botella: Normal
+    min: 6000
+    max: 8000
+  - op: variant.define
+    sku: BOT-0019
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Rosa silicon
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0020
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Chocolate
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0021
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Carbon black
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0022
+    product: Botella
+    attrs:
+      Tamaño rosca: 15mm
+      Altura de Botella: 80mm
+      Cuello: Corto
+      Color de Botella: Colageno
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0023
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Hueso de mamey
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0024
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Te verde
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0025
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Naranja
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: BOT-0026
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Transparente
+      Tipo de Botella: Conica
+  - op: variant.define
+    sku: BOT-0027
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Negro
+      Tipo de Botella: Corta
+  - op: variant.define
+    sku: BOT-0028
+    product: Botella
+    attrs:
+      Cuello: Corto
+      Altura de Botella: 80mm
+      Tamaño rosca: 15mm
+      Color de Botella: Transparente
+      Tipo de Botella: Corta
+  - op: variant.define
+    sku: BOT-0029
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Blanco
+      Tipo de Botella: Corta
+      Tamaño rosca: 15mm
+      Cuello: Corto
+    min: 160000
+    max: 200000
+  - op: variant.define
+    sku: BOT-0030
+    product: Botella
+    attrs:
+      Color de Botella: Morado prosa
+      Tipo de Botella: Corta
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Altura de Botella: 80mm
+  - op: variant.define
+    sku: BOT-0031
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Cromado azul
+      Tipo de Botella: Normal
+      Tamaño rosca: 15mm
+      Cuello: Corto
+  - op: variant.define
+    sku: BOT-0032
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Tipo de Botella: Normal
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Color de Botella: Cromado rosa
+  - op: variant.define
+    sku: BOT-0033
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Cromado oro
+      Tipo de Botella: Normal
+      Tamaño rosca: 15mm
+      Cuello: Corto
+  - op: variant.define
+    sku: BOT-0034
+    product: Botella
+    attrs:
+      Altura de Botella: 80mm
+      Color de Botella: Cromado plata
+      Tamaño rosca: 15mm
+      Cuello: Corto
+      Tipo de Botella: Normal
+  - op: variant.define
+    sku: VST-0001
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Color de Vastago: Blanco
+      Punta: Delineador
+      Tipo de Vastago: Normal
+      Tamaño rosca: 10mm
+      Altura de Vastago: 14mm
+  - op: variant.define
+    sku: VST-0002
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Color de Vastago: Blanco
+      Punta: Delineador
+      Tipo de Vastago: Normal
+      Tamaño rosca: 10mm
+      Altura de Vastago: 19mm
+  - op: variant.define
+    sku: VST-0003
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Nylon
+      Tipo de Vastago: Normal
+      Tamaño rosca: 10mm
+      Altura de Vastago: 29mm
+      Color de Vastago: Negro
+    min: 20000
+    max: 50000
+  - op: variant.define
+    sku: VST-0004
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 10mm
+      Punta: Delineador
+      Tipo de Vastago: Normal
+      Altura de Vastago: 29mm
+      Color de Vastago: Blanco
+    min: 5000
+    max: 10000
+  - op: variant.define
+    sku: VST-0005
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 10mm
+      Punta: Nylon
+      Tipo de Vastago: Normal
+      Altura de Vastago: 29mm
+      Color de Vastago: Blanco
+    min: 5000
+    max: 10000
+  - op: variant.define
+    sku: VST-0006
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 10mm
+      Punta: Gloss
+      Tipo de Vastago: Normal
+      Altura de Vastago: 43mm
+      Color de Vastago: Negro
+  - op: variant.define
+    sku: VST-0007
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 10mm
+      Punta: Gloss
+      Tipo de Vastago: Normal
+      Altura de Vastago: 43mm
+      Color de Vastago: Blanco
+    min: 20000
+    max: 100000
+  - op: variant.define
+    sku: VST-0008
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 10mm
+      Punta: Nylon
+      Tipo de Vastago: Normal
+      Altura de Vastago: 43mm
+      Color de Vastago: Blanco
+  - op: variant.define
+    sku: VST-0009
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Nylon
+      Tamaño rosca: 10mm
+      Tipo de Vastago: Normal
+      Altura de Vastago: 62mm
+      Color de Vastago: Negro
+    max: 10000
+  - op: variant.define
+    sku: VST-0010
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Color de Vastago: Negro
+      Tamaño rosca: 10mm
+      Punta: Delineador
+      Altura de Vastago: 70mm
+      Tipo de Vastago: Normal
+    min: 25000
+    max: 50000
+  - op: variant.define
+    sku: VST-0011
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Gloss
+      Tamaño rosca: 10mm
+      Tipo de Vastago: Normal
+      Altura de Vastago: 74mm
+      Color de Vastago: Negro
+    max: 5000
+  - op: variant.define
+    sku: VST-0012
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Gloss
+      Tamaño rosca: 10mm
+      Tipo de Vastago: Normal
+      Altura de Vastago: 74mm
+      Color de Vastago: Blanco
+    max: 5000
+  - op: variant.define
+    sku: VST-0013
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Color de Vastago: Blanco
+      Punta: Delineador
+      Tamaño rosca: 13mm
+      Tipo de Vastago: Normal
+      Altura de Vastago: 21mm
+  - op: variant.define
+    sku: VST-0015
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Color de Vastago: Blanco
+      Punta: Delineador
+      Tipo de Vastago: Normal
+      Tamaño rosca: 13mm
+      Altura de Vastago: 35mm
+  - op: variant.define
+    sku: VST-0016
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Nylon
+      Tipo de Vastago: Normal
+      Tamaño rosca: 15mm
+      Altura de Vastago: 60mm
+      Color de Vastago: Negro
+  - op: variant.define
+    sku: VST-0017
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Punta: Nylon
+      Tamaño rosca: 15mm
+      Altura de Vastago: 62mm
+      Color de Vastago: Transparente
+      Tipo de Vastago: Normal
+  - op: variant.define
+    sku: VST-0018
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Nylon
+      Altura de Vastago: 82mm
+      Color de Vastago: Negro
+      Tipo de Vastago: Normal
+    min: 160000
+    max: 200000
+  - op: variant.define
+    sku: VST-0019
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Gloss
+      Altura de Vastago: 82mm
+      Color de Vastago: Blanco
+      Tipo de Vastago: Normal
+    min: 25000
+    max: 42000
+  - op: variant.define
+    sku: VST-0020
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Delineador
+      Altura de Vastago: 82mm
+      Color de Vastago: Blanco
+      Tipo de Vastago: Normal
+    min: 25000
+    max: 42000
+  - op: variant.define
+    sku: VST-0024
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Silicon grande
+      Altura de Vastago: 82mm
+      Color de Vastago: Negro
+      Tipo de Vastago: Normal
+    min: 25000
+    max: 42000
+  - op: variant.define
+    sku: VST-0025
+    product: Vastago
+    nombre: Vástago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Silicon chico
+      Altura de Vastago: 82mm
+      Color de Vastago: Negro
+      Tipo de Vastago: Normal
+    min: 10000
+    max: 25000
+  - op: variant.define
+    sku: VST-15mm-nylon-82mm-negro-mod-prosa
+    product: Vastago
+    attrs:
+      Tamaño rosca: 15mm
+      Punta: Nylon
+      Altura de Vastago: 82mm
+      Color de Vastago: Negro
+      Tipo de Vastago: Mod-prosa
+    min: 25000
+    max: 42000
+  - op: variant.define
+    sku: STP-0001
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Negro
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+    min: 20000
+    max: 50000
+  - op: variant.define
+    sku: STP-0002
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Blanco
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+    min: 30000
+    max: 60000
+  - op: variant.define
+    sku: STP-0003
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Fiusha
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+      Logo: Sin logo
+  - op: variant.define
+    sku: STP-0004
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Lila
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0005
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Rosa lili
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: STP-0006
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Verde t5g1878
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0007
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Violeta
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+      Logo: Sin logo
+  - op: variant.define
+    sku: STP-0008
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Chocolate
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0009
+    product: Sobretapa
+    attrs:
+      Logo: Sin logo
+      Altura de Sobretapa: 44mm
+      Color de Sobretapa: Rosa 0708
+      Tamaño rosca: 10mm
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0010
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Negro
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+    min: 6000
+    max: 13700
+  - op: variant.define
+    sku: STP-0011
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Blanco
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+    min: 160000
+    max: 200000
+  - op: variant.define
+    sku: STP-0012
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Morado hipoalergenico
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0013
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Amarillo keratina
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0014
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Azul barradas
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0015
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Gris 134
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0016
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Fiusha
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0017
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Naranja barradas
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0018
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Rosa 0708
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0019
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Verde barradas
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0020
+    product: Sobretapa
+    attrs:
+      Tamaño rosca: 15mm
+      Altura de Sobretapa: 40mm
+      Logo: Sin logo
+      Color de Sobretapa: Verde t5g1878
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0021
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Color de Sobretapa: Rojo jorge diaz
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Forma de Sobretapa: Normal
+    min: 6000
+    max: 12000
+  - op: variant.define
+    sku: STP-0022
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Naranja rohs 52622
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0023
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Gris 2170
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0024
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Azul cielo
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-0025
+    product: Sobretapa
+    attrs:
+      Altura de Sobretapa: 40mm
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Steel green
+      Forma de Sobretapa: Normal
+  - op: variant.define
+    sku: STP-15mm-40mm-sin-logo-azul-nacar-normal
+    product: Sobretapa
+    attrs:
+      Tamaño rosca: 15mm
+      Logo: Sin logo
+      Color de Sobretapa: Azul nacar
+      Forma de Sobretapa: Normal
+      Altura de Sobretapa: 40mm
+    min: 15000
+    max: 20000
+  - op: variant.define
+    sku: ESC-0001
+    product: Escurridor
+    attrs:
+      Versión del vástago: Nuevo
+      Altura de Escurridor: 13mm
+      Agujero de Escurridor: Chico
+      Tamaño rosca: 10mm
+      Color de Escurridor: Negro
+    min: 20000
+    max: 60000
+  - op: variant.define
+    sku: ESC-0002
+    product: Escurridor
+    attrs:
+      Versión del vástago: Nuevo
+      Altura de Escurridor: 13mm
+      Agujero de Escurridor: Chico
+      Tamaño rosca: 10mm
+      Color de Escurridor: Transparente
+    min: 10000
+    max: 100000
+  - op: variant.define
+    sku: ESC-0003
+    product: Escurridor
+    attrs:
+      Versión del vástago: Nuevo
+      Altura de Escurridor: 13mm
+      Agujero de Escurridor: Grande
+      Tamaño rosca: 10mm
+      Color de Escurridor: Negro
+    min: 20000
+    max: 60000
+  - op: variant.define
+    sku: ESC-0004
+    product: Escurridor
+    attrs:
+      Versión del vástago: Nuevo
+      Altura de Escurridor: 13mm
+      Agujero de Escurridor: Grande
+      Tamaño rosca: 10mm
+      Color de Escurridor: Transparente
+    min: 20000
+    max: 60000
+  - op: variant.define
+    sku: ESC-0005
+    product: Escurridor
+    attrs:
+      Altura de Escurridor: 16mm
+      Agujero de Escurridor: Chico
+      Tamaño rosca: 15mm
+      Versión del vástago: Viejo
+      Color de Escurridor: Negro
+    min: 20000
+    max: 50000
+  - op: variant.define
+    sku: ESC-0006
+    product: Escurridor
+    attrs:
+      Altura de Escurridor: 16mm
+      Agujero de Escurridor: Chico
+      Tamaño rosca: 15mm
+      Versión del vástago: Nuevo
+      Color de Escurridor: Negro
+    min: 160000
+    max: 200000
+  - op: variant.define
+    sku: ESC-0007
+    product: Escurridor
+    attrs:
+      Altura de Escurridor: 16mm
+      Agujero de Escurridor: Chico
+      Tamaño rosca: 15mm
+      Versión del vástago: Nuevo
+      Color de Escurridor: Transparente
+    min: 20000
+    max: 100000
+  - op: variant.define
+    sku: ESC-0008
+    product: Escurridor
+    attrs:
+      Altura de Escurridor: 16mm
+      Agujero de Escurridor: Grande
+      Tamaño rosca: 15mm
+      Versión del vástago: Viejo
+      Color de Escurridor: Negro
+    min: 20000
+    max: 50000
+  - op: variant.define
+    sku: ESC-0009
+    product: Escurridor
+    attrs:
+      Altura de Escurridor: 16mm
+      Agujero de Escurridor: Grande
+      Tamaño rosca: 15mm
+      Versión del vástago: Nuevo
+      Color de Escurridor: Transparente
+    min: 20000
+    max: 50000
+  - op: variant.define
+    sku: CSI-0001
+    product: Cepillo Silicon
+    nombre: Pino
+    attrs:
+      Forma de cepillo silicon: Pino
+    min: 5000
+    max: 10000
+  - op: variant.define
+    sku: CSI-0002
+    product: Cepillo Silicon
+    nombre: Espiral
+    attrs:
+      Forma de cepillo silicon: Espiral
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: CSI-0004
+    product: Cepillo Silicon
+    nombre: Peine
+    attrs:
+      Forma de cepillo silicon: Peine
+    min: 5000
+    max: 20000
+  - op: variant.define
+    sku: CSI-0005
+    product: Cepillo Silicon
+    nombre: Balita
+    attrs:
+      Forma de cepillo silicon: Balita
+    min: 5000
+    max: 20000
+  - op: variant.define
+    sku: CSI-0006
+    product: Cepillo Silicon
+    nombre: Cacahuate
+    attrs:
+      Forma de cepillo silicon: Cacahuate
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: CSI-0007
+    product: Cepillo Silicon
+    nombre: Barril
+    attrs:
+      Forma de cepillo silicon: Barril
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: CSI-0008
+    product: Cepillo Silicon
+    nombre: Barril grueso
+    attrs:
+      Forma de cepillo silicon: Barril grueso
+    min: 10000
+    max: 20000
+  - op: variant.define
+    sku: CNI-0002
+    product: Cepillo Nylon
+    nombre: Negro Bala Barradas
+    attrs:
+      Forma de cepillo nylon: Bala Barradas
+      Color de Cerda de Cepillo: Negro
+    min: 10000
+    max: 50000
+    notas: 'grosor: 4"'
+  - op: variant.define
+    sku: CNI-0003
+    product: Cepillo Nylon
+    nombre: Negro Bala
+    attrs:
+      Forma de cepillo nylon: Bala
+      Color de Cerda de Cepillo: Negro
+    min: 40000
+    max: 100000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0004
+    product: Cepillo Nylon
+    nombre: Transparente Bala
+    attrs:
+      Forma de cepillo nylon: Bala
+      Color de Cerda de Cepillo: Transparente
+    min: 20000
+    max: 50000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0005
+    product: Cepillo Nylon
+    nombre: Bala Prosa
+    attrs:
+      Forma de cepillo nylon: Bala Prosa
+      Color de Cerda de Cepillo: Negro
+    notas: 'grosor: 5.75"'
+  - op: variant.define
+    sku: CNI-0007
+    product: Cepillo Nylon
+    nombre: Negro Balita
+    attrs:
+      Forma de cepillo nylon: Balita
+      Color de Cerda de Cepillo: Negro
+    min: 40000
+    max: 150000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0008
+    product: Cepillo Nylon
+    nombre: Transparente Balita
+    attrs:
+      Forma de cepillo nylon: Balita
+      Color de Cerda de Cepillo: Transparente
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0009
+    product: Cepillo Nylon
+    nombre: Balita Prosa
+    attrs:
+      Forma de cepillo nylon: Balita Prosa
+      Color de Cerda de Cepillo: Negro
+    notas: 'grosor: 5.75"'
+  - op: variant.define
+    sku: CNI-0010
+    product: Cepillo Nylon
+    nombre: Negro Cacahuate
+    attrs:
+      Forma de cepillo nylon: Cacahuate
+      Color de Cerda de Cepillo: Negro
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0011
+    product: Cepillo Nylon
+    nombre: Negro Cacahuate Prosa
+    attrs:
+      Forma de cepillo nylon: Cacahuate Prosa
+      Color de Cerda de Cepillo: Negro
+    notas: 'grosor: 5.75"'
+  - op: variant.define
+    sku: CNI-0012
+    product: Cepillo Nylon
+    nombre: Transparente Citologico
+    attrs:
+      Forma de cepillo nylon: Citologico
+      Color de Cerda de Cepillo: Transparente
+    min: 5000
+    max: 15000
+    notas: 'grosor: 3"'
+  - op: variant.define
+    sku: CNI-0013
+    product: Cepillo Nylon
+    nombre: Negro Pino Barradas
+    attrs:
+      Forma de cepillo nylon: Pino Barradas
+      Color de Cerda de Cepillo: Negro
+    min: 5000
+    max: 20000
+    notas: 'grosor: 4"'
+  - op: variant.define
+    sku: CNI-0016
+    product: Cepillo Nylon
+    nombre: Negro Pino mini
+    attrs:
+      Forma de cepillo nylon: Pino mini
+      Color de Cerda de Cepillo: Negro
+    max: 100000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0017
+    product: Cepillo Nylon
+    nombre: Transparente Pino
+    attrs:
+      Forma de cepillo nylon: Pino
+      Color de Cerda de Cepillo: Transparente
+    max: 100000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0018
+    product: Cepillo Nylon
+    nombre: Negro Pino delgado
+    attrs:
+      Forma de cepillo nylon: Pino delgado
+      Color de Cerda de Cepillo: Negro
+    max: 100000
+    notas: 'grosor: 5"'
+  - op: variant.define
+    sku: CNI-0019
+    product: Cepillo Nylon
+    nombre: Negro Pino Prosa
+    attrs:
+      Forma de cepillo nylon: Pino Prosa
+      Color de Cerda de Cepillo: Negro
+    notas: 'grosor: 5.75"'
+  - op: variant.define
+    sku: CNI-0020
+    product: Cepillo Nylon
+    nombre: Transparente Pino Prosa
+    attrs:
+      Forma de cepillo nylon: Pino Prosa
+      Color de Cerda de Cepillo: Transparente
+    notas: 'grosor: 5.75"'
+  - op: variant.define
+    sku: CNI-0021
+    product: Cepillo Nylon
+    nombre: Negro Recto Chico
+    attrs:
+      Forma de cepillo nylon: Recto Chico
+      Color de Cerda de Cepillo: Negro
+    notas: '5x27.5 · grosor: 5"'
+  - op: variant.define
+    sku: CNI-0022
+    product: Cepillo Nylon
+    nombre: Negro Recto XG
+    attrs:
+      Forma de cepillo nylon: Recto XG
+      Color de Cerda de Cepillo: Negro
+    notas: '8.75x22.25 · grosor: 5"'
+  - op: variant.define
+    sku: CNI-0023
+    product: Cepillo Nylon
+    nombre: Negro Recto Grande
+    attrs:
+      Forma de cepillo nylon: Recto Grande
+      Color de Cerda de Cepillo: Negro
+    notas: '8x23 · grosor: 5"'
+  - op: variant.define
+    sku: CNI-0024
+    product: Cepillo Nylon
+    nombre: Transparente Recto Grande
+    attrs:
+      Forma de cepillo nylon: Recto Grande
+      Color de Cerda de Cepillo: Transparente
+    notas: '8x23 · grosor: 5"'
+  - op: variant.define
+    sku: CNI-0025
+    product: Cepillo Nylon
+    nombre: Negro Recto Mediano
+    attrs:
+      Forma de cepillo nylon: Recto Mediano
+      Color de Cerda de Cepillo: Negro
+    notas: '6x12 · grosor: 5"'
+  - op: variant.define
+    sku: CNI-0026
+    product: Cepillo Nylon
+    nombre: Negro Recto Mini
+    attrs:
+      Forma de cepillo nylon: Recto Mini
+      Color de Cerda de Cepillo: Negro
+    notas: 'Mini · grosor: 5"'
+  - op: variant.define
+    sku: DPL-00001
+    product: Punta Delineador
+    attrs:
+      Tipo de Punta: Delineador
+    min: 15000
+    max: 54000
+  - op: variant.define
+    sku: TRN-00001
+    product: Punta Tratamiento
+    nombre: Punta Delineador
+    attrs:
+      Tipo de Punta: Tratamiento nocturno
+  - op: variant.define
+    sku: LGL-00001
+    product: Punta Lip Gloss
+    attrs:
+      Tipo de Punta: Punta lip gloss
+  - op: variant.define
+    sku: LGL-00002
+    product: Punta Lip Gloss
+    attrs:
+      Tipo de Punta: Punta lip gloss grande
+  - op: variant.define
+    sku: LGL-00003
+    product: Punta Lip Gloss
+    attrs:
+      Tipo de Punta: Punta lip gloss tipo hoja
+  - op: variant.define
+    sku: BTVPE-N-pino-negro-30ml-negro-15mm-20mm-negro-yadis-negro-negro
+    product: Rimel Nylon
+    nombre: Pino Negro 30mL Negro 15mm 20mm Negro Yadis Negro Negro
+    attrs:
+      Color de Cepillo Nylon: Negro
+      Altura de Vastago: 20mm
+      Color de Botella: Negro
+      Color de Vastago: Negro
+      Color de Sobretapa: Negro
+      Color de Escurridor: Negro
+      Forma de cepillo nylon: Pino
+      Capacidad de Botella: 30mL
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: Yadis
+    published: true
+  - op: variant.define
+    sku: P0001-0001
+    product: Alambre Acero Inoxidable
+    attrs: {}
+    min: 15
+    max: 25
+  - op: variant.define
+    sku: P0002-0001
+    product: Alambre Ensartado
+    attrs: {}
+  - op: variant.define
+    sku: P0003-0001
+    product: Alambre Kola Loka
+    attrs: {}
+  - op: variant.define
+    sku: P0004-0001
+    product: Bolsa Botella
+    attrs: {}
+    min: 25
+    max: 100
+  - op: variant.define
+    sku: P0005-0001
+    product: Bolsa Celofan
+    attrs: {}
+  - op: variant.define
+    sku: P0006-0001
+    product: Bolsa Hermetica
+    attrs: {}
+  - op: variant.define
+    sku: P0007-0001
+    product: Bolsa Jumbo
+    attrs: {}
+  - op: variant.define
+    sku: P0008-0001
+    product: Caja Cartón
+    attrs:
+      Tamaño de Caja de Cartón: Chico
+    min: 20
+    max: 50
+  - op: variant.define
+    sku: P0008-0002
+    product: Caja Cartón
+    attrs:
+      Tamaño de Caja de Cartón: Grande
+    min: 200
+    max: 500
+  - op: variant.define
+    sku: P0010-0001
+    product: Fleje
+    attrs: {}
+    min: 1
+    max: 2
+  - op: variant.define
+    sku: P0011-0001
+    product: Galleta
+    attrs: {}
+  - op: variant.define
+    sku: P0012-0001
+    product: Grapas
+    attrs: {}
+    min: 1
+    max: 2
+  - op: variant.define
+    sku: P0014-0007
+    product: Palillo Sin Cepillo
+    nombre: Negro
+    attrs:
+      Color de Palillo: Negro
+  - op: variant.define
+    sku: P0014-0008
+    product: Palillo Sin Cepillo
+    nombre: Blanco
+    attrs:
+      Color de Palillo: Blanco
+  - op: variant.define
+    sku: P0014-0009
+    product: Palillo Sin Cepillo
+    nombre: Rosa
+    attrs:
+      Color de Palillo: Rosa
+    min: 60000
+    max: 100000
+  - op: variant.define
+    sku: P0014-0010
+    product: Palillo Sin Cepillo
+    nombre: Lila
+    attrs:
+      Color de Palillo: Lila
+  - op: variant.define
+    sku: P0014-0011
+    product: Palillo Sin Cepillo
+    nombre: Amarillo neon
+    attrs:
+      Color de Palillo: Amarillo neon
+  - op: variant.define
+    sku: P0014-0012
+    product: Palillo Sin Cepillo
+    nombre: Verde neon
+    attrs:
+      Color de Palillo: Verde neon
+  - op: variant.define
+    sku: P0014-0013
+    product: Palillo Sin Cepillo
+    nombre: Rosa neon
+    attrs:
+      Color de Palillo: Rosa neon
+  - op: variant.define
+    sku: P0014-0014
+    product: Palillo Sin Cepillo
+    nombre: Amarillo
+    attrs:
+      Color de Palillo: Amarillo
+  - op: variant.define
+    sku: P0015-alta
+    product: Polietileno
+    attrs:
+      Densidad: Alta
+    min: 100
+    max: 500
+  - op: variant.define
+    sku: P0015-baja
+    product: Polietileno
+    attrs:
+      Densidad: Baja
+    min: 500
+    max: 1500
+  - op: variant.define
+    sku: P0016-0001
+    product: Pulcera
+    attrs: {}
+  - op: variant.define
+    sku: P0019-0001
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 44mm
+      Tamaño rosca: 13mm
+      Medida pincel: "24"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0002
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Hexagonal
+  - op: variant.define
+    sku: P0019-0003
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 44mm
+      Tamaño rosca: 13mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0004
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 25mm
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Gris
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0005
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Hexagonal
+  - op: variant.define
+    sku: P0019-0006
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Tamaño rosca: 13mm
+      Medida pincel: "24"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Gg
+  - op: variant.define
+    sku: P0019-0007
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Tamaño rosca: 13mm
+      Medida pincel: "24"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Gg
+  - op: variant.define
+    sku: P0019-0008
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Medida pincel: 35 plano
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Rosa glither
+      Tipo de Tapa con Pincel: Yadis
+  - op: variant.define
+    sku: P0019-0009
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0010
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Color de Cerda de Pincel: Negro
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0011
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "33"
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0012
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "33"
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0013
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "24"
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Normal
+  - op: variant.define
+    sku: P0019-0014
+    product: Tapa con Pincel
+    attrs:
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "33"
+      Altura de Taparrosca: Desconocido
+      Color de Tapa con Pincel: Rosa ultra
+      Tipo de Tapa con Pincel: Rebeca
+  - op: variant.define
+    sku: P0019-0015
+    product: Tapa con Pincel
+    attrs:
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 15mm
+      Medida pincel: "33"
+      Altura de Taparrosca: Desconocido
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Rebeca
+  - op: variant.define
+    sku: P0019-0016
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 38mm
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 15mm
+      Medida pincel: 35 plano
+      Color de Tapa con Pincel: Transparente
+      Tipo de Tapa con Pincel: Yadis
+  - op: variant.define
+    sku: P0019-0017
+    product: Tapa con Pincel
+    attrs:
+      Altura de Taparrosca: 30mm
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "33"
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Yadis
+  - op: variant.define
+    sku: P0019-0018
+    product: Tapa con Pincel
+    attrs:
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "35"
+      Altura de Taparrosca: Desconocido
+      Color de Tapa con Pincel: Negro
+      Tipo de Tapa con Pincel: Rebeca
+  - op: variant.define
+    sku: P0019-0019
+    product: Tapa con Pincel
+    attrs:
+      Color de Cerda de Pincel: Negro
+      Tamaño rosca: 13mm
+      Medida pincel: "35"
+      Altura de Taparrosca: Desconocido
+      Color de Tapa con Pincel: Blanco
+      Tipo de Tapa con Pincel: Rebeca
+  - op: variant.define
+    sku: P0021-0001
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Negro
+  - op: variant.define
+    sku: P0021-0002
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Fiusha
+  - op: variant.define
+    sku: P0021-0003
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Verde
+  - op: variant.define
+    sku: P0021-0004
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Lila
+  - op: variant.define
+    sku: P0021-0005
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Naranja
+  - op: variant.define
+    sku: P0021-0006
+    product: Tapon
+    nombre: Tapón
+    attrs:
+      Color de Tapon: Rosa
+  - op: variant.define
+    sku: PVC-transparente
+    product: PVC
+    attrs:
+      Color de PVC: Transparente
+    min: 500
+    max: 1500
+  - op: variant.define
+    sku: PVC-violeta
+    product: PVC
+    attrs:
+      Color de PVC: Violeta
+    min: 1000
+    max: 2500
+  - op: variant.define
+    sku: P0032-0001
+    product: Palillo Citologico Sin Cepillo
+    nombre: Blanco
+    attrs:
+      Color de Palillo Citologico: Blanco
+    min: 5000
+    max: 15000
+  - op: variant.define
+    sku: P0033-0001
+    product: Palillo con Cepillo
+    nombre: Blanco Transparente Balita
+    attrs:
+      Color de Palillo: Blanco
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Balita
+  - op: variant.define
+    sku: P0033-0002
+    product: Palillo con Cepillo
+    nombre: Lila Transparente Balita
+    attrs:
+      Color de Palillo: Lila
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Balita
+  - op: variant.define
+    sku: P0033-0003
+    product: Palillo con Cepillo
+    nombre: Naranja neon Transparente Balita
+    attrs:
+      Color de Palillo: Naranja neon
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Balita
+  - op: variant.define
+    sku: P0033-0004
+    product: Palillo con Cepillo
+    nombre: Rosa neon Transparente Balita
+    attrs:
+      Color de Palillo: Rosa neon
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Balita
+  - op: variant.define
+    sku: P0033-0005
+    product: Palillo con Cepillo
+    nombre: Amarillo Transparente Balita
+    attrs:
+      Color de Palillo: Amarillo
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Balita
