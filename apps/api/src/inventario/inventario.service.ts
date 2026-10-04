@@ -274,6 +274,37 @@ export class InventarioService {
     return { ok: true, notificado: notificado.canales };
   }
 
+  // ------------------------------------------------------ Mín / Máx variante
+  /**
+   * Actualiza el stock mínimo y/o máximo de una variante. Pensado para la
+   * edición inline en la tabla de inventario; no dispara al monitor (mismo
+   * comportamiento que `productos.updateVariant`): el estado se recalcula en
+   * el siguiente movimiento o consulta de existencia.
+   */
+  async setMinMax(variantId: number, data: { stockMin?: number; stockMax?: number }) {
+    if (data.stockMin === undefined && data.stockMax === undefined) {
+      throw new BadRequestException("Nada que actualizar");
+    }
+    if (data.stockMin !== undefined && (!Number.isFinite(data.stockMin) || data.stockMin < 0)) {
+      throw new BadRequestException("El mínimo no puede ser negativo");
+    }
+    if (data.stockMax !== undefined && (!Number.isFinite(data.stockMax) || data.stockMax < 0)) {
+      throw new BadRequestException("El máximo no puede ser negativo");
+    }
+
+    const variant = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+    if (!variant) throw new NotFoundException("Variante no encontrada");
+
+    await this.prisma.productVariant.update({
+      where: { id: variantId },
+      data: {
+        ...(data.stockMin !== undefined ? { stockMin: data.stockMin } : {}),
+        ...(data.stockMax !== undefined ? { stockMax: data.stockMax } : {}),
+      },
+    });
+    return { ok: true };
+  }
+
   // ------------------------------------------------------------- Export CSV
   async exportarCSV(): Promise<string> {
     const rows = await this.existencia();

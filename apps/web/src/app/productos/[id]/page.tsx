@@ -604,7 +604,7 @@ export default function ProductoDetallePage() {
             }}
             style={{ width: "auto", margin: 0 }}
           />
-          <span>Vendible en Ventas</span>
+          <span>A la venta</span>
           <span className="muted small">Se ofrece en el modal de nueva venta con sus variantes activas.</span>
         </label>
         <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>

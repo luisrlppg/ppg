@@ -6,6 +6,8 @@ import { useFormatCantidad } from "@/lib/preferences";
 interface Props {
   value: number;
   disabled?: boolean;
+  title?: string;
+  min?: number;
   onSave: (nueva: number) => Promise<void> | void;
 }
 
@@ -13,7 +15,7 @@ interface Props {
  * Celda de cantidad editable. Clic para editar; Enter y blur confirman,
  * Esc cancela. Si el valor no cambia o queda vacío, no se registra nada.
  */
-export default function CantidadEditable({ value, disabled, onSave }: Props) {
+export default function CantidadEditable({ value, disabled, title, min, onSave }: Props) {
   const formatCantidad = useFormatCantidad();
   const [editando, setEditando] = useState(false);
   const [val, setVal] = useState("");
@@ -46,6 +48,7 @@ export default function CantidadEditable({ value, disabled, onSave }: Props) {
       <input
         type="number"
         step="0.001"
+        min={min}
         value={val}
         autoFocus
         onFocus={(e) => e.currentTarget.select()}
@@ -79,7 +82,7 @@ export default function CantidadEditable({ value, disabled, onSave }: Props) {
       className="cell-editable"
       onClick={empezar}
       disabled={disabled}
-      title="Clic para editar (registra un ajuste)"
+      title={title ?? "Clic para editar (registra un ajuste)"}
     >
       {value === 0 ? "—" : formatCantidad(value)}
     </button>

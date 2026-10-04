@@ -47,6 +47,11 @@ class UbicacionDto {
   @IsOptional() @IsString() tipo?: string;
 }
 
+class MinMaxDto {
+  @IsOptional() @IsNumber() @Min(0) stockMin?: number;
+  @IsOptional() @IsNumber() @Min(0) stockMax?: number;
+}
+
 @Controller("inventario")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class InventarioController {
@@ -130,6 +135,12 @@ export class InventarioController {
       ref: dto.ref,
       userId: req.user.id,
     });
+  }
+
+  @Roles("admin", "supervisor", "operador")
+  @Patch("variantes/:variantId/minmax")
+  setMinMax(@Param("variantId", ParseIntPipe) variantId: number, @Body() dto: MinMaxDto) {
+    return this.inventario.setMinMax(variantId, dto);
   }
 
   @Roles("admin", "supervisor", "operador")

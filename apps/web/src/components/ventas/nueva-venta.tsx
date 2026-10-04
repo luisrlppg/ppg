@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { Partner, ProductoPublico } from "@/lib/types";
 import ClienteFormModal from "@/components/clientes/cliente-form-modal";
 import ModalConfigVariante, { type LineaConfigurada } from "./modal-config-variante";
+import ModalSeleccionVariante from "./modal-seleccion-variante";
 
 interface Props {
   onCreada: (id: number) => void;
@@ -38,7 +39,6 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
   const [productos, setProductos] = useState<ProductoPublico[]>([]);
   const [busquedaProducto, setBusquedaProducto] = useState("");
   const [lineas, setLineas] = useState<LineaConfigurada[]>([]);
-  const [varianteSel, setVarianteSel] = useState<Record<number, number>>({});
 
   const [guardando, setGuardando] = useState(false);
   const [configurando, setConfigurando] = useState<{ producto: ProductoPublico; idx: number | null } | null>(null);
@@ -68,23 +68,33 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
     setConfigurando({ producto, idx });
   }
 
-  function agregarDirecto(p: ProductoPublico) {
-    const v = p.variantes.find((x) => x.id === varianteSel[p.productId]);
-    if (!v) {
-      onError("Elige una variante para agregar el producto.");
+  function pistaProducto(p: ProductoPublico): string {
+    if (p.tienePasos) return "Configurable";
+    if (p.variantes.length > 1) return `${p.variantes.length} variantes`;
+    if (p.variantes.length === 1) return "1 variante";
+    return "Sin variantes activas";
+  }
+
+  function seleccionarProducto(p: ProductoPublico) {
+    // Configurables abren el wizard; con varias variantes, el modal de selección.
+    if (p.tienePasos || p.variantes.length > 1) {
+      abrirConfig(p, null);
       return;
     }
-    onError("");
-    guardarLinea({
-      variantId: v.id,
-      productId: p.productId,
-      sku: v.sku,
-      nombre: v.nombre,
-      producto: p.nombre,
-      uom: p.uom,
-      cantidad: "1",
-      configVariantId: v.id,
-    });
+    if (p.variantes.length === 1) {
+      const v = p.variantes[0];
+      onError("");
+      guardarLinea({
+        variantId: v.id,
+        productId: p.productId,
+        sku: v.sku,
+        nombre: v.nombre,
+        producto: p.nombre,
+        uom: p.uom,
+        cantidad: "1",
+        configVariantId: v.id,
+      });
+    }
   }
 
   function guardarLinea(linea: LineaConfigurada) {
@@ -207,40 +217,27 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
             {productosFiltrados.length === 0 ? (
               <p className="muted" style={{ marginTop: 12 }}>No hay productos públicos disponibles.</p>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginTop: 12 }}>
-                {productosFiltrados.map((p) => (
-                  <div key={p.productId} className="card" style={{ margin: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 10 }}>
-                    <div>
+              <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                {productosFiltrados.map((p) => {
+                  const seleccionable = p.tienePasos || p.variantes.length > 0;
+                  return (
+                    <button
+                      key={p.productId}
+                      type="button"
+                      disabled={!seleccionable}
+                      onClick={() => seleccionarProducto(p)}
+                      style={{
+                        ...filaSeleccionable(false),
+                        cursor: seleccionable ? "pointer" : "not-allowed",
+                        opacity: seleccionable ? 1 : 0.55,
+                      }}
+                    >
                       <strong>{p.nombre}</strong>
-                      <div className="muted small">{p.skuBase} · {p.uom}</div>
-                    </div>
-                    {p.tienePasos ? (
-                      <button type="button" className="btn primary sm" onClick={() => abrirConfig(p, null)}>
-                        Configurar
-                      </button>
-                    ) : p.variantes.length === 0 ? (
-                      <span className="muted small">Sin variantes activas.</span>
-                    ) : (
-                      <>
-                        <label className="small" style={{ margin: 0 }}>
-                          Variante
-                          <select
-                            value={varianteSel[p.productId] ?? ""}
-                            onChange={(e) => setVarianteSel((prev) => ({ ...prev, [p.productId]: Number(e.target.value) }))}
-                          >
-                            <option value="">— Elegir —</option>
-                            {p.variantes.map((v) => (
-                              <option key={v.id} value={v.id}>{v.nombre} · {v.sku}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <button type="button" className="btn primary sm" onClick={() => agregarDirecto(p)}>
-                          Agregar
-                        </button>
-                      </>
-                    )}
-                  </div>
-                ))}
+                      <span className="muted small">{p.skuBase} · {p.uom}</span>
+                      <span className="muted small">{pistaProducto(p)}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </>
@@ -352,12 +349,21 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
       )}
 
       {configurando && (
-        <ModalConfigVariante
-          producto={configurando.producto}
-          lineaInicial={configurando.idx !== null && lineas[configurando.idx] ? lineas[configurando.idx] : undefined}
-          onConfirmar={guardarLinea}
-          onCerrar={() => setConfigurando(null)}
-        />
+        configurando.producto.tienePasos ? (
+          <ModalConfigVariante
+            producto={configurando.producto}
+            lineaInicial={configurando.idx !== null && lineas[configurando.idx] ? lineas[configurando.idx] : undefined}
+            onConfirmar={guardarLinea}
+            onCerrar={() => setConfigurando(null)}
+          />
+        ) : (
+          <ModalSeleccionVariante
+            producto={configurando.producto}
+            lineaInicial={configurando.idx !== null && lineas[configurando.idx] ? lineas[configurando.idx] : undefined}
+            onConfirmar={guardarLinea}
+            onCerrar={() => setConfigurando(null)}
+          />
+        )
       )}
     </div>
   );

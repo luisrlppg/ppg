@@ -13,7 +13,7 @@ import { useFormatCantidad } from "@/lib/preferences";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
 type Accion = "entrada" | "salida" | "mover";
-type Vista = "ubicacion" | "variante" | "variante-minmax" | "producto";
+type Vista = "ubicacion" | "variante" | "variante-minmax";
 
 export default function InventarioPage() {
   const formatCantidad = useFormatCantidad();
@@ -22,7 +22,7 @@ export default function InventarioPage() {
   const [movs, setMovs] = useState<Movimiento[]>([]);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [vista, setVista] = useState<Vista>("ubicacion");
+  const [vista, setVista] = useState<Vista>("variante");
   const [ubicacionFiltro, setUbicacionFiltro] = useState<number | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [productoSelId, setProductoSelId] = useState<number | null>(null);
@@ -143,7 +143,7 @@ export default function InventarioPage() {
     }
   }
 
-  // ----------------------------------------------------- Ajuste por celda
+  // ---------------------------------------------------------- Ajuste por celda
   async function ajustar(variantId: number, locationId: number, nuevaCantidad: number) {
     try {
       const r = await api<{ resultado: { delta: number; sinCambio: boolean } }>("/inventario/ajuste", {
@@ -152,6 +152,19 @@ export default function InventarioPage() {
       });
       if (r.resultado.sinCambio) notify(null, "Sin cambios.");
       else notify(null, `Ajuste registrado (${r.resultado.delta > 0 ? "+" : ""}${formatCantidad(r.resultado.delta)}).`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  // -------------------------------------------------- Editar mín/máx variante
+  async function guardarMinMax(variantId: number, patch: { stockMin?: number; stockMax?: number }) {
+    try {
+      await api(`/inventario/variantes/${variantId}/minmax`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      notify(null, "Mín/máx actualizado.");
     } catch (e) {
       setError((e as Error).message);
     }
@@ -272,18 +285,6 @@ export default function InventarioPage() {
     .filter((g) => g.filas.length > 0)
     .filter((g) => ubicacionFiltro === null || g.l.id === ubicacionFiltro);
 
-  // Totales por producto (respeta el filtro de atributos del producto seleccionado).
-  const gruposProducto = (() => {
-    const map = new Map<number, { productoId: number; producto: string; uom: string; variantes: number; stock: number }>();
-    for (const v of filtradas) {
-      let g = map.get(v.productoId);
-      if (!g) { g = { productoId: v.productoId, producto: v.producto, uom: v.uom, variantes: 0, stock: 0 }; map.set(v.productoId, g); }
-      g.variantes += 1;
-      g.stock += v.stockActual;
-    }
-    return [...map.values()].sort((a, b) => a.producto.localeCompare(b.producto));
-  })();
-
   // ---------------------------------------------------------- Exportar CSV
   const celdaVariante = (v: Existencia) =>
     [v.producto, ...v.valoracion.map((a) => `${a.attribute} ${a.valor}`)].join(" · ");
@@ -309,10 +310,6 @@ export default function InventarioPage() {
         filas.push([celdaVariante(v), v.sku, v.stockActual, v.stockMin, v.stockMax, ubic]);
       }
       descargarCSV("inventario-por-variante-min-max.csv", filas);
-    } else {
-      filas.push(["Producto", "Variantes", "Stock"]);
-      for (const g of gruposProducto) filas.push([g.producto, g.variantes, g.stock]);
-      descargarCSV("inventario-por-producto.csv", filas);
     }
   }
 
@@ -340,7 +337,7 @@ export default function InventarioPage() {
         Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Para un{" "}
         <strong>ajuste</strong> (conteo físico), haz clic en la cantidad en <strong>Por ubicación</strong> o{" "}
         <strong>Por variante</strong> y escribe la cantidad real: se registra la diferencia. El stock no puede
-        quedar por debajo de cero.
+        quedar por debajo de cero. En <strong>Min Max</strong> puedes editar el mínimo y el máximo de cada variante.
       </HelpNote>
 
       <div className="toolbar">
@@ -396,8 +393,7 @@ export default function InventarioPage() {
           options={[
             { value: "ubicacion", label: "Por ubicación" },
             { value: "variante", label: "Por variante" },
-            { value: "variante-minmax", label: "Por variante min max" },
-            { value: "producto", label: "Por producto" },
+            { value: "variante-minmax", label: "Min Max" },
           ]}
         />
       </div>
@@ -435,8 +431,22 @@ export default function InventarioPage() {
                     <td className="num">
                       <strong>{formatCantidad(v.stockActual)}</strong>
                     </td>
-                    <td className="num">{v.stockMin > 0 ? formatCantidad(v.stockMin) : "—"}</td>
-                    <td className="num">{v.stockMax > 0 ? formatCantidad(v.stockMax) : "—"}</td>
+                    <td className="num">
+                      <CantidadEditable
+                        value={v.stockMin}
+                        min={0}
+                        title="Clic para editar el mínimo"
+                        onSave={(n) => guardarMinMax(v.variantId, { stockMin: n })}
+                      />
+                    </td>
+                    <td className="num">
+                      <CantidadEditable
+                        value={v.stockMax}
+                        min={0}
+                        title="Clic para editar el máximo"
+                        onSave={(n) => guardarMinMax(v.variantId, { stockMax: n })}
+                      />
+                    </td>
                     <td className="small muted">
                       {Object.values(v.porUbicacion)
                         .map((l) => `${l.location}: ${formatCantidad(l.qty)}`)
@@ -447,36 +457,6 @@ export default function InventarioPage() {
                 {filtradas.length === 0 && (
                   <tr>
                     <td colSpan={5} className="empty">Sin existencias que coincidan.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          ) : vista === "producto" ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th className="num">Variantes</th>
-                  <th className="num">Stock</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gruposProducto.map((g) => (
-                  <tr key={g.productoId}>
-                    <td>
-                      <strong>
-                        {g.producto} <span className="muted">({g.uom})</span>
-                      </strong>
-                    </td>
-                    <td className="num">{g.variantes}</td>
-                    <td className="num">
-                      <strong>{formatCantidad(g.stock)}</strong>
-                    </td>
-                  </tr>
-                ))}
-                {gruposProducto.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="empty">Sin existencias que coincidan.</td>
                   </tr>
                 )}
               </tbody>

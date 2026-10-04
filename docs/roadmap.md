@@ -5,7 +5,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 ## Pendientes activos
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos:
-   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (797), `reportes/page.tsx` (718),
+   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (718),
    `ventas/page.tsx` (469), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (Taparrosca sin `Forma`,
@@ -26,6 +26,21 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Paso 2 de nueva venta como lista (2026-10-04):** el selector de producto dejó de ser un grid
+  de tarjetas y ahora es una **lista filtrable** por nombre/SKU. Al hacer clic: producto con pasos
+  abre `modal-config-variante.tsx` (wizard); sin pasos con varias variantes abre el nuevo
+  `components/ventas/modal-seleccion-variante.tsx` (selección simple + cantidad); con una sola
+  variante se agrega directo; sin variantes la fila queda deshabilitada. Se eliminó el `<select>`
+  de variante por tarjeta (`varianteSel`).
+- **Inventario sin vista "Por producto" (2026-10-04):** se eliminó la vista y su export
+  (`inventario-por-producto.csv`); el resumen por producto (variantes/stock) ya se ve en la tabla
+  de `/productos`. Inventario queda con 3 vistas: Por ubicación / Por variante / Min Max.
+- **Mín/máx editable en inventario (2026-10-04):** la vista **Min Max** de `/inventario` (antes
+  "Por variante min max") ahora edita inline las celdas Mín/Máx con `CantidadEditable` (props
+  nuevas `title`/`min`); guarda vía `PATCH /inventario/variantes/:vid/minmax`, disponible para
+  **todos** los roles. El endpoint es dedicado para no ampliar `PATCH /productos/variantes/:vid`
+  (admin/supervisor), que además permite nombre/activo/notas. No dispara el monitor: el estado se
+  recalcula en el siguiente movimiento/consulta (paridad con `productos.updateVariant`).
 - **Flags de suministro fabricable/comprable (2026-10-04):** `Product` ganó `fabricable` y
   `comprable` (migración `20261004160000_product_fabricable_comprable`, backfill desde el BOM:
   fabricable = tiene componentes exactos; comprable = no). El **neteo** (`planificacion.service`)
