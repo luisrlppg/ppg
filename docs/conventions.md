@@ -1,0 +1,39 @@
+# conventions.md — Patrones y reglas de código
+
+Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `project-nav.md`.
+
+## API (NestJS)
+
+1. **Cada dominio es un módulo** (`x.controller.ts`, `x.service.ts`, `x.module.ts`). Usa los guards
+   existentes (`JwtAuthGuard` + `RolesGuard`) y el decorator `@Roles()`. No dupliques guards.
+2. **Roles:** `admin` puede todo; `supervisor` hace confirmar/despachar/aplicar; `operador` lee y reporta.
+   Sólo `auth`, `catalogos` y `public` son públicos.
+3. **Rutas estáticas antes de `:param`** en los controllers (p. ej. `/inventario/existencia` vs `/inventario/:id`).
+4. **Decimal ↔ number:** usa siempre `dec()` de `common/util.ts` para convertir `Decimal` de Prisma.
+5. **Precios:** todo cambio de precio base/variante **debe** registrarse en `PriceChange`.
+6. **BOM recursivo / ciclos:** cualquier lógica que recorra `ProductComponent` recursivamente debe
+   **detectar ciclos** (patrón presente en `ventas`, `inventario`, `productos.resolveComponentVariant`
+   y `catalogos.atributos-producto`). La recursión BOM hoy está duplicada en varios sitios; si la tocas,
+   considera extraerla a un helper/módulo común.
+7. **Monitor tras stock:** cada mutación de stock que deba alertar llama a `monitor.afterStockChange`.
+   Mantén ese contrato.
+8. **Migraciones:** nunca ejecutes `prisma migrate dev` directo en shell no-TTY; genera con
+   `--create-only` y aplica con `pnpm db:deploy` (ver `development.md`).
+
+## Web (Next.js)
+
+9. **Páginas `"use client"`**; usa `api()` de `@/lib/api` y tipos de `@/lib/types.ts`.
+   **No** introduzcas Redux/Zustand/react-query: sigue `useState` + `useEffect` + `useCallback`.
+10. **Tipos nuevos:** centralízalos en `apps/web/src/lib/types.ts`.
+11. **UI compartida:** reutiliza `components/ui/` (`PageHeader`, `Modal`, `ConfirmDialog`, `Segmented`,
+    `HelpNote`) y las clases/tokens de `app/globals.css`. No inventes clases nuevas.
+12. **Exportaciones CSV en cliente** usan `lib/csv.ts`; respetan los filtros/vista activa.
+13. **Preferencias de UI** (vista tabla/grid, selecciones de ejes): `local-store.ts` (`ppg.*` en `localStorage`).
+
+## General
+
+14. **No-interactividad:** nunca dejes comandos que pidan input (CI/agente). Prefiere flags no interactivos.
+15. **Comentarios opcionales:** usa `{/* */}` (web) y `// ---` (api) para marcar secciones grandes,
+    igual que los archivos existentes. No añadas comentarios explicativos redundantes; **no** comentes código evidente.
+16. **Actualiza el mapa:** si mueves/renombras archivos o cambias zonas relevantes, actualiza
+    `project-nav.md` (§2/§3/§4) para que las referencias sigan siendo válidas.

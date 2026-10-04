@@ -1,0 +1,71 @@
+# scripts.md — Catálogo de scripts
+
+Scripts de utilidad en `scripts/`. Para cambios de catálogo, prefiere el toolkit declarativo
+de [`CATALOG-OPS.md`](./CATALOG-OPS.md); los scripts one-off quedan como referencia histórica.
+Para datos/migración Odoo, ver la sección al final.
+
+## Seed y demo
+
+- `seed-products.ts` — configura estructura BOM + `ProductAttributeLine` + `ProductPasso`.
+- `seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3
+  (reportes/producción); idempotente.
+- `seed-demo-ventas.ts` — variantes únicas + combo taparrosca SIN stock para probar ventas →
+  confirmación → neteo → cascada de OFs (E2); idempotente.
+- `seed-cepillos-notas.ts` — carga medidas/grosor de cepillos como nota interna (`ProductVariant.notas`);
+  idempotente. `--dry`/`--apply`.
+- `reset-variants.ts` — limpia variantes y atributos/valores.
+
+## Reorganizaciones one-off (histórico)
+
+Todas soportan `--dry`/`--apply`.
+
+- `reorg-atributos.ts` — split/rename de atributos por producto desde `atributos-mapping.csv`
+  (re-apunta variantes, ejes, permitidos y pasos).
+- `consolidar-atributos.ts` — consolidación: splits, merges, repunts, renombres, borrado de muertos
+  y normalización de valores (primera mayúscula + colisiones).
+- `finalizar-minmax.ts` — crea el producto PVC y asigna la forma a los Pino del Cepillo Nylon.
+- `reorg-cepillos.ts` — Cepillo Nylon por `Forma` + `Grosor cerda` + `Color` (elimina `Estado` y
+  `Medidas`); Cepillo Silicon por forma; convierte medidas del "Cepillo Recto" en formas; borra
+  `Medidas` y `Estado` del catálogo.
+- `reorg-cepillos-grosor.ts` — quita el eje `Grosor cerda` (va a `notas`); codifica el grosor en la
+  forma (5.75" → `… Prosa`, 4" → `Bala/Pino Barradas`); borra valores de Forma huérfanos.
+- `reorg-palillos.ts` — separa `Palillo`: renombra id 42 → `Palillo Sin Cepillo`, crea
+  `Palillo Citologico Sin Cepillo`, `Palillo con Cepillo` y `Palillo Citologico con Cepillo`; define BOM.
+- `reorg-vastago.ts` — elimina `Agujero de Vastago` (lo sustituye `Punta`) y deja `Tipo de Vastago`
+  sólo con `Normal` y `Mod-prosa`.
+- `completar-vastago.ts` — completa `Color de Vastago`/`Punta` de las 10 variantes sin derivar de Odoo.
+- `reorg-tipo-mango.ts` — elimina `Tipo de Mango` y sincroniza `Pincel` con `Mango`
+  (hereda `Ceja`/`Agujero`); crea `PIN-13mm-35mm-plano`.
+- `remapear-plano.ts` — remapeo auxiliar.
+
+## Migración y reconciliación Odoo
+
+> Los CSV de Odoo y algunos scripts de migración viven en rutas ignoradas por git; se conservan localmente.
+
+- `odoo-migration/step8-clientes.ts` — migra `scripts/odoo-data/contacts.csv` a Clientes (`Partner`):
+  separa `Persona, Empresa`, omite direcciones hijas, descarta email de prueba, limpia teléfonos y
+  normaliza a Título; idempotente por nombre+empresa. `--dry` no escribe y genera `clientes-revision.csv`.
+- `odoo-migration/step9-min-max.ts` — aplica `stockMin/stockMax` desde `min-max.csv` (resuelve por
+  `familiaOdoo`+atributos con `variantes.csv`). Soporta `--file`, `--apply`, `--factor` y `--pendientes`.
+- `odoo-migration/step10-materializar.ts` — materializa variantes faltantes desde
+  `materializar-faltantes.csv` (clona `baseSku` + `overrides`), crea valores y fija min/máx.
+- `odoo-migration/reconcile-stock.ts` — reconcilia `docs/odoo_inv.csv` contra la existencia de PPG
+  (BD `StockLevel` por defecto; `--ppg <csv>` usa un export): mapea con `mapeo-odoo-ppg.csv`, deja
+  subensamblados pendientes y excluye pigmentos/oficina. Genera
+  `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`. `--apply` fija
+  `StockLevel` (motivo `ajuste`) sólo en renglones `ajuste`; **`--reset`** borra todo el stock y recarga
+  el snapshot Odoo (destructivo: respaldar con `pg_dump` antes).
+- `odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**:
+  `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
+- `odoo-migration-plan.ts` — plan de migración.
+
+## Toolkit de catálogo (actual) — `scripts/catalog/`
+
+Ver detalle y formato de ops en [`CATALOG-OPS.md`](./CATALOG-OPS.md).
+
+- `snapshot.ts` → `docs/catalog-snapshot.{json,md}` (estado canónico).
+- `apply.ts --file <ops.yaml> [--apply]` — motor genérico de ops declarativas (idempotente, transaccional).
+- `odoo-diff.ts` — compara `mapeo-odoo-ppg.csv` ↔ PPG y propone ops.
+- `export-seed.ts` — vuelca el catálogo actual a `scripts/catalog/seed/catalog.yaml` (+ `stock.yaml`).
+- Alias: `pnpm cat:snapshot` · `cat:apply` · `cat:odoo-diff` · `cat:export-seed` · `cat:seed` · `cat:stock`.
+- Casos nuevos: YAML en `scripts/catalog/ops/` (los `odoo-diff-*.yaml` son regenerables/ignorados).
