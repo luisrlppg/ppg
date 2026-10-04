@@ -92,6 +92,16 @@ export interface ProductoDetalle {
   category: { id: number; nombre: string } | null;
   variantes: (Variante & { porUbicacion?: unknown })[];
   componentes: { componentId: number; nombre: string; cantidad: number; tipo: string }[];
+  pasos?: PassoRow[];
+}
+
+export interface PassoRow {
+  id: number;
+  sortOrder: number;
+  panel: number;
+  pregunta: string;
+  attributeId: number | null;
+  variantProductId: number | null;
 }
 
 export interface Ubicacion {
@@ -378,19 +388,29 @@ export interface StatsConsumo {
 export interface PassoOption {
   valueId: number;
   valor: string;
-  variantId: number;
-  sku: string;
   enStock: boolean;
-  uom: string;
 }
 
 export interface Passo {
   sortOrder: number;
+  panel: number;
   pregunta: string;
-  attributeId: number | null;
+  attributeId: number;
   variantProductId: number;
-  isQtyStep: boolean;
   opciones: PassoOption[];
+}
+
+export interface SeleccionPaso {
+  attributeId: number;
+  valueId: number;
+}
+
+export interface ResolucionVariante {
+  variantId: number | null;
+  sku: string | null;
+  nombre: string | null;
+  existe: boolean;
+  creada?: boolean;
 }
 
 export interface ConfiguracionLinea {

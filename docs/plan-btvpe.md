@@ -146,9 +146,19 @@ Ejes comunes a los BTVPE:
 
 ---
 
-## 7. Pasos guiados (`ProductPasso`) — Opción A (agrupación en frontend)
+## 7. Pasos guiados (`ProductPasso`) — Modelo B (desde componentes)
 
-**Regla:** se usan pares **[característica, color] consecutivos** para cada componente. El frontend agrupa características+color de un componente en **un panel** (detección por atributo de color = `Color ...` agrupado al paso inmediato anterior).
+> **Actualización 2026-10-04 (Modelo B, implementado).** Ver `docs/data-model.md`.
+> El wizard ya NO se arma desde las variantes del producto vendido, sino desde las variantes
+> **activas de cada componente** (`variantProductId`). El primer paso es **`Tamaño de Botella`**
+> (componente Botella), que deriva `Tamaño rosca`/altura y filtra los pasos siguientes.
+> El agrupado usa el campo explícito **`panel`** (no regex sobre el texto) y `isQtyStep` se retiró.
+> `getPasos`/`resolverConfiguracion` filtran por la selección previa (cascada) y materializan la
+> variante vendible al confirmar. `Capacidad de Botella` (mL) → `notas` + eje `Tamaño de Botella`.
+> Cepillo Silicon tiene eje `Color de Cepillo Silicon` (Blanco/Negro); el nylon usa
+> `Color de Cerda de Cepillo`; los BTVPE usan `Forma de Sobretapa`.
+
+**Regla:** se usan pares **[característica, color] consecutivos** para cada componente, agrupados por `panel`.
 
 **Comportamiento del color en el wizard:**
 - **≥2 colores** → se muestra selector de color junto a la característica.
@@ -168,13 +178,13 @@ Ejes comunes a los BTVPE:
 6. Color Escurridor
 7. Cantidad (qty)
 
-### BTVPE-N (Rimel Nylon) — orden
-1. Forma (cepillo) + Color Cepillo
-2. Botella + Color Botella
-3. Altura vástago + Color Vástago
-4. Forma tapa + Color Sobretapa
-5. Color Escurridor
-6. Cantidad
+### BTVPE-N (Rimel Nylon) — orden implementado (Modelo B)
+1. `Tamaño de Botella` + Color Botella  (Botella deriva rosca)
+2. Altura vástago + Color Vástago
+3. Forma Sobretapa + Color Sobretapa
+4. Color Escurridor
+5. Forma cepillo nylon + Color de Cerda de Cepillo
+6. Cantidad (Revisar)
 
 ### BTVPE-D / BTVPE-TN — orden (sin punta en wizard)
 1. Botella + Color Botella

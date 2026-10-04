@@ -5,6 +5,10 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 
 ## Decisiones vigentes (reorgs ya aplicados)
 
+- **BTVPE (2026-10-04):** eje `Tamaño de Botella` en Botella (`Mini`/`Alta`/`Chica`/`Grande`);
+  se retiró `Capacidad de Botella` (mL → `notas`); `Color de Cepillo Silicon` (Blanco/Negro) eje de
+  Cepillo Silicon; nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`);
+  BTVPE usan `Forma de Sobretapa`. Wizard en **Modelo B** (ops `scripts/catalog/ops/btvpe-reconciliacion.yaml`).
 - **Vastago:** sin `Agujero de Vastago` (lo sustituye `Punta`). `Tipo de Vastago` = `Normal`, `Mod-prosa`.
 - **`Tipo de Mango` eliminado:** `Pelikan` pasó a `Ceja`; `Normal`/`Plano` se tradujeron a
   `Agujero de Mango`. `Ceja` = `Delgada`, `Gruesa`, `Pelikan`.

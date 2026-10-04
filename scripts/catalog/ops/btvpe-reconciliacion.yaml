@@ -1,0 +1,341 @@
+# Reconciliación BTVPE (Modelo B: wizard desde componentes)
+# - Botella define rosca/altura via Tamaño de Botella
+# - Colores por componente; forma sobretapa; capacidad -> notas (se retira el eje)
+# - Pasos con panel y sin isQtyStep
+version: 1
+name: btvpe-reconciliacion
+description: "Norma botella/pasos/colores de los 5 BTVPE para el wizard desde componentes"
+ops:
+  - { op: attr.ensure, name: "Tamaño de Botella", values: [Chica, Grande, Alta, Mini] }
+  - { op: attr.assignAxis, product: Botella, attribute: "Tamaño de Botella", sortOrder: 5 }
+  - { op: variant.set, sku: BOT-0001, attribute: "Tamaño de Botella", value: Mini }
+  - { op: variant.set, sku: BOT-0002, attribute: "Tamaño de Botella", value: Mini }
+  - { op: variant.set, sku: BOT-0003, attribute: "Tamaño de Botella", value: Mini }
+  - { op: variant.set, sku: BOT-0004, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0005, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0006, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0007, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0008, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0009, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0010, attribute: "Tamaño de Botella", value: Alta }
+  - { op: variant.set, sku: BOT-0011, attribute: "Tamaño de Botella", value: Chica }
+  - { op: variant.set, sku: BOT-0012, attribute: "Tamaño de Botella", value: Chica }
+  - { op: variant.set, sku: BOT-0013, attribute: "Tamaño de Botella", value: Chica }
+  - { op: variant.set, sku: BOT-0014, attribute: "Tamaño de Botella", value: Chica }
+  - { op: variant.set, sku: BOT-0015, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0016, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0017, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0018, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0019, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0020, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0021, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0022, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0023, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0024, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0025, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0026, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0027, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0028, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0029, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0030, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0031, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0032, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0033, attribute: "Tamaño de Botella", value: Grande }
+  - { op: variant.set, sku: BOT-0034, attribute: "Tamaño de Botella", value: Grande }
+  - { op: value.add, attribute: "Color de Cepillo Silicon", value: Blanco }
+  - { op: value.add, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: attr.assignAxis, product: "Cepillo Silicon", attribute: "Color de Cepillo Silicon", sortOrder: 1 }
+  - { op: variant.copy, from: CSI-0001, sku: CSI-0001-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0001, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0002, sku: CSI-0002-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0002, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0004, sku: CSI-0004-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0004, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0005, sku: CSI-0005-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0005, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0006, sku: CSI-0006-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0006, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0007, sku: CSI-0007-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0007, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: variant.copy, from: CSI-0008, sku: CSI-0008-B, overrides: { "Color de Cepillo Silicon": Blanco } }
+  - { op: variant.set, sku: CSI-0008, attribute: "Color de Cepillo Silicon", value: Negro }
+  - { op: attr.unassignAxis, product: Rimel Silicon, attribute: "Capacidad de Botella" }
+  - { op: attr.unassignAxis, product: Rimel Silicon, attribute: "Forma de Taparrosca" }
+  - { op: attr.unassignAxis, product: Rimel Nylon, attribute: "Capacidad de Botella" }
+  - { op: attr.unassignAxis, product: Rimel Nylon, attribute: "Forma de Taparrosca" }
+  - { op: attr.unassignAxis, product: Delineador, attribute: "Capacidad de Botella" }
+  - { op: attr.unassignAxis, product: Delineador, attribute: "Forma de Taparrosca" }
+  - { op: attr.unassignAxis, product: Tratamiento de Noche, attribute: "Capacidad de Botella" }
+  - { op: attr.unassignAxis, product: Tratamiento de Noche, attribute: "Forma de Taparrosca" }
+  - { op: attr.unassignAxis, product: Lip Gloss, attribute: "Capacidad de Botella" }
+  - { op: attr.unassignAxis, product: Lip Gloss, attribute: "Forma de Taparrosca" }
+  - { op: attr.unassignAxis, product: "Rimel Silicon", attribute: "Forma de cepillo nylon" }
+  - { op: attr.unassignAxis, product: "Rimel Nylon", attribute: "Color de Cepillo Nylon" }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Tamaño de Botella", sortOrder: 1 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Color de Botella", sortOrder: 2 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Tamaño rosca", sortOrder: 3 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Altura de Vastago", sortOrder: 4 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Color de Vastago", sortOrder: 5 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Forma de Sobretapa", sortOrder: 6 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Color de Sobretapa", sortOrder: 7 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Color de Escurridor", sortOrder: 8 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Forma de cepillo silicon", sortOrder: 9 }
+  - { op: attr.assignAxis, product: Rimel Silicon, attribute: "Color de Cepillo Silicon", sortOrder: 10 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Tamaño de Botella", sortOrder: 1 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Color de Botella", sortOrder: 2 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Tamaño rosca", sortOrder: 3 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Altura de Vastago", sortOrder: 4 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Color de Vastago", sortOrder: 5 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Forma de Sobretapa", sortOrder: 6 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Color de Sobretapa", sortOrder: 7 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Color de Escurridor", sortOrder: 8 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Forma de cepillo nylon", sortOrder: 9 }
+  - { op: attr.assignAxis, product: Rimel Nylon, attribute: "Color de Cerda de Cepillo", sortOrder: 10 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Tamaño de Botella", sortOrder: 1 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Color de Botella", sortOrder: 2 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Tamaño rosca", sortOrder: 3 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Altura de Vastago", sortOrder: 4 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Color de Vastago", sortOrder: 5 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Forma de Sobretapa", sortOrder: 6 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Color de Sobretapa", sortOrder: 7 }
+  - { op: attr.assignAxis, product: Delineador, attribute: "Color de Escurridor", sortOrder: 8 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Tamaño de Botella", sortOrder: 1 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Color de Botella", sortOrder: 2 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Tamaño rosca", sortOrder: 3 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Altura de Vastago", sortOrder: 4 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Color de Vastago", sortOrder: 5 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Forma de Sobretapa", sortOrder: 6 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Color de Sobretapa", sortOrder: 7 }
+  - { op: attr.assignAxis, product: Tratamiento de Noche, attribute: "Color de Escurridor", sortOrder: 8 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Tipo de Punta", sortOrder: 1 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Tamaño de Botella", sortOrder: 2 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Color de Botella", sortOrder: 3 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Tamaño rosca", sortOrder: 4 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Altura de Vastago", sortOrder: 5 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Color de Vastago", sortOrder: 6 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Forma de Sobretapa", sortOrder: 7 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Color de Sobretapa", sortOrder: 8 }
+  - { op: attr.assignAxis, product: Lip Gloss, attribute: "Color de Escurridor", sortOrder: 9 }
+  - { op: attr.restrictValues, product: Rimel Silicon, attribute: "Tamaño de Botella", values: [Chica, Grande] }
+  - { op: attr.restrictValues, product: Rimel Nylon, attribute: "Tamaño de Botella", values: [Chica, Grande] }
+  - { op: attr.restrictValues, product: Lip Gloss, attribute: "Tamaño de Botella", values: [Chica, Grande] }
+  - { op: attr.restrictValues, product: Delineador, attribute: "Tamaño de Botella", values: [Chica, Grande, Alta, Mini] }
+  - { op: attr.restrictValues, product: Tratamiento de Noche, attribute: "Tamaño de Botella", values: [Chica, Grande, Alta, Mini] }
+  - { op: variant.delete, sku: BTVPE-N-pino-negro-30ml-negro-15mm-20mm-negro-yadis-negro-negro, allowStock: true }
+  - op: step.set
+    product: "Rimel Silicon"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "¿Qué tamaño de botella prefieres?"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "¿De qué color quieres la botella?"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "¿Qué altura de vástago prefieres?"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "¿De qué color quieres el vástago?"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "¿Qué forma de tapa prefieres?"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "¿De qué color quieres la tapa?"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "¿De qué color quieres el escurridor?"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "¿Qué forma de cepillo prefieres?"
+        attribute: "Forma de cepillo silicon"
+        variantProduct: "Cepillo Silicon"
+      - sortOrder: 9
+        panel: 5
+        pregunta: "¿De qué color quieres el cepillo?"
+        attribute: "Color de Cepillo Silicon"
+        variantProduct: "Cepillo Silicon"
+  - op: step.set
+    product: "Rimel Nylon"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "¿Qué tamaño de botella prefieres?"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "¿De qué color quieres la botella?"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "¿Qué altura de vástago prefieres?"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "¿De qué color quieres el vástago?"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "¿Qué forma de tapa prefieres?"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "¿De qué color quieres la tapa?"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "¿De qué color quieres el escurridor?"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "¿Qué forma de cepillo prefieres?"
+        attribute: "Forma de cepillo nylon"
+        variantProduct: "Cepillo Nylon"
+      - sortOrder: 9
+        panel: 5
+        pregunta: "¿De qué color quieres el cepillo?"
+        attribute: "Color de Cerda de Cepillo"
+        variantProduct: "Cepillo Nylon"
+  - op: step.set
+    product: "Delineador"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "¿Qué tamaño de botella prefieres?"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "¿De qué color quieres la botella?"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "¿Qué altura de vástago prefieres?"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "¿De qué color quieres el vástago?"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "¿Qué forma de tapa prefieres?"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "¿De qué color quieres la tapa?"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "¿De qué color quieres el escurridor?"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+  - op: step.set
+    product: "Tratamiento de Noche"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "¿Qué tamaño de botella prefieres?"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 2
+        panel: 1
+        pregunta: "¿De qué color quieres la botella?"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "¿Qué altura de vástago prefieres?"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 4
+        panel: 2
+        pregunta: "¿De qué color quieres el vástago?"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "¿Qué forma de tapa prefieres?"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 6
+        panel: 3
+        pregunta: "¿De qué color quieres la tapa?"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "¿De qué color quieres el escurridor?"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+  - op: step.set
+    product: "Lip Gloss"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "¿Qué tipo de punta prefieres?"
+        attribute: "Tipo de Punta"
+        variantProduct: "Punta Lip Gloss"
+      - sortOrder: 2
+        panel: 2
+        pregunta: "¿Qué tamaño de botella prefieres?"
+        attribute: "Tamaño de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 3
+        panel: 2
+        pregunta: "¿De qué color quieres la botella?"
+        attribute: "Color de Botella"
+        variantProduct: "Botella"
+      - sortOrder: 4
+        panel: 3
+        pregunta: "¿Qué altura de vástago prefieres?"
+        attribute: "Altura de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 5
+        panel: 3
+        pregunta: "¿De qué color quieres el vástago?"
+        attribute: "Color de Vastago"
+        variantProduct: "Vastago"
+      - sortOrder: 6
+        panel: 4
+        pregunta: "¿Qué forma de tapa prefieres?"
+        attribute: "Forma de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 7
+        panel: 4
+        pregunta: "¿De qué color quieres la tapa?"
+        attribute: "Color de Sobretapa"
+        variantProduct: "Sobretapa"
+      - sortOrder: 8
+        panel: 5
+        pregunta: "¿De qué color quieres el escurridor?"
+        attribute: "Color de Escurridor"
+        variantProduct: "Escurridor"
+  - { op: attr.delete, name: "Color de Cepillo Nylon" }
+  - { op: attr.delete, name: "Capacidad de Botella" }

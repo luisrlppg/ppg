@@ -36,6 +36,14 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 - **Sobretapa** (id 8, `STP`) · **Escurridor** (id 9, `ESC`) · **Cepillo Silicon** (id 10, `CSI`) ·
   **Cepillo Nylon** (id 11, `CNI`).
 - **PVC** (id 86, `PVC`) — uom `kg`.
+- **BTVPE — Tamaño de Botella (2026-10-04):** el componente **Botella** tiene el eje
+  `Tamaño de Botella` (`Mini` 10mm/48mm, `Alta` 10mm/80mm, `Chica` 15mm/60mm, `Grande` 15mm/80mm),
+  derivado de `Tamaño rosca` + `Altura de Botella`. Reemplaza al extinto `Capacidad de Botella`
+  (mL); la capacidad fue a `notas`. Los BTVPE restrictan a `Chica,Grande` (o los 4 en Delineador/
+  Tratamiento de Noche).
+- **Colores:** `Color de Cepillo Silicon` (Blanco/Negro) es eje de **Cepillo Silicon**; el cepillo
+  nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`). Los BTVPE usan
+  `Forma de Sobretapa` (no `Forma de Taparrosca`, que sigue para otros productos).
 - **Palillos** (reorg `scripts/reorg-palillos.ts`):
   - **Palillo Sin Cepillo** (id 42, `P0014`) — componente; eje `Color de Palillo`.
   - **Palillo Citologico Sin Cepillo** (`P0032`) — componente; eje `Color de Palillo Citologico` (sólo `Blanco`).
@@ -80,11 +88,18 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 
 ## Pasos del storefront (`ProductPasso`)
 
-- **6 pasos** para Taparrosca con Pincel (pasos 1-3 → Vástago, paso 4 → Pincel, pasos 5-6 → Taparrosca).
-- Aunque `variantProductId` apunta a los componentes, `getPasos` arma las opciones de cada paso
-  desde las **variantes publicadas del producto navegado** (`productId`), porque los componentes
-  (Vástago/Pincel) no siempre tienen variantes reconvertidas por atributo. `variantProductId` sólo
-  se conserva por compatibilidad en la respuesta.
+- **Modelo B (vigente 2026-10-04):** cada paso saca sus opciones de las **variantes activas del
+  componente** (`variantProductId`), no del producto navegado. Al elegir una opción se eligen las
+  variantes de un componente y sus ejes compartidos filtran los pasos siguientes (cascada).
+- **`panel`** agrupa pasos que se muestran juntos (ej. característica + color). Reemplaza la
+  detección por texto (`isQtyStep` se retiró). El paso explícito de cantidad vive en *Revisar*.
+- `getPasos(productId, seleccion)` acepta la selección para filtrar por compatibilidad (ej. rosca).
+  `resolverConfiguracion` une la selección + ejes derivados y materializa/reutiliza la variante
+  vendible. La agrupación se calcula por `panel`; los pasos sin `attributeId` no se emiten.
+- **Taparrosca con Pincel** aún usa el patrón antiguo (pasos 1-3 → Vástago, paso 4 → Pincel,
+  pasos 5-6 → Taparrosca); migrar a panel es opcional.
+- Los **5 BTVPE** (Rimel Silicon/Nylon, Delineador, Tratamiento de Noche, Lip Gloss) usan Modelo B:
+  primer paso = `Tamaño de Botella` (componente Botella), que deriva `Tamaño rosca` y altura.
 
 ## Reglas de negocio relevantes
 

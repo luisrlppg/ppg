@@ -108,10 +108,10 @@ async function main() {
         product: p.nombre,
         steps: p.passos.map((s) => ({
           sortOrder: s.sortOrder,
+          panel: s.panel,
           pregunta: s.pregunta,
           ...(s.attribute ? { attribute: s.attribute.nombre } : {}),
           ...(s.variantProductId ? { variantProduct: productName.get(s.variantProductId) ?? null } : {}),
-          ...(s.isQtyStep ? { isQtyStep: true } : {}),
         })),
       });
     }

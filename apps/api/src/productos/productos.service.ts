@@ -76,6 +76,7 @@ export class ProductosService {
       include: {
         category: true,
         attributeLines: { include: { attribute: true }, orderBy: { sortOrder: "asc" } },
+        passos: { orderBy: { sortOrder: "asc" } },
         components: { include: { component: { select: { id: true, nombre: true } } } },
         variants: {
           include: {
@@ -114,6 +115,14 @@ export class ProductosService {
         nombre: c.component.nombre,
         cantidad: dec(c.cantidad),
         tipo: c.tipo,
+      })),
+      pasos: p.passos.map((s) => ({
+        id: s.id,
+        sortOrder: s.sortOrder,
+        panel: s.panel,
+        pregunta: s.pregunta,
+        attributeId: s.attributeId,
+        variantProductId: s.variantProductId,
       })),
       porUbicacion: undefined,
     };
@@ -250,6 +259,54 @@ export class ProductosService {
       }
     });
     return { ok: true, permitidos: valueIds };
+  }
+
+  /** Pasos guiados del storefront (para el editor del producto). */
+  async getPasos(productId: number) {
+    const passos = await this.prisma.productPasso.findMany({
+      where: { productId },
+      orderBy: { sortOrder: "asc" },
+    });
+    return passos.map((s) => ({
+      id: s.id,
+      sortOrder: s.sortOrder,
+      panel: s.panel,
+      pregunta: s.pregunta,
+      attributeId: s.attributeId,
+      variantProductId: s.variantProductId,
+    }));
+  }
+
+  /** Reemplaza los pasos guiados del storefront (wizard de ventas). */
+  async setPasos(
+    productId: number,
+    pasos: { sortOrder?: number; panel?: number; pregunta: string; attributeId?: number | null; variantProductId?: number | null }[],
+  ) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException("Producto no encontrado");
+
+    const attrIds = [...new Set(pasos.map((p) => p.attributeId).filter((x): x is number => x != null))];
+    if (attrIds.length > 0) {
+      const existentes = await this.prisma.attribute.count({ where: { id: { in: attrIds } } });
+      if (existentes !== attrIds.length) throw new BadRequestException("Algún atributo no existe");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.productPasso.deleteMany({ where: { productId } });
+      for (const [i, p] of pasos.entries()) {
+        await tx.productPasso.create({
+          data: {
+            productId,
+            sortOrder: p.sortOrder ?? i,
+            panel: p.panel ?? i,
+            pregunta: p.pregunta,
+            attributeId: p.attributeId ?? null,
+            variantProductId: p.variantProductId ?? null,
+          },
+        });
+      }
+    });
+    return { ok: true };
   }
 
   async setComponentes(

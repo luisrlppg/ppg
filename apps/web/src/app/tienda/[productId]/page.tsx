@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { getPasosCached } from "@/lib/pasos-cache";
+import { getPasosCached, getPasosConSeleccion } from "@/lib/pasos-cache";
+import { buildPaneles, esPanelResuelto, resolver, seleccionActual, autoSeleccionar } from "@/lib/pasos-wizard";
 import type { Passo, PassoOption, ConfiguracionLinea } from "@/lib/types";
 
 interface ProductoBasico {
@@ -12,36 +13,6 @@ interface ProductoBasico {
   skuBase: string;
   uom: string;
   basePrice: number;
-}
-
-interface PasoUI {
-  passo: Passo;
-  seleccion: string;
-  seleccionVariantId: number | null;
-}
-
-// Panel = conjunto de passos mostrados juntos (característica + color de un componente)
-type Panel = { charIdx: number | null; colorIdx: number | null };
-
-function esPasoColor(passo: Passo): boolean {
-  return /¿de qué color/i.test(passo.pregunta);
-}
-
-function buildPaneles(passos: Passo[]): Panel[] {
-  const result: Panel[] = [];
-  for (let i = 0; i < passos.length; i++) {
-    if (esPasoColor(passos[i])) {
-      const prev = result[result.length - 1];
-      if (prev && prev.charIdx !== null && prev.colorIdx === null) {
-        prev.colorIdx = i;
-      } else {
-        result.push({ charIdx: null, colorIdx: i });
-      }
-    } else {
-      result.push({ charIdx: i, colorIdx: null });
-    }
-  }
-  return result;
 }
 
 export default function TiendaPage() {
@@ -53,31 +24,23 @@ export default function TiendaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selecciones, setSelecciones] = useState<PasoUI[]>([]);
+  const [selIdx, setSelIdx] = useState<Record<number, number | undefined>>({});
   const [panelActual, setPanelActual] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [pedidoNumero, setPedidoNumero] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState("");
+  const [skuFinal, setSkuFinal] = useState("");
 
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
 
-  const carregar = useCallback(async () => {
+  const cargar = useCallback(async () => {
     try {
-      const [p, ps] = await Promise.all([
-        api<ProductoBasico>(`/productos/${pid}`),
-        getPasosCached(pid),
-      ]);
+      const [p, ps] = await Promise.all([api<ProductoBasico>(`/productos/${pid}`), getPasosCached(pid)]);
       setProducto(p);
-      const attrSteps = ps.filter((s) => !s.isQtyStep);
-      setPassos(attrSteps);
-      setSelecciones(attrSteps.map((s) => ({
-        passo: s,
-        seleccion: "",
-        seleccionVariantId: null,
-      })));
+      setPassos(ps);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -85,119 +48,68 @@ export default function TiendaPage() {
     }
   }, [pid]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => { cargar(); }, [cargar]);
 
-  const passosAtributo = passos;
-  const paneles = useMemo(() => buildPaneles(passosAtributo), [passosAtributo]);
-  // totalPasos = paneles + 1 (la revisión final)
-  const totalPasos = paneles.length + 1;
-
-  function seleccionarOpcion(pasoIdx: number, opt: PassoOption) {
-    setSelecciones((prev) => {
-      const next = [...prev];
-      next[pasoIdx] = { ...next[pasoIdx], seleccion: opt.valor, seleccionVariantId: opt.variantId };
-      return next;
-    });
-  }
-
-  function opcionesDelPaso(pasoIdx: number): PassoOption[] {
-    const paso = passosAtributo[pasoIdx];
-    if (!paso) return [];
-
-    if (pasoIdx === 0) return paso.opciones;
-
-    let compatibles: Set<number> | undefined;
-    for (let i = 0; i < pasoIdx; i++) {
-      const selVid = selecciones[i]?.seleccionVariantId;
-      if (selVid === null || selVid === undefined) continue;
-      const variantesDeEsteValor = new Set(
-        passosAtributo[i].opciones.filter((o) => o.variantId === selVid).map((o) => o.variantId),
-      );
-      if (compatibles === undefined) {
-        compatibles = variantesDeEsteValor;
-      } else {
-        compatibles = new Set(Array.from(compatibles).filter((v) => variantesDeEsteValor.has(v)));
-      }
-    }
-    if (compatibles === undefined) return paso.opciones;
-    return paso.opciones.filter((o) => compatibles.has(o.variantId));
-  }
-
-  // Auto-selecciona cualquier paso que quede con una sola variante compatible
-  // (p. ej. colores de un solo valor: no se muestran y se eligen automáticamente).
+  // Recarga las opciones del servidor cuando cambia la selección (cascada).
   useEffect(() => {
-    setSelecciones((prev) => {
-      let changed = false;
-      const next = prev.map((s) => ({ ...s }));
-      for (let i = 0; i < passosAtributo.length; i++) {
-        if (next[i]?.seleccionVariantId) continue;
-        const opts = opcionesDelPaso(i);
-        const unique = [...new Set(opts.map((o) => o.variantId))];
-        if (unique.length === 1 && opts.length > 0) {
-          const opt = opts[0];
-          next[i] = { passo: passosAtributo[i], seleccion: opt.valor, seleccionVariantId: opt.variantId };
-          changed = true;
-        }
-      }
+    if (passos.length === 0) return;
+    const sel = seleccionActual(passos, selIdx);
+    if (sel.length === 0) return;
+    let cancel = false;
+    getPasosConSeleccion(pid, sel).then((ps) => { if (!cancel) setPassos(ps); }).catch(() => {});
+    return () => { cancel = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(selIdx)]);
+
+  // Auto-selección de pasos con una sola opción.
+  useEffect(() => {
+    if (passos.length === 0) return;
+    setSelIdx((prev) => {
+      const { next, changed } = autoSeleccionar(passos, prev);
       return changed ? next : prev;
     });
-  });
+  }, [passos]);
 
-  function panelResuelto(p: Panel): boolean {
-    if (p.charIdx !== null) {
-      if (!selecciones[p.charIdx]?.seleccionVariantId) return false;
-    }
-    if (p.colorIdx !== null) {
-      if (!selecciones[p.colorIdx]?.seleccionVariantId) return false;
-    }
-    return true;
+  const paneles = useMemo(() => buildPaneles(passos), [passos]);
+  const totalPasos = paneles.length + 1;
+  const esRevision = panelActual >= paneles.length;
+
+  function seleccionarOpcion(pasoIdx: number, opt: PassoOption) {
+    setSelIdx((prev) => ({ ...prev, [pasoIdx]: opt.valueId }));
+  }
+
+  function panelResuelto(p: { pasos: number[] }): boolean {
+    return esPanelResuelto(p, selIdx);
   }
 
   function puedeAvanzar(): boolean {
-    if (panelActual < paneles.length) {
-      return panelResuelto(paneles[panelActual]);
-    }
+    if (!esRevision) return panelResuelto(paneles[panelActual]);
     return cantidad > 0;
   }
 
-  function variantIdFinal(): number | null {
-    const last = selecciones[selecciones.length - 1];
-    return last?.seleccionVariantId ?? null;
-  }
-
-  function variantSkuFinal(): string {
-    const last = selecciones[selecciones.length - 1];
-    if (!last?.seleccionVariantId) return "";
-    const opt = last.passo.opciones.find((o) => o.variantId === last.seleccionVariantId);
-    return opt?.sku ?? "";
-  }
-
   async function confirmarPedido() {
-    const vid = variantIdFinal();
-    if (!vid) { setSubmitError("No se ha seleccionado una configuración válida."); return; }
     setSubmitting(true);
     setSubmitError("");
     try {
-      const pasosConfig = selecciones.map((s, i) => {
-        const attrsForThisVariant = passosAtributo[i].opciones.filter((o) => o.variantId === s.seleccionVariantId);
-        const valores = [...new Set(attrsForThisVariant.map((o) => o.valor))];
-        return {
-          pregunta: s.passo.pregunta,
-          opciones: valores,
-          seleccion: s.seleccion,
-        };
-      });
-      const cfg: ConfiguracionLinea = { pasos: pasosConfig };
-      const r = await api<{ numero: string }>("public/orders", {
+      const r = await resolver(pid, passos, selIdx, true);
+      if (!r.variantId) { setSubmitError("No se pudo armar esa configuración."); return; }
+      setSkuFinal(r.sku ?? "");
+      const cfg: ConfiguracionLinea = {
+        pasos: passos.map((p, i) => {
+          const opt = p.opciones.find((o) => o.valueId === selIdx[i]);
+          return { pregunta: p.pregunta, opciones: [], seleccion: opt?.valor ?? "" };
+        }),
+      };
+      const res = await api<{ numero: string }>("public/orders", {
         method: "POST",
         body: JSON.stringify({
           nombre: nombre || undefined,
           telefono: telefono || undefined,
           email: email || undefined,
-          lines: [{ variantId: vid, cantidad, configuracion: JSON.stringify(cfg) }],
+          lines: [{ variantId: r.variantId, cantidad, configuracion: JSON.stringify(cfg) }],
         }),
       });
-      setPedidoNumero(r.numero);
+      setPedidoNumero(res.numero);
     } catch (e) {
       setSubmitError((e as Error).message);
     } finally {
@@ -205,21 +117,8 @@ export default function TiendaPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <p>Cargando producto…</p>
-      </div>
-    );
-  }
-
-  if (error || !producto) {
-    return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <p style={{ color: "red" }}>{error || "Producto no encontrado."}</p>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ padding: 40, textAlign: "center" }}><p>Cargando producto…</p></div>;
+  if (error || !producto) return <div style={{ padding: 40, textAlign: "center" }}><p style={{ color: "red" }}>{error || "Producto no encontrado."}</p></div>;
 
   if (pedidoNumero) {
     return (
@@ -235,24 +134,21 @@ export default function TiendaPage() {
   }
 
   const panel = paneles[panelActual];
-  const esRevision = panelActual >= paneles.length;
 
-  const renderOpciones = (stepIdx: number, onSelect: (o: PassoOption) => void) => {
-    const opts = opcionesDelPaso(stepIdx);
-    if (opts.length === 0) {
-      return null;
-    }
-    // Se oculta el selector cuando solo queda 1 opción (se auto-selecciona)
-    const unique = new Set(opts.map((o) => o.variantId));
-    if (unique.size === 1) return null;
+  const renderOpciones = (stepIdx: number) => {
+    const paso = passos[stepIdx];
+    if (!paso) return null;
+    const opts = paso.opciones;
+    if (opts.length === 0) return null;
+    if (new Set(opts.map((o) => o.valueId)).size === 1) return null;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {opts.map((opt) => {
-          const sel = selecciones[stepIdx]?.seleccionVariantId === opt.variantId;
+          const sel = selIdx[stepIdx] === opt.valueId;
           return (
             <button
-              key={`${opt.variantId}-${opt.valueId}`}
-              onClick={() => onSelect(opt)}
+              key={`${paso.attributeId}-${opt.valueId}`}
+              onClick={() => seleccionarOpcion(stepIdx, opt)}
               style={{
                 padding: "12px 16px",
                 border: sel ? "2px solid var(--primary)" : "1px solid #ccc",
@@ -260,19 +156,12 @@ export default function TiendaPage() {
                 background: sel ? "#eff6ff" : "white",
                 cursor: "pointer",
                 textAlign: "left",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
               }}
             >
               <span style={{ fontWeight: sel ? "bold" : "normal" }}>{opt.valor}</span>
-              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {opt.enStock ? (
-                  <span style={{ fontSize: "0.8em", color: "var(--success)" }}>En stock</span>
-                ) : (
-                  <span style={{ fontSize: "0.8em", color: "var(--warning)" }}>Sin stock</span>
-                )}
-                <span className="muted small">{opt.sku}</span>
+              <span style={{ fontSize: "0.8em", color: opt.enStock ? "var(--success)" : "var(--warning)" }}>
+                {opt.enStock ? "En stock" : "Sin stock"}
               </span>
             </button>
           );
@@ -281,22 +170,9 @@ export default function TiendaPage() {
     );
   };
 
-  const renderSubPaso = (stepIdx: number) => {
-    if (stepIdx === null || stepIdx === undefined) return null;
-    const paso = passosAtributo[stepIdx];
-    if (!paso) return null;
-    return (
-      <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: "0 0 8px", fontSize: "0.95em" }}>{paso.pregunta}</h4>
-        {renderOpciones(stepIdx, (o) => seleccionarOpcion(stepIdx, o))}
-      </div>
-    );
-  };
-
   const panelTitle = (() => {
-    const firstIdx = panel?.charIdx ?? panel?.colorIdx;
-    const firstPaso = firstIdx != null ? passosAtributo[firstIdx] : undefined;
-    return firstPaso?.pregunta ?? "";
+    const firstIdx = panel?.pasos[0];
+    return firstIdx != null ? passos[firstIdx]?.pregunta ?? "" : "";
   })();
 
   return (
@@ -317,10 +193,7 @@ export default function TiendaPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             {Array.from({ length: totalPasos }).map((_, i) => (
-              <div key={i} style={{
-                flex: 1, height: 4, borderRadius: 2,
-                background: i <= panelActual ? "var(--primary)" : "#ddd",
-              }} />
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= panelActual ? "var(--primary)" : "#ddd" }} />
             ))}
           </div>
           <p className="muted small" style={{ marginTop: 6 }}>
@@ -334,12 +207,13 @@ export default function TiendaPage() {
             <>
               <h3 style={{ marginTop: 0 }}>{panelTitle}</h3>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                {panel.charIdx !== null && renderSubPaso(panel.charIdx)}
-                {panel.charIdx !== null && panel.colorIdx !== null && (
-                  <div style={{ margin: "4px 0", fontSize: "0.85em", color: "#666" }}>Colócalo de color:</div>
-                )}
-                {panel.colorIdx !== null && renderSubPaso(panel.colorIdx)}
-                {((panel.charIdx === null || !opcionesDelPaso(panel.charIdx).length) && (panel.colorIdx === null || !opcionesDelPaso(panel.colorIdx).length)) && (
+                {panel.pasos.map((stepIdx) => (
+                  <div key={stepIdx} style={{ marginBottom: 16 }}>
+                    <h4 style={{ margin: "0 0 8px", fontSize: "0.95em" }}>{passos[stepIdx]?.pregunta}</h4>
+                    {renderOpciones(stepIdx)}
+                  </div>
+                ))}
+                {panel.pasos.every((i) => (passos[i]?.opciones.length ?? 0) === 0) && (
                   <p className="muted">Completa el paso anterior primero.</p>
                 )}
               </div>
@@ -351,12 +225,15 @@ export default function TiendaPage() {
               <h3 style={{ marginTop: 0 }}>Revisa tu pedido</h3>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
-                  {selecciones.map((s, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                      <td style={{ padding: "8px 0", color: "#666" }}>{s.passo.pregunta}</td>
-                      <td style={{ padding: "8px 0", textAlign: "right", fontWeight: "bold" }}>{s.seleccion}</td>
-                    </tr>
-                  ))}
+                  {passos.map((s, i) => {
+                    const opt = s.opciones.find((o) => o.valueId === selIdx[i]);
+                    return (
+                      <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                        <td style={{ padding: "8px 0", color: "#666" }}>{s.pregunta}</td>
+                        <td style={{ padding: "8px 0", textAlign: "right", fontWeight: "bold" }}>{opt?.valor ?? "—"}</td>
+                      </tr>
+                    );
+                  })}
                   <tr style={{ borderBottom: "1px solid #eee" }}>
                     <td style={{ padding: "8px 0", color: "#666" }}>Cantidad</td>
                     <td style={{ padding: "8px 0", textAlign: "right" }}>
@@ -371,10 +248,12 @@ export default function TiendaPage() {
                       <span style={{ marginLeft: 6, color: "#666" }}>{producto.uom}(s)</span>
                     </td>
                   </tr>
-                  <tr>
-                    <td style={{ padding: "8px 0", color: "#666" }}>SKU final</td>
-                    <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "monospace" }}>{variantSkuFinal()}</td>
-                  </tr>
+                  {skuFinal && (
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>SKU final</td>
+                      <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "monospace" }}>{skuFinal}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
@@ -393,24 +272,14 @@ export default function TiendaPage() {
 
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
             {panelActual > 0 ? (
-              <button className="btn ghost" onClick={() => setPanelActual(panelActual - 1)}>
-                ← Atrás
-              </button>
+              <button className="btn ghost" onClick={() => setPanelActual(panelActual - 1)}>← Atrás</button>
             ) : <span />}
             {!esRevision ? (
-              <button
-                className="btn primary"
-                onClick={() => setPanelActual(panelActual + 1)}
-                disabled={!puedeAvanzar()}
-              >
+              <button className="btn primary" onClick={() => setPanelActual(panelActual + 1)} disabled={!puedeAvanzar()}>
                 {panelActual === paneles.length - 1 ? "Revisar →" : "Siguiente →"}
               </button>
             ) : (
-              <button
-                className="btn primary"
-                onClick={confirmarPedido}
-                disabled={submitting || !variantIdFinal()}
-              >
+              <button className="btn primary" onClick={confirmarPedido} disabled={submitting || !passos.every((_, i) => selIdx[i] !== undefined)}>
                 {submitting ? "Enviando…" : "Confirmar pedido"}
               </button>
             )}

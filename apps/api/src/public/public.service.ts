@@ -3,28 +3,42 @@ import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { valoresPermitidosLote } from "../common/valores-permitidos";
 import { PrismaService } from "../prisma/prisma.service";
+import { ProductosService } from "../productos/productos.service";
 
 export interface PassoOption {
   valueId: number;
   valor: string;
-  variantId: number;
-  sku: string;
   enStock: boolean;
-  uom: string;
 }
 
 export interface Passo {
   sortOrder: number;
+  panel: number;
   pregunta: string;
-  attributeId: number | null;
+  attributeId: number;
   variantProductId: number;
-  isQtyStep: boolean;
   opciones: PassoOption[];
+}
+
+export interface SeleccionPaso {
+  attributeId: number;
+  valueId: number;
+}
+
+export interface ResolucionVariante {
+  variantId: number | null;
+  sku: string | null;
+  nombre: string | null;
+  existe: boolean;
+  creada?: boolean;
 }
 
 @Injectable()
 export class PublicService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly productos: ProductosService,
+  ) {}
 
   /** Alta de pedido web (invitado). Los precios se recalculan en servidor:
    *  nunca se confía en el precio del cliente (§7.7). */
@@ -99,7 +113,10 @@ export class PublicService {
     const rows = await this.prisma.product.findMany({
       where: {
         activo: true,
-        variants: { some: { activo: true, published: true } },
+        OR: [
+          { variants: { some: { activo: true, published: true } } },
+          { passos: { some: {} } },
+        ],
       },
       include: {
         variants: {
@@ -143,7 +160,13 @@ export class PublicService {
     }));
   }
 
-  async getPasos(productId: number): Promise<Passo[]> {
+  /**
+   * Arma los pasos guiados del storefront. Las opciones de cada paso salen de las
+   * variantes ACTIVAS del componente (`variantProductId`) que tengan ese atributo,
+   * filtradas por los valores permitidos del producto. Si se pasa `seleccion`, se
+   * filtran además por compatibilidad con lo elegido (ejes compartidos, p. ej. rosca).
+   */
+  async getPasos(productId: number, seleccion: SeleccionPaso[] = []): Promise<Passo[]> {
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundException(`Producto ${productId} no encontrado`);
 
@@ -151,61 +174,149 @@ export class PublicService {
       where: { productId },
       orderBy: { sortOrder: "asc" },
     });
+    if (passos.length === 0) return [];
 
-    // Carga "en lote" para evitar el N+1: 1 query de valores + 1 de variantes,
-    // y se agrupa en memoria por (atributo, valor).
     const attrIds = [...new Set(passos.filter((p) => p.attributeId != null).map((p) => p.attributeId!))];
     const permitidos = await valoresPermitidosLote(this.prisma, product.id, attrIds);
     const values = await this.prisma.attributeValue.findMany({
       where: { attributeId: { in: attrIds } },
       orderBy: { valor: "asc" },
     });
+    const valorPorId = new Map(values.map((v) => [v.id, v.valor]));
 
-    const variantesPublicadas = await this.prisma.productVariant.findMany({
-      where: { productId: product.id, published: true },
-      include: { variantAttributes: true, stockLevels: true, product: { select: { uom: true } } },
+    // Variantes activas de los componentes referenciados por los pasos.
+    const componentIds = [...new Set(passos.map((p) => p.variantProductId ?? p.productId))];
+    const variantes = await this.prisma.productVariant.findMany({
+      where: { productId: { in: componentIds }, activo: true },
+      include: { variantAttributes: true, stockLevels: true },
     });
-    const porValor = new Map<number, { variantId: number; sku: string; enStock: boolean; uom: string }[]>();
-    for (const variant of variantesPublicadas) {
-      const enStock = variant.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
-      const uom = variant.product.uom as string;
-      for (const va of variant.variantAttributes) {
-        const arr = porValor.get(va.valueId) ?? [];
-        arr.push({ variantId: variant.id, sku: variant.sku, enStock, uom });
-        porValor.set(va.valueId, arr);
-      }
+    const porProducto = new Map<number, typeof variantes>();
+    for (const v of variantes) {
+      const arr = porProducto.get(v.productId) ?? [];
+      arr.push(v);
+      porProducto.set(v.productId, arr);
     }
+    type Variante = (typeof variantes)[number];
+    const attrsDe = (v: Variante) => new Map(v.variantAttributes.map((va) => [va.attributeId, va.valueId]));
+    const enStockDe = (v: Variante) => v.stockLevels.reduce((a, l) => a + dec(l.qty), 0) > 0;
 
-    const result: Passo[] = [];
-    for (const passo of passos) {
-      const vpId = passo.variantProductId ?? passo.productId;
-      if (passo.isQtyStep || !passo.attributeId) {
-        result.push({ sortOrder: passo.sortOrder, pregunta: passo.pregunta, attributeId: null, variantProductId: vpId, isQtyStep: passo.isQtyStep, opciones: [] });
-        continue;
-      }
-      const permitidosSet = new Set(permitidos.get(passo.attributeId) ?? []);
-      const opciones: PassoOption[] = [];
-      for (const v of values) {
-        if (v.attributeId !== passo.attributeId) continue;
-        if (!permitidosSet.has(v.id)) continue;
-        for (const variant of porValor.get(v.id) ?? []) {
-          opciones.push({ valueId: v.id, valor: v.valor, variantId: variant.variantId, sku: variant.sku, enStock: variant.enStock, uom: variant.uom });
+    const componentePorAtributo = new Map<number, number>();
+    for (const p of passos) if (p.attributeId != null) componentePorAtributo.set(p.attributeId, p.variantProductId ?? p.productId);
+
+    // Una variante candidata es compatible si, para cada selección previa, coincide
+    // con las variantes del componente elegido en todos los ejes que comparten.
+    const esCompatible = (cand: Variante): boolean => {
+      const ca = attrsDe(cand);
+      for (const s of seleccion) {
+        const compSel = componentePorAtributo.get(s.attributeId);
+        if (compSel === undefined) continue;
+        const matchSel = (porProducto.get(compSel) ?? []).filter((v) => attrsDe(v).get(s.attributeId) === s.valueId);
+        if (matchSel.length === 0) return false;
+        for (const [attrId, valId] of ca) {
+          if (!matchSel.some((m) => attrsDe(m).has(attrId))) continue;
+          if (!matchSel.some((m) => attrsDe(m).get(attrId) === valId)) return false;
         }
       }
-      const seen = new Map<string, PassoOption>();
-      for (const o of opciones) {
-        const key = `${o.valueId}-${o.variantId}`;
-        if (!seen.has(key)) seen.set(key, o);
-      }
-      result.push({
-        sortOrder: passo.sortOrder,
-        pregunta: passo.pregunta,
-        attributeId: passo.attributeId,
-        variantProductId: vpId,
-        isQtyStep: false,
-        opciones: [...seen.values()].sort((a, b) => a.valor.localeCompare(b.valor)),
+      return true;
+    };
+
+    return passos
+      .filter((p) => p.attributeId != null)
+      .map((passo) => {
+        const attrId = passo.attributeId!;
+        const componenteId = passo.variantProductId ?? passo.productId;
+        const permitidosSet = new Set(permitidos.get(attrId) ?? []);
+        const compatibles = (porProducto.get(componenteId) ?? []).filter((v) => {
+          const val = attrsDe(v).get(attrId);
+          return val !== undefined && permitidosSet.has(val) && esCompatible(v);
+        });
+        const porValor = new Map<number, boolean>();
+        for (const v of compatibles) {
+          const valueId = attrsDe(v).get(attrId)!;
+          porValor.set(valueId, (porValor.get(valueId) ?? false) || enStockDe(v));
+        }
+        const opciones: PassoOption[] = [...porValor.entries()]
+          .map(([valueId, enStock]) => ({ valueId, valor: valorPorId.get(valueId) ?? String(valueId), enStock }))
+          .sort((a, b) => a.valor.localeCompare(b.valor));
+        return {
+          sortOrder: passo.sortOrder,
+          panel: passo.panel,
+          pregunta: passo.pregunta,
+          attributeId: attrId,
+          variantProductId: componenteId,
+          opciones,
+        };
       });
+  }
+
+  /**
+   * Resuelve (y opcionalmente materializa) la variante vendible del producto a partir
+   * de la selección de componentes. Deduce los ejes que no son paso (p. ej.
+   * `Tamaño rosca`) desde las variantes del componente elegido.
+   */
+  async resolverConfiguracion(
+    productId: number,
+    seleccion: SeleccionPaso[],
+    opts: { crear?: boolean } = {},
+  ): Promise<ResolucionVariante> {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException(`Producto ${productId} no encontrado`);
+
+    const axes = await this.prisma.productAttributeLine.findMany({
+      where: { productId },
+      orderBy: { sortOrder: "asc" },
+      include: { attribute: true },
+    });
+    if (axes.length === 0) throw new BadRequestException("El producto no tiene ejes configurados");
+
+    const passos = await this.prisma.productPasso.findMany({ where: { productId } });
+    const componentePorAtributo = new Map<number, number>();
+    for (const p of passos) if (p.attributeId != null) componentePorAtributo.set(p.attributeId, p.variantProductId ?? p.productId);
+
+    const combo = new Map<number, number>();
+    for (const s of seleccion) {
+      const componenteId = componentePorAtributo.get(s.attributeId);
+      if (componenteId === undefined) continue;
+      combo.set(s.attributeId, s.valueId);
+      const variantes = await this.prisma.productVariant.findMany({
+        where: { productId: componenteId, activo: true },
+        include: { variantAttributes: true },
+      });
+      const match = variantes.filter((v) => v.variantAttributes.some((va) => va.attributeId === s.attributeId && va.valueId === s.valueId));
+      if (match.length === 0) continue;
+      for (const axe of axes) {
+        if (combo.has(axe.attributeId)) continue;
+        const vals = new Set<number>();
+        for (const m of match) {
+          const va = m.variantAttributes.find((x) => x.attributeId === axe.attributeId);
+          if (va) vals.add(va.valueId);
+        }
+        if (vals.size === 1) combo.set(axe.attributeId, [...vals][0]);
+      }
     }
-    return result;
+
+    const faltantes = axes.filter((a) => !combo.has(a.attributeId)).map((a) => a.attribute.nombre);
+    if (faltantes.length > 0) {
+      throw new BadRequestException(`Selección incompleta: falta ${faltantes.join(", ")}`);
+    }
+
+    const valueIds = axes.map((a) => combo.get(a.attributeId)!);
+    const candidatas = await this.prisma.productVariant.findMany({
+      where: { productId, activo: true },
+      include: { variantAttributes: true },
+    });
+    const existente = candidatas.find((v) =>
+      valueIds.every((vid, i) => v.variantAttributes.some((va) => va.attributeId === axes[i].attributeId && va.valueId === vid)),
+    );
+    if (existente) {
+      return { variantId: existente.id, sku: existente.sku, nombre: existente.nombre, existe: true };
+    }
+    if (!opts.crear) {
+      return { variantId: null, sku: null, nombre: null, existe: false };
+    }
+
+    const variantId = await this.productos.materializar(productId, valueIds);
+    const creada = await this.prisma.productVariant.findUnique({ where: { id: variantId } });
+    return { variantId, sku: creada?.sku ?? null, nombre: creada?.nombre ?? null, existe: true, creada: true };
   }
 }

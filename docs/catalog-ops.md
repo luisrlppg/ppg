@@ -73,7 +73,7 @@ ops:
 | `product.define` | `nombre`, `sku`, `uom?`, `category?`, `basePrice?`, `hasVariants?`, `imagen?`, `activo?` | Crea/actualiza un producto (meta). |
 | `variant.define` | `sku`, `product`, `nombre?`, `attrs`, `price?`, `min?`, `max?`, `published?`, `longLead?`, `activo?`, `imagen?`, `notas?` | Crea/actualiza una variante y **define** sus valores de eje + meta. |
 | `bom.set` | `product`, `components: [{ component, cantidad, tipo }]` | Reemplaza el BOM del producto. |
-| `step.set` | `product`, `steps: [{ sortOrder, pregunta, attribute?, variantProduct?, isQtyStep? }]` | Reemplaza los pasos de tienda del producto. |
+| `step.set` | `product`, `steps: [{ sortOrder, panel?, pregunta, attribute?, variantProduct? }]` | Reemplaza los pasos de tienda del producto. `panel` agrupa pasos que se muestran juntos. |
 | `packaging.set` | `sku`, `empaques: [{ nombre, cantidad }]` | Reemplaza los empaques de la variante. |
 | `stock.set` | `sku`, `location`, `qty` | Fija el stock (apertura) y registra el movimiento. |
 

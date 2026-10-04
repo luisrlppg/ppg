@@ -20,6 +20,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Wizard de ventas — Modelo B (2026-10-04):** los pasos guiados (`ProductPasso`) pasaron a tomar
+  las opciones de las **variantes activas del componente** (`variantProductId`), no del producto
+  vendido. Se agregó `panel` (agrupa pasos; reemplaza el regex de color), `getPasos(id, seleccion)`
+  con cascada server-side y `resolverConfiguracion` (materializa/reutiliza la variante vendible;
+  tienda crea, venta interna pregunta). Nuevos endpoints `GET/POST public/productos/:id/pasos` y
+  `POST public/productos/:id/resolver`; editor de pasos en `/productos/[id]` (`GET/PUT
+  /productos/:id/pasos`); lógica compartida en `lib/pasos-wizard.ts`. Aplicado a los 5 BTVPE
+  (botella primero + `Tamaño de Botella`, colores por componente, `Forma de Sobretapa`). Ops en
+  `scripts/catalog/ops/btvpe-reconciliacion.yaml`. Ver [`plan-btvpe.md`](./plan-btvpe.md).
 - **Toolkit de catálogo + seed declarativo (2026-10-04):** `scripts/catalog/` con
   `snapshot`/`apply`/`odoo-diff`/`export-seed`; alias `cat:snapshot|apply|odoo-diff|export-seed|seed|stock`.
   El catálogo se define con ops YAML idempotentes y se reproduce con el seed versionado

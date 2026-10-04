@@ -223,6 +223,13 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       if (!a) throw new Error(`attr.restrictValues: no existe el atributo "${o.attribute}"`);
       const p = await productByName(tx, o.product);
       if (!p) throw new Error(`attr.restrictValues: no existe el producto "${o.product}"`);
+      const current = await tx.productAttributeValue.findMany({ where: { productId: p.id, attributeId: a.id }, include: { value: true } });
+      const curSet = current.map((c) => norm(c.value.valor)).sort();
+      const desSet = o.values.map(norm).sort();
+      if (curSet.length === desSet.length && curSet.every((v, i) => v === desSet[i])) {
+        log(`attr.restrictValues ya estaba: ${o.product}/${o.attribute}`);
+        return;
+      }
       await tx.productAttributeValue.deleteMany({ where: { productId: p.id, attributeId: a.id } });
       for (const v of o.values) {
         const val = await ensureValue(tx, a.id, v);
@@ -616,13 +623,13 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
     case "step.set": {
       const p = await productByName(tx, o.product);
       if (!p) throw new Error(`step.set: no existe el producto "${o.product}"`);
-      const desired: { sortOrder: number; pregunta: string; attributeId: number | null; variantProductId: number | null; isQtyStep: boolean }[] = [];
+      const desired: { sortOrder: number; pregunta: string; attributeId: number | null; variantProductId: number | null; panel: number }[] = [];
       for (const s of o.steps) {
         const a = s.attribute ? await attrBy(tx, s.attribute) : null;
         if (s.attribute && !a) throw new Error(`step.set: no existe el atributo "${s.attribute}"`);
         const vp = s.variantProduct ? await productByName(tx, s.variantProduct) : null;
         if (s.variantProduct && !vp) throw new Error(`step.set: no existe el producto "${s.variantProduct}"`);
-        desired.push({ sortOrder: s.sortOrder, pregunta: s.pregunta, attributeId: a?.id ?? null, variantProductId: vp?.id ?? null, isQtyStep: s.isQtyStep ?? false });
+        desired.push({ sortOrder: s.sortOrder, pregunta: s.pregunta, attributeId: a?.id ?? null, variantProductId: vp?.id ?? null, panel: s.panel ?? 0 });
       }
       const existing = await tx.productPasso.findMany({ where: { productId: p.id } });
       const same =
@@ -634,7 +641,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
               e.pregunta === d.pregunta &&
               e.attributeId === d.attributeId &&
               e.variantProductId === d.variantProductId &&
-              e.isQtyStep === d.isQtyStep,
+              e.panel === d.panel,
           ),
         );
       if (same) { log(`step.set ya estaba: ${o.product}`); return; }

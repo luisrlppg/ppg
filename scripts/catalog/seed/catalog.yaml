@@ -426,12 +426,6 @@ ops:
       - 20mm
       - 10mm
   - op: attr.ensure
-    name: Capacidad de Botella
-    values:
-      - 10mL
-      - 15mL
-      - 30mL
-  - op: attr.ensure
     name: Ceja
     values:
       - Delgada
@@ -461,10 +455,6 @@ ops:
       - Rosa silicon
       - Te verde
       - Transparente
-  - op: attr.ensure
-    name: Color de Cepillo Nylon
-    values:
-      - Negro
   - op: attr.ensure
     name: Color de Cepillo Silicon
     values:
@@ -669,6 +659,13 @@ ops:
       - Silicon chico
       - Silicon grande
   - op: attr.ensure
+    name: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
+      - Alta
+      - Mini
+  - op: attr.ensure
     name: Tamaño de Caja de Cartón
     values:
       - Chico
@@ -815,6 +812,10 @@ ops:
     attribute: Tipo de Botella
     sortOrder: 4
   - op: attr.assignAxis
+    product: Botella
+    attribute: Tamaño de Botella
+    sortOrder: 5
+  - op: attr.assignAxis
     product: Vastago
     attribute: Altura de Vastago
     sortOrder: 0
@@ -876,6 +877,10 @@ ops:
     sortOrder: 4
   - op: attr.assignAxis
     product: Cepillo Silicon
+    attribute: Color de Cepillo Silicon
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Cepillo Silicon
     attribute: Forma de cepillo silicon
     sortOrder: 2
   - op: attr.assignAxis
@@ -900,87 +905,99 @@ ops:
     sortOrder: 0
   - op: attr.assignAxis
     product: Rimel Silicon
-    attribute: Forma de cepillo nylon
+    attribute: Tamaño de Botella
     sortOrder: 1
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Botella
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Tamaño rosca
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Altura de Vastago
+    sortOrder: 4
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Vastago
+    sortOrder: 5
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Forma de Sobretapa
+    sortOrder: 6
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Sobretapa
+    sortOrder: 7
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Color de Escurridor
+    sortOrder: 8
+  - op: attr.assignAxis
+    product: Rimel Silicon
+    attribute: Forma de cepillo silicon
+    sortOrder: 9
   - op: attr.assignAxis
     product: Rimel Silicon
     attribute: Color de Cepillo Silicon
+    sortOrder: 10
+  - op: attr.restrictValues
+    product: Rimel Silicon
+    attribute: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Tamaño de Botella
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Rimel Nylon
+    attribute: Color de Botella
     sortOrder: 2
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Capacidad de Botella
+    product: Rimel Nylon
+    attribute: Tamaño rosca
     sortOrder: 3
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Color de Botella
+    product: Rimel Nylon
+    attribute: Altura de Vastago
     sortOrder: 4
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Tamaño rosca
+    product: Rimel Nylon
+    attribute: Color de Vastago
     sortOrder: 5
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Altura de Vastago
+    product: Rimel Nylon
+    attribute: Forma de Sobretapa
     sortOrder: 6
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Color de Vastago
+    product: Rimel Nylon
+    attribute: Color de Sobretapa
     sortOrder: 7
   - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Forma de Taparrosca
-    sortOrder: 8
-  - op: attr.assignAxis
-    product: Rimel Silicon
-    attribute: Color de Sobretapa
-    sortOrder: 9
-  - op: attr.assignAxis
-    product: Rimel Silicon
+    product: Rimel Nylon
     attribute: Color de Escurridor
-    sortOrder: 10
+    sortOrder: 8
   - op: attr.assignAxis
     product: Rimel Nylon
     attribute: Forma de cepillo nylon
-    sortOrder: 1
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Color de Cepillo Nylon
-    sortOrder: 2
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Capacidad de Botella
-    sortOrder: 3
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Color de Botella
-    sortOrder: 4
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Tamaño rosca
-    sortOrder: 5
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Altura de Vastago
-    sortOrder: 6
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Color de Vastago
-    sortOrder: 7
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Forma de Taparrosca
-    sortOrder: 8
-  - op: attr.assignAxis
-    product: Rimel Nylon
-    attribute: Color de Sobretapa
     sortOrder: 9
   - op: attr.assignAxis
     product: Rimel Nylon
-    attribute: Color de Escurridor
+    attribute: Color de Cerda de Cepillo
     sortOrder: 10
+  - op: attr.restrictValues
+    product: Rimel Nylon
+    attribute: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
   - op: attr.assignAxis
     product: Delineador
-    attribute: Capacidad de Botella
+    attribute: Tamaño de Botella
     sortOrder: 1
   - op: attr.assignAxis
     product: Delineador
@@ -1000,7 +1017,7 @@ ops:
     sortOrder: 5
   - op: attr.assignAxis
     product: Delineador
-    attribute: Forma de Taparrosca
+    attribute: Forma de Sobretapa
     sortOrder: 6
   - op: attr.assignAxis
     product: Delineador
@@ -1010,9 +1027,17 @@ ops:
     product: Delineador
     attribute: Color de Escurridor
     sortOrder: 8
+  - op: attr.restrictValues
+    product: Delineador
+    attribute: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
+      - Alta
+      - Mini
   - op: attr.assignAxis
     product: Tratamiento de Noche
-    attribute: Capacidad de Botella
+    attribute: Tamaño de Botella
     sortOrder: 1
   - op: attr.assignAxis
     product: Tratamiento de Noche
@@ -1032,7 +1057,7 @@ ops:
     sortOrder: 5
   - op: attr.assignAxis
     product: Tratamiento de Noche
-    attribute: Forma de Taparrosca
+    attribute: Forma de Sobretapa
     sortOrder: 6
   - op: attr.assignAxis
     product: Tratamiento de Noche
@@ -1042,9 +1067,21 @@ ops:
     product: Tratamiento de Noche
     attribute: Color de Escurridor
     sortOrder: 8
+  - op: attr.restrictValues
+    product: Tratamiento de Noche
+    attribute: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
+      - Alta
+      - Mini
   - op: attr.assignAxis
     product: Lip Gloss
-    attribute: Capacidad de Botella
+    attribute: Tipo de Punta
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Lip Gloss
+    attribute: Tamaño de Botella
     sortOrder: 2
   - op: attr.assignAxis
     product: Lip Gloss
@@ -1064,7 +1101,7 @@ ops:
     sortOrder: 6
   - op: attr.assignAxis
     product: Lip Gloss
-    attribute: Forma de Taparrosca
+    attribute: Forma de Sobretapa
     sortOrder: 7
   - op: attr.assignAxis
     product: Lip Gloss
@@ -1074,6 +1111,12 @@ ops:
     product: Lip Gloss
     attribute: Color de Escurridor
     sortOrder: 9
+  - op: attr.restrictValues
+    product: Lip Gloss
+    attribute: Tamaño de Botella
+    values:
+      - Chica
+      - Grande
   - op: attr.assignAxis
     product: Caja Cartón
     attribute: Tamaño de Caja de Cartón
@@ -1159,29 +1202,34 @@ ops:
     product: Taparrosca con Pincel
     steps:
       - sortOrder: 1
+        panel: 0
         pregunta: ¿Qué tamaño de rosca necesitas?
         attribute: Tamaño rosca
         variantProduct: Mango
       - sortOrder: 2
+        panel: 0
         pregunta: ¿Qué altura de vastago prefieres?
         attribute: Altura de Mango
         variantProduct: Mango
       - sortOrder: 3
+        panel: 0
         pregunta: ¿Qué tipo de agujero tiene el vastago?
         attribute: Agujero de Mango
         variantProduct: Mango
       - sortOrder: 4
+        panel: 0
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Taparrosca
         variantProduct: Pincel
       - sortOrder: 5
+        panel: 0
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Tapa con Pincel
         variantProduct: Taparrosca con Pincel
       - sortOrder: 6
+        panel: 0
         pregunta: ¿Cuántas unidades necesitas?
         variantProduct: Taparrosca con Pincel
-        isQtyStep: true
   - op: bom.set
     product: Rimel Silicon
     components:
@@ -1204,45 +1252,50 @@ ops:
     product: Rimel Silicon
     steps:
       - sortOrder: 1
-        pregunta: ¿Qué forma de cepillo prefieres?
-        attribute: Forma de cepillo silicon
-        variantProduct: Cepillo Silicon
-      - sortOrder: 2
-        pregunta: ¿De qué color quieres el cepillo?
-        attribute: Color de Cepillo Silicon
-        variantProduct: Cepillo Silicon
-      - sortOrder: 3
-        pregunta: ¿Qué botella prefieres?
-        attribute: Capacidad de Botella
+        panel: 1
+        pregunta: ¿Qué tamaño de botella prefieres?
+        attribute: Tamaño de Botella
         variantProduct: Botella
-      - sortOrder: 4
+      - sortOrder: 2
+        panel: 1
         pregunta: ¿De qué color quieres la botella?
         attribute: Color de Botella
         variantProduct: Botella
-      - sortOrder: 5
+      - sortOrder: 3
+        panel: 2
         pregunta: ¿Qué altura de vástago prefieres?
         attribute: Altura de Vastago
         variantProduct: Vastago
-      - sortOrder: 6
+      - sortOrder: 4
+        panel: 2
         pregunta: ¿De qué color quieres el vástago?
         attribute: Color de Vastago
         variantProduct: Vastago
-      - sortOrder: 7
+      - sortOrder: 5
+        panel: 3
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
-      - sortOrder: 8
+      - sortOrder: 6
+        panel: 3
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
-      - sortOrder: 9
+      - sortOrder: 7
+        panel: 4
         pregunta: ¿De qué color quieres el escurridor?
         attribute: Color de Escurridor
         variantProduct: Escurridor
-      - sortOrder: 10
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Rimel Silicon
-        isQtyStep: true
+      - sortOrder: 8
+        panel: 5
+        pregunta: ¿Qué forma de cepillo prefieres?
+        attribute: Forma de cepillo silicon
+        variantProduct: Cepillo Silicon
+      - sortOrder: 9
+        panel: 5
+        pregunta: ¿De qué color quieres el cepillo?
+        attribute: Color de Cepillo Silicon
+        variantProduct: Cepillo Silicon
   - op: bom.set
     product: Rimel Nylon
     components:
@@ -1265,45 +1318,50 @@ ops:
     product: Rimel Nylon
     steps:
       - sortOrder: 1
-        pregunta: ¿Qué forma de cepillo prefieres?
-        attribute: Forma de cepillo nylon
-        variantProduct: Cepillo Nylon
-      - sortOrder: 2
-        pregunta: ¿De qué color quieres el cepillo?
-        attribute: Color de Cepillo Nylon
-        variantProduct: Cepillo Nylon
-      - sortOrder: 3
-        pregunta: ¿Qué botella prefieres?
-        attribute: Capacidad de Botella
+        panel: 1
+        pregunta: ¿Qué tamaño de botella prefieres?
+        attribute: Tamaño de Botella
         variantProduct: Botella
-      - sortOrder: 4
+      - sortOrder: 2
+        panel: 1
         pregunta: ¿De qué color quieres la botella?
         attribute: Color de Botella
         variantProduct: Botella
-      - sortOrder: 5
+      - sortOrder: 3
+        panel: 2
         pregunta: ¿Qué altura de vástago prefieres?
         attribute: Altura de Vastago
         variantProduct: Vastago
-      - sortOrder: 6
+      - sortOrder: 4
+        panel: 2
         pregunta: ¿De qué color quieres el vástago?
         attribute: Color de Vastago
         variantProduct: Vastago
-      - sortOrder: 7
+      - sortOrder: 5
+        panel: 3
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
-      - sortOrder: 8
+      - sortOrder: 6
+        panel: 3
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
-      - sortOrder: 9
+      - sortOrder: 7
+        panel: 4
         pregunta: ¿De qué color quieres el escurridor?
         attribute: Color de Escurridor
         variantProduct: Escurridor
-      - sortOrder: 10
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Rimel Nylon
-        isQtyStep: true
+      - sortOrder: 8
+        panel: 5
+        pregunta: ¿Qué forma de cepillo prefieres?
+        attribute: Forma de cepillo nylon
+        variantProduct: Cepillo Nylon
+      - sortOrder: 9
+        panel: 5
+        pregunta: ¿De qué color quieres el cepillo?
+        attribute: Color de Cerda de Cepillo
+        variantProduct: Cepillo Nylon
   - op: bom.set
     product: Delineador
     components:
@@ -1326,37 +1384,40 @@ ops:
     product: Delineador
     steps:
       - sortOrder: 1
-        pregunta: ¿Qué botella prefieres?
-        attribute: Capacidad de Botella
+        panel: 1
+        pregunta: ¿Qué tamaño de botella prefieres?
+        attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
+        panel: 1
         pregunta: ¿De qué color quieres la botella?
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
+        panel: 2
         pregunta: ¿Qué altura de vástago prefieres?
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
+        panel: 2
         pregunta: ¿De qué color quieres el vástago?
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
+        panel: 3
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
+        panel: 3
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
+        panel: 4
         pregunta: ¿De qué color quieres el escurridor?
         attribute: Color de Escurridor
         variantProduct: Escurridor
-      - sortOrder: 8
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Delineador
-        isQtyStep: true
   - op: bom.set
     product: Tratamiento de Noche
     components:
@@ -1379,37 +1440,40 @@ ops:
     product: Tratamiento de Noche
     steps:
       - sortOrder: 1
-        pregunta: ¿Qué botella prefieres?
-        attribute: Capacidad de Botella
+        panel: 1
+        pregunta: ¿Qué tamaño de botella prefieres?
+        attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 2
+        panel: 1
         pregunta: ¿De qué color quieres la botella?
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 3
+        panel: 2
         pregunta: ¿Qué altura de vástago prefieres?
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 4
+        panel: 2
         pregunta: ¿De qué color quieres el vástago?
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 5
+        panel: 3
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 6
+        panel: 3
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
+        panel: 4
         pregunta: ¿De qué color quieres el escurridor?
         attribute: Color de Escurridor
         variantProduct: Escurridor
-      - sortOrder: 8
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Tratamiento de Noche
-        isQtyStep: true
   - op: bom.set
     product: Lip Gloss
     components:
@@ -1432,41 +1496,45 @@ ops:
     product: Lip Gloss
     steps:
       - sortOrder: 1
-        pregunta: ¿Qué tipo de punta de lip gloss prefieres?
+        panel: 1
+        pregunta: ¿Qué tipo de punta prefieres?
         attribute: Tipo de Punta
         variantProduct: Punta Lip Gloss
       - sortOrder: 2
-        pregunta: ¿Qué botella prefieres?
-        attribute: Capacidad de Botella
+        panel: 2
+        pregunta: ¿Qué tamaño de botella prefieres?
+        attribute: Tamaño de Botella
         variantProduct: Botella
       - sortOrder: 3
+        panel: 2
         pregunta: ¿De qué color quieres la botella?
         attribute: Color de Botella
         variantProduct: Botella
       - sortOrder: 4
+        panel: 3
         pregunta: ¿Qué altura de vástago prefieres?
         attribute: Altura de Vastago
         variantProduct: Vastago
       - sortOrder: 5
+        panel: 3
         pregunta: ¿De qué color quieres el vástago?
         attribute: Color de Vastago
         variantProduct: Vastago
       - sortOrder: 6
+        panel: 4
         pregunta: ¿Qué forma de tapa prefieres?
         attribute: Forma de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 7
+        panel: 4
         pregunta: ¿De qué color quieres la tapa?
         attribute: Color de Sobretapa
         variantProduct: Sobretapa
       - sortOrder: 8
+        panel: 5
         pregunta: ¿De qué color quieres el escurridor?
         attribute: Color de Escurridor
         variantProduct: Escurridor
-      - sortOrder: 9
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Lip Gloss
-        isQtyStep: true
   - op: bom.set
     product: Palillo con Cepillo
     components:
@@ -2324,6 +2392,7 @@ ops:
       Color de Botella: Negro
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Mini
       Tipo de Botella: Mini
     min: 6000
     max: 12000
@@ -2335,6 +2404,7 @@ ops:
       Color de Botella: Blanco
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Mini
       Tipo de Botella: Mini
     min: 6000
     max: 12000
@@ -2346,6 +2416,7 @@ ops:
       Color de Botella: Transparente
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Mini
       Tipo de Botella: Mini
     min: 6000
     max: 12000
@@ -2357,6 +2428,7 @@ ops:
       Color de Botella: Negro
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Tipo de Botella: Delineador
   - op: variant.define
     sku: BOT-0005
@@ -2366,6 +2438,7 @@ ops:
       Color de Botella: Blanco
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Tipo de Botella: Delineador
   - op: variant.define
     sku: BOT-0006
@@ -2375,6 +2448,7 @@ ops:
       Color de Botella: Transparente
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Tipo de Botella: Delineador
     min: 35064
     max: 70128
@@ -2386,6 +2460,7 @@ ops:
       Color de Botella: Lila
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Tipo de Botella: Delineador
   - op: variant.define
     sku: BOT-0008
@@ -2395,6 +2470,7 @@ ops:
       Color de Botella: Chocolate
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Tipo de Botella: Delineador
   - op: variant.define
     sku: BOT-0009
@@ -2403,6 +2479,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Color de Botella: Rosa 1348
       Tipo de Botella: Delineador
   - op: variant.define
@@ -2412,6 +2489,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 10mm
       Cuello: Corto
+      Tamaño de Botella: Alta
       Color de Botella: Rosa 52377
       Tipo de Botella: Delineador
   - op: variant.define
@@ -2421,6 +2499,7 @@ ops:
       Altura de Botella: 60mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Chica
       Color de Botella: Negro
       Tipo de Botella: Normal
   - op: variant.define
@@ -2430,6 +2509,7 @@ ops:
       Altura de Botella: 60mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Chica
       Color de Botella: Rosa 1348
       Tipo de Botella: Normal
   - op: variant.define
@@ -2439,6 +2519,7 @@ ops:
       Altura de Botella: 60mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Chica
       Color de Botella: Transparente
       Tipo de Botella: Normal
   - op: variant.define
@@ -2448,6 +2529,7 @@ ops:
       Altura de Botella: 60mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Chica
       Color de Botella: Beige
       Tipo de Botella: Normal
   - op: variant.define
@@ -2457,6 +2539,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Negro
       Tipo de Botella: Normal
   - op: variant.define
@@ -2466,6 +2549,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Morado hipoalergenico
       Tipo de Botella: Normal
   - op: variant.define
@@ -2475,6 +2559,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Amarillo keratina
       Tipo de Botella: Normal
   - op: variant.define
@@ -2484,6 +2569,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Lila
       Tipo de Botella: Normal
     min: 6000
@@ -2495,6 +2581,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Rosa silicon
       Tipo de Botella: Normal
   - op: variant.define
@@ -2504,6 +2591,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Chocolate
       Tipo de Botella: Normal
   - op: variant.define
@@ -2513,6 +2601,7 @@ ops:
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Carbon black
       Tipo de Botella: Normal
   - op: variant.define
@@ -2520,6 +2609,7 @@ ops:
     product: Botella
     attrs:
       Tamaño rosca: 15mm
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Cuello: Corto
       Color de Botella: Colageno
@@ -2528,6 +2618,7 @@ ops:
     sku: BOT-0023
     product: Botella
     attrs:
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
@@ -2537,6 +2628,7 @@ ops:
     sku: BOT-0024
     product: Botella
     attrs:
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
@@ -2546,6 +2638,7 @@ ops:
     sku: BOT-0025
     product: Botella
     attrs:
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
@@ -2555,6 +2648,7 @@ ops:
     sku: BOT-0026
     product: Botella
     attrs:
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
@@ -2564,6 +2658,7 @@ ops:
     sku: BOT-0027
     product: Botella
     attrs:
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Cuello: Corto
@@ -2574,6 +2669,7 @@ ops:
     product: Botella
     attrs:
       Cuello: Corto
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
       Tamaño rosca: 15mm
       Color de Botella: Transparente
@@ -2587,6 +2683,7 @@ ops:
       Tipo de Botella: Corta
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
     min: 160000
     max: 200000
   - op: variant.define
@@ -2597,6 +2694,7 @@ ops:
       Tipo de Botella: Corta
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Altura de Botella: 80mm
   - op: variant.define
     sku: BOT-0031
@@ -2607,6 +2705,7 @@ ops:
       Tipo de Botella: Normal
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
   - op: variant.define
     sku: BOT-0032
     product: Botella
@@ -2615,6 +2714,7 @@ ops:
       Tipo de Botella: Normal
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Color de Botella: Cromado rosa
   - op: variant.define
     sku: BOT-0033
@@ -2625,6 +2725,7 @@ ops:
       Tipo de Botella: Normal
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
   - op: variant.define
     sku: BOT-0034
     product: Botella
@@ -2633,6 +2734,7 @@ ops:
       Color de Botella: Cromado plata
       Tamaño rosca: 15mm
       Cuello: Corto
+      Tamaño de Botella: Grande
       Tipo de Botella: Normal
   - op: variant.define
     sku: VST-0001
@@ -3231,56 +3333,112 @@ ops:
     nombre: Pino
     attrs:
       Forma de cepillo silicon: Pino
+      Color de Cepillo Silicon: Negro
     min: 5000
     max: 10000
+  - op: variant.define
+    sku: CSI-0001-B
+    product: Cepillo Silicon
+    nombre: Pino
+    attrs:
+      Forma de cepillo silicon: Pino
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0002
     product: Cepillo Silicon
     nombre: Espiral
     attrs:
+      Color de Cepillo Silicon: Negro
       Forma de cepillo silicon: Espiral
     min: 10000
     max: 20000
+  - op: variant.define
+    sku: CSI-0002-B
+    product: Cepillo Silicon
+    nombre: Espiral
+    attrs:
+      Forma de cepillo silicon: Espiral
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0004
     product: Cepillo Silicon
     nombre: Peine
     attrs:
       Forma de cepillo silicon: Peine
+      Color de Cepillo Silicon: Negro
     min: 5000
     max: 20000
+  - op: variant.define
+    sku: CSI-0004-B
+    product: Cepillo Silicon
+    nombre: Peine
+    attrs:
+      Forma de cepillo silicon: Peine
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0005
     product: Cepillo Silicon
     nombre: Balita
     attrs:
       Forma de cepillo silicon: Balita
+      Color de Cepillo Silicon: Negro
     min: 5000
     max: 20000
+  - op: variant.define
+    sku: CSI-0005-B
+    product: Cepillo Silicon
+    nombre: Balita
+    attrs:
+      Forma de cepillo silicon: Balita
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0006
     product: Cepillo Silicon
     nombre: Cacahuate
     attrs:
       Forma de cepillo silicon: Cacahuate
+      Color de Cepillo Silicon: Negro
     min: 10000
     max: 20000
+  - op: variant.define
+    sku: CSI-0006-B
+    product: Cepillo Silicon
+    nombre: Cacahuate
+    attrs:
+      Forma de cepillo silicon: Cacahuate
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0007
     product: Cepillo Silicon
     nombre: Barril
     attrs:
+      Color de Cepillo Silicon: Negro
       Forma de cepillo silicon: Barril
     min: 10000
     max: 20000
+  - op: variant.define
+    sku: CSI-0007-B
+    product: Cepillo Silicon
+    nombre: Barril
+    attrs:
+      Forma de cepillo silicon: Barril
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CSI-0008
     product: Cepillo Silicon
     nombre: Barril grueso
     attrs:
+      Color de Cepillo Silicon: Negro
       Forma de cepillo silicon: Barril grueso
     min: 10000
     max: 20000
+  - op: variant.define
+    sku: CSI-0008-B
+    product: Cepillo Silicon
+    nombre: Barril grueso
+    attrs:
+      Forma de cepillo silicon: Barril grueso
+      Color de Cepillo Silicon: Blanco
   - op: variant.define
     sku: CNI-0002
     product: Cepillo Nylon
@@ -3500,22 +3658,6 @@ ops:
     product: Punta Lip Gloss
     attrs:
       Tipo de Punta: Punta lip gloss tipo hoja
-  - op: variant.define
-    sku: BTVPE-N-pino-negro-30ml-negro-15mm-20mm-negro-yadis-negro-negro
-    product: Rimel Nylon
-    nombre: Pino Negro 30mL Negro 15mm 20mm Negro Yadis Negro Negro
-    attrs:
-      Color de Cepillo Nylon: Negro
-      Altura de Vastago: 20mm
-      Color de Botella: Negro
-      Color de Vastago: Negro
-      Color de Sobretapa: Negro
-      Color de Escurridor: Negro
-      Forma de cepillo nylon: Pino
-      Capacidad de Botella: 30mL
-      Tamaño rosca: 15mm
-      Forma de Taparrosca: Yadis
-    published: true
   - op: variant.define
     sku: P0001-0001
     product: Alambre Acero Inoxidable

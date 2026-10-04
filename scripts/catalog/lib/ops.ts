@@ -52,7 +52,7 @@ export type Op =
       notas?: string | null;
     }
   | { op: "bom.set"; product: string; components: { component: string; cantidad: number; tipo: "exacto" | "consumible" }[] }
-  | { op: "step.set"; product: string; steps: { sortOrder: number; pregunta: string; attribute?: string | null; variantProduct?: string | null; isQtyStep?: boolean }[] }
+  | { op: "step.set"; product: string; steps: { sortOrder: number; pregunta: string; attribute?: string | null; variantProduct?: string | null; panel?: number }[] }
   | { op: "packaging.set"; sku: string; empaques: { nombre: string; cantidad: number }[] }
   | { op: "stock.set"; sku: string; location: string; qty: number };
 

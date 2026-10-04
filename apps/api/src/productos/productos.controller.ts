@@ -55,6 +55,18 @@ class ComponenteDto {
   @IsString() tipo!: string;
 }
 
+class PassoDto {
+  @IsOptional() @IsNumber() sortOrder?: number;
+  @IsOptional() @IsNumber() panel?: number;
+  @IsString() @IsNotEmpty() pregunta!: string;
+  @IsOptional() @IsNumber() attributeId?: number | null;
+  @IsOptional() @IsNumber() variantProductId?: number | null;
+}
+
+class SetPasosDto {
+  @IsArray() @ValidateNested({ each: true }) @Type(() => PassoDto) pasos!: PassoDto[];
+}
+
 class VarianteDto {
   @IsString() @IsNotEmpty() nombre!: string;
   @IsString() @IsNotEmpty() sku!: string;
@@ -165,6 +177,18 @@ export class ProductosController {
   @Put(":id/componentes")
   componentes(@Param("id", ParseIntPipe) id: number, @Body() dto: { componentes: ComponenteDto[] }) {
     return this.productos.setComponentes(id, dto.componentes);
+  }
+
+  @Roles("admin", "supervisor", "operador")
+  @Get(":id/pasos")
+  pasos(@Param("id", ParseIntPipe) id: number) {
+    return this.productos.getPasos(id);
+  }
+
+  @Roles("admin", "supervisor")
+  @Put(":id/pasos")
+  setPasos(@Param("id", ParseIntPipe) id: number, @Body() dto: SetPasosDto) {
+    return this.productos.setPasos(id, dto.pasos);
   }
 
   // -------------------------------------------------- Grid / combos
