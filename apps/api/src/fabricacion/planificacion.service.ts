@@ -38,6 +38,8 @@ interface VarianteCtx {
   product: {
     id: number;
     nombre: string;
+    fabricable: boolean;
+    comprable: boolean;
     components: { componentId: number; cantidad: unknown; tipo: string; component: { id: number; nombre: string } }[];
   };
 }
@@ -101,7 +103,7 @@ export class PlanificacionService {
       const falta = netearEsteNivel ? cantidad - stockOf(v) : cantidad;
       if (falta <= 0) return;
       demand.set(variantId, (demand.get(variantId) ?? 0) + falta);
-      if (v.product.components.length === 0) return; // hoja → compra
+      if (!v.product.fabricable || v.product.components.length === 0) return; // hoja → compra o fabricación sin BOM
       for (const c of v.product.components) {
         const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
           productId: v.productId,
@@ -122,12 +124,12 @@ export class PlanificacionService {
     const comprar: PlanItem[] = [];
     for (const [variantId, cantidad] of [...demand.entries()].sort((a, b) => a[0] - b[0])) {
       const v = await this.load(tx, variantId, cache);
-      if (v.product.components.length === 0) {
-        comprar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad });
+      if (v.product.fabricable) {
+        const tipo = v.product.components.length > 1 ? "ensamble" : "fabricacion";
+        fabricar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad, tipo });
         continue;
       }
-      const tipo = v.product.components.length === 1 ? "fabricacion" : "ensamble";
-      fabricar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad, tipo });
+      comprar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad });
     }
     return { fabricar, comprar };
   }

@@ -607,6 +607,34 @@ export default function ProductoDetallePage() {
           <span>Vendible en Ventas</span>
           <span className="muted small">Se ofrece en el modal de nueva venta con sus variantes activas.</span>
         </label>
+        <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
+          <input
+            type="checkbox"
+            checked={d.fabricable}
+            onChange={(e) => {
+              api(`/productos/${prodId}`, { method: "PATCH", body: JSON.stringify({ fabricable: e.target.checked }) })
+                .then(() => cargar())
+                .catch((err) => notify(err as Error, ""));
+            }}
+            style={{ width: "auto", margin: 0 }}
+          />
+          <span>Fabricable</span>
+          <span className="muted small">Se puede producir: genera orden de fabricación (con o sin BOM).</span>
+        </label>
+        <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
+          <input
+            type="checkbox"
+            checked={d.comprable}
+            onChange={(e) => {
+              api(`/productos/${prodId}`, { method: "PATCH", body: JSON.stringify({ comprable: e.target.checked }) })
+                .then(() => cargar())
+                .catch((err) => notify(err as Error, ""));
+            }}
+            style={{ width: "auto", margin: 0 }}
+          />
+          <span>Comprable</span>
+          <span className="muted small">Se puede adquirir por compra.</span>
+        </label>
       </div>
 
       {/* --- Atributos y valores --- */}

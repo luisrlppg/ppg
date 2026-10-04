@@ -22,6 +22,14 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
 - **`Product.vendible`** — el producto aparece en el selector del **modal de Ventas** con sus
   variantes activas; se marca con el checkbox "Vendible en Ventas" (detalle y lista de productos).
   Sustituye al retirado `ProductVariant.published`.
+- **`Product.fabricable` / `Product.comprable`** — flags independientes (ambos pueden ser `true`) que
+  definen cómo entra el producto al **neteo** al confirmar una venta o crear una OF:
+  - `fabricable` → se produce (genera orden de fabricación); puede o no tener BOM exacto. Si no tiene
+    componentes, la OF se crea sin líneas.
+  - `comprable` → se adquiere por compra (aparece en "Pendientes de compra" / `resumen.comprar`).
+  - Si es ambos, el neteo **prioriza fabricar**. Si no es ninguno, cae a compra (respaldo).
+  - Se editan con los checkboxes de la ficha y la lista de productos. El seed de catálogo todavía
+    **no** declara estos flags (ver `roadmap.md`).
 - **`ProductPasso`** — pasos del storefront (ver abajo).
 - **`ProductComponent`** — BOM; componentes `exacto` vs `consumible`.
 - **`User.separadorMiles`** — preferencia personal de formato de cantidades (`"coma"` default o

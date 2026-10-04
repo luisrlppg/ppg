@@ -28,6 +28,8 @@ class CreateProductoDto {
   @IsOptional() @IsNumber() basePrice?: number;
   @IsOptional() @IsBoolean() hasVariants?: boolean;
   @IsOptional() @IsBoolean() vendible?: boolean;
+  @IsOptional() @IsBoolean() fabricable?: boolean;
+  @IsOptional() @IsBoolean() comprable?: boolean;
   @IsOptional() @IsString() imagen?: string;
 }
 
@@ -38,6 +40,8 @@ class UpdateProductoDto {
   @IsOptional() @IsNumber() basePrice?: number;
   @IsOptional() @IsBoolean() hasVariants?: boolean;
   @IsOptional() @IsBoolean() vendible?: boolean;
+  @IsOptional() @IsBoolean() fabricable?: boolean;
+  @IsOptional() @IsBoolean() comprable?: boolean;
   @IsOptional() @IsString() imagen?: string;
   @IsOptional() @IsBoolean() activo?: boolean;
 }

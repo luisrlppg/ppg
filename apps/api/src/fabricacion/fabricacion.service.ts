@@ -118,8 +118,8 @@ export class FabricacionService {
         include: { product: { include: { components: { where: { tipo: "exacto" } } } } },
       });
       if (!variant) throw new NotFoundException("Variante no encontrada");
-      if (variant.product.components.length === 0) {
-        throw new BadRequestException(`"${variant.product.nombre}" no tiene componentes exactos en su BOM; es de compra, no fabricable.`);
+      if (!variant.product.fabricable) {
+        throw new BadRequestException(`"${variant.product.nombre}" no está marcado como fabricable (es de compra).`);
       }
       const plan = await this.planificacion.planificar(
         tx,
@@ -139,7 +139,7 @@ export class FabricacionService {
   // ------------------------------------------- Reposición por mín/máx
   private async candidatosReposicion(tx: Prisma.TransactionClient, objetivo: ObjetivoReposicion) {
     const variants = await tx.productVariant.findMany({
-      where: { activo: true, product: { activo: true }, stockMin: { gt: 0 } },
+      where: { activo: true, product: { activo: true, fabricable: true }, stockMin: { gt: 0 } },
       include: {
         product: { include: { components: { where: { tipo: "exacto" } } } },
         stockLevels: true,
@@ -147,7 +147,6 @@ export class FabricacionService {
     });
     const out: { variantId: number; cantidad: number }[] = [];
     for (const v of variants) {
-      if (v.product.components.length === 0) continue; // no fabricable → compra
       const actual = v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
       const min = dec(v.stockMin);
       const max = dec(v.stockMax);

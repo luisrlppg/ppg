@@ -114,6 +114,8 @@ model Product {
   basePrice       Decimal               @default(0) // neto, sin IVA
   hasVariants     Boolean               @default(false) // true = familia con grid (combo/perezoso)
   vendible        Boolean               @default(false) // seleccionado para vender en Ventas
+  fabricable      Boolean               @default(false) // se puede producir (genera OF)
+  comprable       Boolean               @default(false) // se puede adquirir por compra
   imagen          String?
   activo          Boolean               @default(true)
   createdAt       DateTime              @default(now())

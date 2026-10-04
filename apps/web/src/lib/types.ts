@@ -37,6 +37,8 @@ export interface ProductoLite {
   basePrice: number;
   hasVariants: boolean;
   vendible: boolean;
+  fabricable: boolean;
+  comprable: boolean;
   activo: boolean;
   imagen: string | null;
   categoria: string | null;
@@ -89,6 +91,8 @@ export interface ProductoDetalle {
   categoryId: number | null;
   hasVariants: boolean;
   vendible: boolean;
+  fabricable: boolean;
+  comprable: boolean;
   activo: boolean;
   category: { id: number; nombre: string } | null;
   variantes: (Variante & { porUbicacion?: unknown })[];
@@ -232,6 +236,7 @@ export interface VentaLinea {
   nombre: string;
   producto: string;
   uom: string;
+  imagen: string | null;
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
@@ -262,6 +267,10 @@ export interface Venta {
   origen: "interno" | "web";
   confirmadaAt: string | null;
   notas: string | null;
+  nombreEnvio?: string | null;
+  telefonoEnvio?: string | null;
+  emailEnvio?: string | null;
+  paymentMethod?: string | null;
   partnerId: number | null;
   partner: (Pick<Partner, "id" | "nombre" | "empresa" | "telefono" | "direccion" | "email">) | null;
   resumen: ResumenNeteo | null;

@@ -80,6 +80,18 @@ export default function ProductosPage() {
     }
   }
 
+  async function toggleFlag(p: ProductoLite, campo: "fabricable" | "comprable", etiqueta: string) {
+    setError("");
+    setMsg("");
+    try {
+      await api(`/productos/${p.id}`, { method: "PATCH", body: JSON.stringify({ [campo]: !p[campo] }) });
+      await cargar();
+      setMsg(`"${p.nombre}" ${!p[campo] ? `marcado como ${etiqueta}` : `ya no es ${etiqueta}`}.`);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   // --------------------------------------------------------------- Alta
   const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -88,6 +100,8 @@ export default function ProductosPage() {
   const [basePrice, setBasePrice] = useState("");
   const [hasVariants, setHasVariants] = useState(false);
   const [vendible, setVendible] = useState(false);
+  const [fabricable, setFabricable] = useState(false);
+  const [comprable, setComprable] = useState(false);
   const [catAlta, setCatAlta] = useState("");
   const [nuevaCat, setNuevaCat] = useState("");
   const [showNuevaCat, setShowNuevaCat] = useState(false);
@@ -100,6 +114,8 @@ export default function ProductosPage() {
     setBasePrice("");
     setHasVariants(false);
     setVendible(false);
+    setFabricable(false);
+    setComprable(false);
     setCatAlta("");
     setNuevaCat("");
     setShowNuevaCat(false);
@@ -121,6 +137,8 @@ export default function ProductosPage() {
           categoryId: catAlta ? Number(catAlta) : undefined,
           hasVariants,
           vendible,
+          fabricable,
+          comprable,
         }),
       });
       resetForm();
@@ -264,6 +282,8 @@ export default function ProductosPage() {
                 <th className="num">Precio</th>
                 <th>Categoría</th>
                 <th>Vendible</th>
+                <th>Fabricable</th>
+                <th>Comprable</th>
                 <th className="num">Variantes</th>
                 <th className="num">Stock</th>
                 <th></th>
@@ -288,6 +308,24 @@ export default function ProductosPage() {
                       title="Vender en el modal de Ventas"
                     />
                   </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={p.fabricable}
+                      onChange={() => toggleFlag(p, "fabricable", "fabricable")}
+                      style={{ width: "auto" }}
+                      title="Se puede producir (genera OF)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={p.comprable}
+                      onChange={() => toggleFlag(p, "comprable", "comprable")}
+                      style={{ width: "auto" }}
+                      title="Se puede adquirir por compra"
+                    />
+                  </td>
                   <td className="num">{p.variantes}</td>
                   <td className="num">{formatCantidad(p.stockTotal)}</td>
                   <td>
@@ -299,7 +337,7 @@ export default function ProductosPage() {
               ))}
               {productos.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="empty">
+                  <td colSpan={11} className="empty">
                     Sin productos todavía. Usa “Nuevo producto” para crear el primero.
                   </td>
                 </tr>
@@ -350,6 +388,14 @@ export default function ProductosPage() {
             <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
               <input type="checkbox" checked={vendible} onChange={(e) => setVendible(e.target.checked)} style={{ width: "auto", margin: 0 }} />{" "}
               <span>Vendible en Ventas</span>
+            </label>
+            <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
+              <input type="checkbox" checked={fabricable} onChange={(e) => setFabricable(e.target.checked)} style={{ width: "auto", margin: 0 }} />{" "}
+              <span>Fabricable</span>
+            </label>
+            <label className="row" style={{ gap: 8, alignItems: "center", marginTop: 8 }}>
+              <input type="checkbox" checked={comprable} onChange={(e) => setComprable(e.target.checked)} style={{ width: "auto", margin: 0 }} />{" "}
+              <span>Comprable</span>
             </label>
             <div className="row" style={{ alignItems: "flex-end" }}>
               <label style={{ flex: 2 }}>

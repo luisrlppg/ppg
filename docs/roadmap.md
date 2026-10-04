@@ -10,6 +10,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (Taparrosca sin `Forma`,
    `PIN-0011`, crosswalk con SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
+4. **Órdenes de compra (OC):** no existe entidad persistente. Hoy lo "comprable" va al listado
+   `resumen.comprar` / Pendientes de compra (sin documento). Falta un módulo `PurchaseOrder`
+   (modelo + API + UI) que consuma `Product.comprable`. Fase siguiente tras E3.
+5. **Seed de catálogo y flags de suministro:** `Product.fabricable`/`comprable` se editan en la UI
+   pero `scripts/catalog/` (engine + `catalog.yaml`) aún **no** los declara → al re-seedear quedan en
+   `false`. Pendiente extender las ops de catálogo.
 
 ## Candidatos a refactor transversal
 
@@ -20,6 +26,20 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Flags de suministro fabricable/comprable (2026-10-04):** `Product` ganó `fabricable` y
+  `comprable` (migración `20261004160000_product_fabricable_comprable`, backfill desde el BOM:
+  fabricable = tiene componentes exactos; comprable = no). El **neteo** (`planificacion.service`)
+  ahora decide fabricar/compra por estos flags en vez de por la sola presencia de BOM: un fabricable
+  sin componentes genera OF sin líneas; "ambos" prioriza fabricar. Las guardas de `fabricacion`
+  (alta manual y reposición) exigen `fabricable`. UI: checkboxes en ficha y lista de productos, y en
+  el alta. Sin OC persistente todavía (ver pendiente 4).
+- **Impresión de venta + IVA (2026-10-04):** en `/ventas` se agregó el componente
+  `components/ventas/documento-venta.tsx` (overlay + `window.print()`), con encabezado de empresa
+  (solo "Plásticos Plasa"), nº de orden (`SalesOrder.numero`), fecha, **nº de cliente** (= `Partner.id`),
+  datos del cliente, desglose por línea con **imagen** (`variant.imagen ?? product.imagen`), precio,
+  cantidad y subtotal, y **toggle de IVA 16%** (precios netos; el documento inicia sin IVA). Se lanza
+  desde el botón "Imprimir" del detalle y automáticamente al crear una venta. La API `ventas.get`
+  ahora devuelve `imagen` por línea. Sin migración. Pendiente E5: cotización/facturación formal.
 - **Vendible en Ventas + retiro de `published` (2026-10-04):** el selector del modal de Ventas
   ahora lista solo productos con `Product.vendible = true` (`public.service.productosPublicos`);
   se marca con el checkbox "Vendible en Ventas" en el detalle y en la lista de productos. Se

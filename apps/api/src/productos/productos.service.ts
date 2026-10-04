@@ -63,6 +63,8 @@ export class ProductosService {
       basePrice: dec(p.basePrice),
       hasVariants: p.hasVariants,
       vendible: p.vendible,
+      fabricable: p.fabricable,
+      comprable: p.comprable,
       activo: p.activo,
       imagen: p.imagen,
       categoria: p.category?.nombre ?? null,
@@ -137,6 +139,8 @@ export class ProductosService {
     basePrice?: number;
     hasVariants?: boolean;
     vendible?: boolean;
+    fabricable?: boolean;
+    comprable?: boolean;
     imagen?: string;
   }) {
     const skuBase = data.skuBase.trim();
@@ -153,6 +157,8 @@ export class ProductosService {
         basePrice: data.basePrice ?? 0,
         hasVariants: data.hasVariants ?? false,
         vendible: data.vendible ?? false,
+        fabricable: data.fabricable ?? false,
+        comprable: data.comprable ?? false,
         imagen: data.imagen ?? null,
       },
     });
@@ -175,6 +181,8 @@ export class ProductosService {
       basePrice?: number;
       hasVariants?: boolean;
       vendible?: boolean;
+      fabricable?: boolean;
+      comprable?: boolean;
       imagen?: string | null;
       activo?: boolean;
     }>,
@@ -193,6 +201,8 @@ export class ProductosService {
         ...(data.basePrice !== undefined ? { basePrice: data.basePrice } : {}),
         ...(data.hasVariants !== undefined ? { hasVariants: data.hasVariants } : {}),
         ...(data.vendible !== undefined ? { vendible: data.vendible } : {}),
+        ...(data.fabricable !== undefined ? { fabricable: data.fabricable } : {}),
+        ...(data.comprable !== undefined ? { comprable: data.comprable } : {}),
         ...(data.imagen !== undefined ? { imagen: data.imagen } : {}),
         ...(data.activo !== undefined ? { activo: data.activo } : {}),
       },
