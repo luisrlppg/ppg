@@ -3,32 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
+import Modal from "@/components/ui/modal";
 import { api } from "@/lib/api";
+import { formatCantidad } from "@ppg/shared";
 import type { EventoNotificacion, StockBajo } from "@/lib/types";
-
-interface EstadoMonitor {
-  canales: string[];
-  configurados: { email: boolean; telegram: boolean; callmebot: boolean };
-  ultimaVerificacion: string | null;
-  enAlerta: number;
-}
 
 export default function MonitorPage() {
   const [bajo, setBajo] = useState<StockBajo[]>([]);
-  const [estado, setEstado] = useState<EstadoMonitor | null>(null);
   const [eventos, setEventos] = useState<EventoNotificacion[]>([]);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [cargando, setCargando] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [b, e, ev] = await Promise.all([
+    const [b, ev] = await Promise.all([
       api<StockBajo[]>("/monitor/stock-bajo"),
-      api<EstadoMonitor>("/monitor/estado"),
       api<EventoNotificacion[]>("/monitor/eventos"),
     ]);
     setBajo(b);
-    setEstado(e);
     setEventos(ev);
   }, []);
 
@@ -36,18 +27,42 @@ export default function MonitorPage() {
     cargar().catch((e) => setError(e.message));
   }, [cargar]);
 
-  async function accion(path: string, body?: unknown, okMsg?: string) {
-    setCargando(true);
+  // -------------------------------------------------------- Crear OF
+  const [ofPara, setOfPara] = useState<StockBajo | null>(null);
+  const [ofCantidad, setOfCantidad] = useState("1");
+  const [ofNotas, setOfNotas] = useState("");
+  const [creando, setCreando] = useState(false);
+
+  function abrirOF(v: StockBajo) {
+    const faltante = v.deficit > 0 ? v.deficit : 1;
+    setOfPara(v);
+    setOfCantidad(String(faltante));
+    setOfNotas("");
     setError("");
     setMsg("");
+  }
+
+  async function crearOF(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ofPara) return;
+    const cantidad = Number(ofCantidad);
+    if (!(cantidad > 0)) {
+      setError("La cantidad debe ser mayor a 0.");
+      return;
+    }
+    setCreando(true);
+    setError("");
     try {
-      await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined });
-      await cargar();
-      setMsg(okMsg ?? "Listo.");
+      const r = await api<{ creadas: { numero: string }[] }>("/fabricacion", {
+        method: "POST",
+        body: JSON.stringify({ variantId: ofPara.variantId, cantidad, notas: ofNotas.trim() || undefined }),
+      });
+      setOfPara(null);
+      setMsg(`Se crearon ${r.creadas.length} OF(s): ${r.creadas.map((c) => c.numero).join(", ")}.`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setCargando(false);
+      setCreando(false);
     }
   }
 
@@ -60,49 +75,20 @@ export default function MonitorPage() {
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
-      <div className="grid-2">
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>Configuración</h3>
-          <p className="small">
-            Telegram: <span className="badge normal">{estado?.configurados.telegram ? "listo" : "no configurado"}</span>{" "}
-            WhatsApp (CallMeBot):{" "}
-            <span className="badge normal">{estado?.configurados.callmebot ? "listo" : "no configurado"}</span>{" "}
-            Email: <span className="badge normal">{estado?.configurados.email ? "listo" : "no configurado"}</span>
-          </p>
-          <p className="small muted">
-            Última verificación: {estado?.ultimaVerificacion ? new Date(estado.ultimaVerificacion).toLocaleString("es-MX") : "nunca"}
-            <br />
-            Variantes en alerta: <strong>{estado?.enAlerta ?? 0}</strong>
-          </p>
-          <div className="row">
-            <button className="btn primary" disabled={cargando} onClick={() => accion("/monitor/check", undefined, "Revisión manual completada.")}>
-              Revisar ahora
-            </button>
-            <button className="btn primary" disabled={cargando} onClick={() => accion("/monitor/notify", undefined, "Notificación forzada enviada a todos los bajos.")}>
-              Notificar todo (forzado)
-            </button>
-          </div>
-          <div className="spacer" />
-          <button className="btn ghost" disabled={cargando} onClick={() => accion("/monitor/notificar-prueba", undefined, "Prueba enviada.")}>
-            Enviar notificación de prueba
-          </button>
-        </div>
-
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>Eventos de notificación</h3>
-          <ul className="step-list" style={{ fontSize: "0.9rem" }}>
-            {eventos.slice(0, 8).map((ev) => (
-              <li key={ev.id} style={{ padding: "8px 12px" }}>
-                <span className={`badge ${ev.ok ? "normal" : "bajo"}`}>{ev.ok ? "enviado" : "sin canal"}</span>{" "}
-                {ev.subject}
-                <div className="small muted">
-                  {ev.channels.join(", ") || "⚠ no se pudo enviar (falta configuración)"} · {new Date(ev.createdAt).toLocaleString("es-MX")}
-                </div>
-              </li>
-            ))}
-            {eventos.length === 0 && <li className="muted">Sin eventos todavía.</li>}
-          </ul>
-        </div>
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Eventos de notificación</h3>
+        <ul className="step-list" style={{ fontSize: "0.9rem" }}>
+          {eventos.slice(0, 8).map((ev) => (
+            <li key={ev.id} style={{ padding: "8px 12px" }}>
+              <span className={`badge ${ev.ok ? "normal" : "bajo"}`}>{ev.ok ? "enviado" : "sin canal"}</span>{" "}
+              {ev.subject}
+              <div className="small muted">
+                {ev.channels.join(", ") || "⚠ no se pudo enviar (falta configuración)"} · {new Date(ev.createdAt).toLocaleString("es-MX")}
+              </div>
+            </li>
+          ))}
+          {eventos.length === 0 && <li className="muted">Sin eventos todavía.</li>}
+        </ul>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -116,6 +102,7 @@ export default function MonitorPage() {
               <th>Mínimo</th>
               <th>Faltan</th>
               <th>Tipo</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -127,24 +114,23 @@ export default function MonitorPage() {
                 </td>
                 <td className="muted-2">{v.sku}</td>
                 <td>
-                  <strong>
-                    {v.stockActual} {v.uom}
-                  </strong>
+                  <strong>{formatCantidad(v.stockActual)}</strong>
                 </td>
-                <td>
-                  {v.stockMin} {v.uom}
-                </td>
-                <td>
-                  {v.deficit} {v.uom}
-                </td>
+                <td>{formatCantidad(v.stockMin)}</td>
+                <td>{formatCantidad(v.deficit)}</td>
                 <td>
                   <span className={`badge ${v.longLead ? "critico" : "bajo"}`}>{v.longLead ? "crítico" : "bajo"}</span>
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  <button className="btn secondary sm" onClick={() => abrirOF(v)}>
+                    Crear OF
+                  </button>
                 </td>
               </tr>
             ))}
             {bajo.length === 0 && (
               <tr>
-                <td colSpan={6} className="empty">
+                <td colSpan={7} className="empty">
                   Todo en nivel normal.
                 </td>
               </tr>
@@ -152,6 +138,44 @@ export default function MonitorPage() {
           </tbody>
         </table>
       </div>
+
+      {ofPara && (
+        <Modal title="Crear orden de fabricación" onClose={() => setOfPara(null)}>
+          <form onSubmit={crearOF}>
+            <p className="muted small" style={{ marginTop: 0 }}>
+              <strong>{ofPara.producto}</strong> · {ofPara.nombre} ({ofPara.sku})
+              <br />
+              Existencia: {formatCantidad(ofPara.stockActual)} · Mínimo: {formatCantidad(ofPara.stockMin)}
+            </p>
+            <div className="row">
+              <label>
+                Cantidad
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={ofCantidad}
+                  onChange={(e) => setOfCantidad(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </label>
+              <label>
+                Notas (opcional)
+                <input value={ofNotas} onChange={(e) => setOfNotas(e.target.value)} placeholder="motivo, lote…" />
+              </label>
+            </div>
+            <div className="row" style={{ justifyContent: "flex-end" }}>
+              <button type="button" className="btn ghost" onClick={() => setOfPara(null)}>
+                Cancelar
+              </button>
+              <button className="btn primary" disabled={creando}>
+                {creando ? "Creando…" : "Crear OF"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </AppShell>
   );
 }
