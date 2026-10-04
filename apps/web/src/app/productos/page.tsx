@@ -7,8 +7,8 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
-import ConfirmDialog from "@/components/ui/confirm-dialog";
 import Segmented from "@/components/ui/segmented";
+import StickyBar from "@/components/ui/sticky-bar";
 import ProductoCard from "@/components/productos/producto-card";
 import { api } from "@/lib/api";
 import { guardarVistaProductos, leerVistaProductos, type VistaProductos } from "@/lib/local-store";
@@ -31,10 +31,6 @@ export default function ProductosPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroCat, setFiltroCat] = useState("");
-
-  const [porEliminar, setPorEliminar] = useState<ProductoLite | null>(null);
-  const [eliminando, setEliminando] = useState(false);
-  const [bloqueo, setBloqueo] = useState<{ p: ProductoLite; motivo: string } | null>(null);
 
   const [vista, setVista] = useState<VistaProductos>("tabla");
   useEffect(() => {
@@ -171,37 +167,6 @@ export default function ProductosPage() {
     }
   }
 
-  // --------------------------------------------------------------- Eliminar
-  async function eliminar(p: ProductoLite) {
-    setEliminando(true);
-    try {
-      await api(`/productos/${p.id}/definitivo`, { method: "DELETE" });
-      setPorEliminar(null);
-      await cargar();
-      setError("");
-      setMsg(`Producto "${p.nombre}" eliminado.`);
-    } catch (e) {
-      setPorEliminar(null);
-      setBloqueo({ p, motivo: (e as Error).message });
-    } finally {
-      setEliminando(false);
-    }
-  }
-
-  async function desactivar(p: ProductoLite) {
-    try {
-      await api(`/productos/${p.id}`, { method: "DELETE" });
-      setBloqueo(null);
-      await cargar();
-      setError("");
-      setMsg(`Producto "${p.nombre}" desactivado.`);
-    } catch (e) {
-      setBloqueo(null);
-      setMsg("");
-      setError((e as Error).message);
-    }
-  }
-
   return (
     <AppShell>
       {error && <div className="error">{error}</div>}
@@ -231,6 +196,7 @@ export default function ProductosPage() {
         ))}
       </div>
 
+      <StickyBar>
       <div className="card" style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
         <label style={{ flex: 2, minWidth: 180 }}>
           Buscar
@@ -259,6 +225,7 @@ export default function ProductosPage() {
           />
         </div>
       </div>
+      </StickyBar>
 
       {vista === "grid" ? (
         productos.length === 0 ? (
@@ -266,12 +233,12 @@ export default function ProductosPage() {
         ) : (
           <div className="product-grid">
             {productos.map((p) => (
-              <ProductoCard key={p.id} producto={p} onEliminar={setPorEliminar} />
+              <ProductoCard key={p.id} producto={p} />
             ))}
           </div>
         )
       ) : (
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table className="table">
             <thead>
@@ -286,7 +253,6 @@ export default function ProductosPage() {
                 <th>Comprable</th>
                 <th className="num">Variantes</th>
                 <th className="num">Stock</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -328,16 +294,11 @@ export default function ProductosPage() {
                   </td>
                   <td className="num">{p.variantes}</td>
                   <td className="num">{formatCantidad(p.stockTotal)}</td>
-                  <td>
-                    <button type="button" className="btn ghost sm" onClick={() => setPorEliminar(p)}>
-                      Eliminar
-                    </button>
-                  </td>
                 </tr>
               ))}
               {productos.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="empty">
+                  <td colSpan={10} className="empty">
                     Sin productos todavía. Usa “Nuevo producto” para crear el primero.
                   </td>
                 </tr>
@@ -438,34 +399,6 @@ export default function ProductosPage() {
             </div>
           </form>
         </Modal>
-      )}
-
-      {porEliminar && (
-        <ConfirmDialog
-          title="Eliminar producto"
-          message={
-            <>
-              ¿Seguro que deseas eliminar <strong>{porEliminar.nombre}</strong>? Esta acción no se puede deshacer.
-              {porEliminar.variantes > 0 && <> Se eliminarán también sus {porEliminar.variantes} variante(s).</>}
-            </>
-          }
-          confirmLabel="Eliminar"
-          danger
-          loading={eliminando}
-          onConfirm={() => eliminar(porEliminar)}
-          onClose={() => setPorEliminar(null)}
-        />
-      )}
-
-      {bloqueo && (
-        <ConfirmDialog
-          title="No se pudo eliminar"
-          message={bloqueo.motivo}
-          confirmLabel="Desactivar en su lugar"
-          cancelLabel="Cerrar"
-          onConfirm={() => desactivar(bloqueo.p)}
-          onClose={() => setBloqueo(null)}
-        />
       )}
     </AppShell>
   );

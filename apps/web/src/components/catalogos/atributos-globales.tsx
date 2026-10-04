@@ -154,7 +154,7 @@ export default function AtributosGlobales({ onNotify }: Props) {
         placeholder="Buscar atributo..."
         style={{ marginBottom: 16, width: "100%", maxWidth: 300 }}
       />
-      <div className="card" style={{ padding: 0, overflow: "hidden", margin: 0 }}>
+      <div className="card" style={{ padding: 0, margin: 0 }}>
         <table className="table" style={{ margin: 0 }}>
           <thead>
             <tr>

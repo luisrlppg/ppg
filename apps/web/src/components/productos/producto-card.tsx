@@ -8,10 +8,9 @@ import type { ProductoLite } from "@/lib/types";
 
 interface Props {
   producto: ProductoLite;
-  onEliminar: (p: ProductoLite) => void;
 }
 
-export default function ProductoCard({ producto, onEliminar }: Props) {
+export default function ProductoCard({ producto }: Props) {
   const formatCantidad = useFormatCantidad();
   const [imgError, setImgError] = useState(false);
   const src = producto.imagen;
@@ -44,11 +43,6 @@ export default function ProductoCard({ producto, onEliminar }: Props) {
           <span className="muted small">${Number(producto.basePrice).toFixed(2)}</span>
         </div>
       </Link>
-      <div className="product-card-actions">
-        <button type="button" className="btn ghost sm" onClick={() => onEliminar(producto)}>
-          Eliminar
-        </button>
-      </div>
     </div>
   );
 }

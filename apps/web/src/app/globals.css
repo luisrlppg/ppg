@@ -280,8 +280,10 @@ select:focus {
 /* ---- Layout con menú lateral ---- */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -454,12 +456,22 @@ select:focus {
 .content {
   flex: 1;
   min-width: 0;
-  padding: 24px 16px 64px;
+  height: 100vh;
+  height: 100dvh;
+  overflow: auto;
+  padding: 0 16px 64px;
 }
 
 .content-inner {
   max-width: 1024px;
   margin: 0 auto;
+}
+
+/* Espaciado superior sin mover el bloque contenedor del sticky (ver .sticky-bar). */
+.content-inner::before {
+  content: "";
+  display: block;
+  height: 24px;
 }
 
 .backdrop {
@@ -511,6 +523,10 @@ select:focus {
   background: #eee;
   padding: 10px 12px;
   font-size: 0.95rem;
+  position: sticky;
+  top: var(--sticky-head, 0px);
+  z-index: 3;
+  box-shadow: inset 0 -1px 0 var(--line);
 }
 
 .table td {
@@ -699,6 +715,11 @@ select:focus {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Con un modal abierto, el área de contenido no debe scrollear detrás. */
+.modal-open .content {
+  overflow: hidden;
 }
 
 /* ---- Encabezado de página ---- */
@@ -1025,7 +1046,7 @@ select:focus {
   gap: 6px;
   flex-wrap: wrap;
   position: sticky;
-  top: 58px;
+  top: 0;
   z-index: 20;
   background: #f4f4f4;
   padding: 10px 0;
@@ -1099,7 +1120,22 @@ select:focus {
 
 /* ---- Utilidades de tabla ---- */
 .table-wrap {
-  overflow-x: auto;
+  overflow: visible;
+}
+
+/* ---- Barra de búsqueda/filtros fija (arriba) ---- */
+.sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f4f4f4;
+  padding: 12px 0;
+  margin: 0;
+}
+
+.sticky-bar > * {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .table td.num,

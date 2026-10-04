@@ -855,7 +855,7 @@ export default function ProductoDetallePage() {
             ))}
           </div>
         )}
-        <div className="card" style={{ padding: 0, overflow: "hidden", margin: "12px 0" }}>
+        <div className="card" style={{ padding: 0, margin: "12px 0" }}>
           <table className="table">
             <thead>
               <tr>
@@ -912,7 +912,7 @@ export default function ProductoDetallePage() {
           seleccionado. Los pasos con el mismo número de <strong>panel</strong> se muestran juntos. Los ejes que no son
           paso (p. ej. <strong>Tamaño rosca</strong>) se derivan del componente elegido.
         </HelpNote>
-        <div className="card" style={{ padding: 0, overflow: "hidden", margin: "12px 0" }}>
+        <div className="card" style={{ padding: 0, margin: "12px 0" }}>
           <table className="table">
             <thead>
               <tr>
@@ -1077,7 +1077,7 @@ export default function ProductoDetallePage() {
         )}
 
         <div className="spacer" />
-        <div className="card" style={{ padding: 0, overflow: "hidden", margin: 0 }}>
+        <div className="card" style={{ padding: 0, margin: 0 }}>
           <table className="table">
             <thead>
               <tr>

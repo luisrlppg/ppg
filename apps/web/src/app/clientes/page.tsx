@@ -6,6 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import Segmented from "@/components/ui/segmented";
+import StickyBar from "@/components/ui/sticky-bar";
 import ClienteCard from "@/components/clientes/cliente-card";
 import ClienteFormModal from "@/components/clientes/cliente-form-modal";
 import { api } from "@/lib/api";
@@ -147,6 +148,7 @@ export default function ClientesPage() {
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
+      <StickyBar>
       <div className="card" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <label style={{ flex: 2, minWidth: 200 }}>
           Buscar
@@ -168,6 +170,7 @@ export default function ClientesPage() {
           />
         </div>
       </div>
+      </StickyBar>
 
       {vista === "grid" ? (
         clientes.length === 0 ? (
@@ -180,7 +183,7 @@ export default function ClientesPage() {
           </div>
         )
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{ padding: 0 }}>
           <div className="table-wrap">
             <table className="table">
               <thead>

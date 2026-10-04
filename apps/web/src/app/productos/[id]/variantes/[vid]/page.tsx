@@ -175,7 +175,7 @@ export default function VariantePage() {
       </div>
 
       {/* --- Existencia --- */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="card" style={{ padding: 0 }}>
         <table className="table">
           <thead>
             <tr>

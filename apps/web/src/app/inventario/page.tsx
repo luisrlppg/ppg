@@ -6,6 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import Segmented from "@/components/ui/segmented";
+import StickyBar from "@/components/ui/sticky-bar";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
 import { api } from "@/lib/api";
 import { descargarCSV } from "@/lib/csv";
@@ -340,6 +341,7 @@ export default function InventarioPage() {
         quedar por debajo de cero. En <strong>Min Max</strong> puedes editar el mínimo y el máximo de cada variante.
       </HelpNote>
 
+      <StickyBar>
       <div className="toolbar">
         <button className="btn primary" onClick={() => abrir("entrada")}>
           + Entrada
@@ -397,8 +399,9 @@ export default function InventarioPage() {
           ]}
         />
       </div>
+      </StickyBar>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           {vista === "variante-minmax" ? (
             <table className="table">

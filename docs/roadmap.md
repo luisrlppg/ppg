@@ -26,6 +26,16 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Buscador/encabezados fijos y productos alfabético (2026-10-04):** el área de contenido
+  (`.content`) pasó a ser el contenedor de scroll (`100dvh; overflow:auto`; sidebar fijo) y el
+  `thead` de `.table` se pega debajo de un `StickyBar` (mide su alto en `--sticky-head`). Aplicado
+  en productos, clientes, ventas e inventario; se quitó `overflow:hidden` de las tarjetas con tablas
+  y `.table-wrap` dejó de scrollear (el horizontal lo hace `.content`). Además, `GET /productos`
+  ahora ordena **siempre alfabético por `nombre`** (antes por `updatedAt`, que reordenaba al editar).
+- **Eliminar producto solo desde el detalle (2026-10-04):** se quitó el botón "Eliminar" de la
+  lista de productos (tabla y tarjetas) para reducir el riesgo de borrados accidentales; el alta
+  sigue igual. El borrado (con fallback a desactivar) queda únicamente en la ficha del producto
+  (`productos/[id]`).
 - **Paso 2 de nueva venta como lista (2026-10-04):** el selector de producto dejó de ser un grid
   de tarjetas y ahora es una **lista filtrable** por nombre/SKU. Al hacer clic: producto con pasos
   abre `modal-config-variante.tsx` (wizard); sin pasos con varias variantes abre el nuevo

@@ -46,7 +46,7 @@ export class ProductosService {
     };
     const rows = await this.prisma.product.findMany({
       where,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { nombre: "asc" },
       include: {
         category: true,
         variants: {

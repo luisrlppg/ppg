@@ -39,7 +39,7 @@ Registrados en `app.module.ts`.
 ### 2.1 Productos / variantes / grid / BOM → `productos/`
 - `productos.controller.ts` (235) — rutas `/api/productos...`
 - `productos.service.ts` (593), zonas:
-  - `list` 34 · `get` (detalle + componentes + variantes) 73 · `create` 122
+  - `list` (siempre orden alfabético por `nombre`) 34 · `get` (detalle + componentes + variantes) 73 · `create` 122
   - `update` (registra `PriceChange`) 157 · `deactivate` 202
   - `setEjes` 209 · `setValoresPermitidos` 226 (tabla `ProductAttributeValue`) · `setComponentes` (BOM) 255 · `getPasos`/`setPasos` (wizard)
   - `variantesDeProducto` 276 · `buscarVariantes` 292 · `createVariant` 324 · `updateVariant` 341
@@ -147,7 +147,7 @@ y `AppShell` (excepto tienda y login).
 | Página | Archivo | Líneas | Funcionalidad |
 |---|---|---|---|
 | Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos |
-| Lista productos | `app/productos/page.tsx` | 395 | grid/tabla + alta en modal; eliminar con fallback a desactivar |
+| Lista productos | `app/productos/page.tsx` | 402 | grid/tabla + alta en modal; sin botón eliminar (el borrado vive en el detalle del producto) |
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
 | Ventas | `app/ventas/page.tsx` | 486 | lista/detalle/confirmar/despachar/**imprimir**; alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (selección simple de variante); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento imprimible: `components/ventas/documento-venta.tsx` (overlay + `window.print()`, toggle IVA 16%, imagen por línea) |
@@ -175,8 +175,9 @@ y `AppShell` (excepto tienda y login).
 
 ### 3.3 Componentes UI compartidos (`components/ui/`)
 Reutilízalos en vez de inventar clases nuevas:
-- `page-header.tsx` (37) · `modal.tsx` (45) · `confirm-dialog.tsx` (39) · `segmented.tsx` (31) · `help-note.tsx` (26).
+- `page-header.tsx` (37) · `modal.tsx` (45) · `confirm-dialog.tsx` (39) · `segmented.tsx` (31) · `help-note.tsx` (26) · `sticky-bar.tsx` (buscador/filtros fijos).
 - Estilos/tokens en `app/globals.css`. Eliminados por falta de uso: `badge.tsx`, `empty-state.tsx`.
+- **Scroll + fijos:** el área de contenido (`.content` en `app-shell.tsx`) es el contenedor de scroll (`height:100dvh; overflow:auto`); el sidebar queda fijo. `StickyBar` mide su alto y setea `--sticky-head`, que usan los `th` de `.table` para pegarse justo debajo del buscador. Por eso las tarjetas que envuelven tablas **no** deben usar `overflow:hidden` ni `.table-wrap` debe scrollear (el scroll horizontal lo hace `.content`).
 
 ---
 

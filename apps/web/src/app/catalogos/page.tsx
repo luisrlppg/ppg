@@ -197,7 +197,7 @@ function CatalogosInner() {
               Crear
             </button>
           </div>
-          <div className="card" style={{ padding: 0, overflow: "hidden", margin: 0 }}>
+          <div className="card" style={{ padding: 0, margin: 0 }}>
             <div className="table-wrap">
               <table className="table" style={{ margin: 0 }}>
                 <thead>
@@ -261,7 +261,7 @@ function CatalogosInner() {
               Crear
             </button>
           </div>
-          <div className="card" style={{ padding: 0, overflow: "hidden", margin: 0 }}>
+          <div className="card" style={{ padding: 0, margin: 0 }}>
             <div className="table-wrap">
               <table className="table" style={{ margin: 0 }}>
                 <thead>

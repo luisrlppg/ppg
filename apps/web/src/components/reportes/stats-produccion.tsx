@@ -84,7 +84,7 @@ export default function StatsProduccion({ onError }: Props) {
           </div>
 
           <h5 style={{ marginTop: 16 }}>Producción por sección (unidades / persona-hora)</h5>
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="card" style={{ padding: 0 }}>
             <table className="table" style={{ margin: 0 }}>
               <thead>
                 <tr>
@@ -120,7 +120,7 @@ export default function StatsProduccion({ onError }: Props) {
           </div>
 
           <h5 style={{ marginTop: 16 }}>Consumo por variante</h5>
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="card" style={{ padding: 0 }}>
             <table className="table" style={{ margin: 0 }}>
               <thead>
                 <tr>

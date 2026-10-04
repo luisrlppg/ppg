@@ -26,7 +26,10 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
    **No** introduzcas Redux/Zustand/react-query: sigue `useState` + `useEffect` + `useCallback`.
 10. **Tipos nuevos:** centralízalos en `apps/web/src/lib/types.ts`.
 11. **UI compartida:** reutiliza `components/ui/` (`PageHeader`, `Modal`, `ConfirmDialog`, `Segmented`,
-    `HelpNote`) y las clases/tokens de `app/globals.css`. No inventes clases nuevas.
+    `HelpNote`, `StickyBar`) y las clases/tokens de `app/globals.css`. No inventes clases nuevas.
+    En listas con buscador envuelve la barra en `StickyBar` (queda fija y publica `--sticky-head`);
+    las tarjetas que envuelven `.table` **no** deben usar `overflow:hidden` ni `.table-wrap` scrollear
+    (el scroll del contenido y el `thead` fijo dependen de ello; ver §3.3 de `project-nav.md`).
 12. **Exportaciones CSV en cliente** usan `lib/csv.ts`; respetan los filtros/vista activa.
 13. **Preferencias de UI** (vista tabla/grid, selecciones de ejes): `local-store.ts` (`ppg.*` en `localStorage`).
 14. **Cantidades mostradas:** formatea las cantidades visibles con `useFormatCantidad()` de

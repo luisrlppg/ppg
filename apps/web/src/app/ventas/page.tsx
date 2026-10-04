@@ -6,6 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import StickyBar from "@/components/ui/sticky-bar";
 import NuevaVenta from "@/components/ventas/nueva-venta";
 import DocumentoVenta from "@/components/ventas/documento-venta";
 import { api } from "@/lib/api";
@@ -207,7 +208,7 @@ export default function VentasPage() {
           <HelpNote>Todas las líneas están despachadas.</HelpNote>
         )}
 
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{ padding: 0 }}>
           <div className="table-wrap">
             <table className="table">
               <thead>
@@ -298,7 +299,7 @@ export default function VentasPage() {
             </div>
 
             {(d.ordenesFabricacion ?? []).length > 0 && (
-              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div className="card" style={{ padding: 0 }}>
                 <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación generadas</h4>
                 <div className="table-wrap">
                   <table className="table">
@@ -408,6 +409,7 @@ export default function VentasPage() {
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
+      <StickyBar>
       <div className="toolbar">
         <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Nº o cliente…" style={{ maxWidth: 240 }} />
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} style={{ maxWidth: 180 }}>
@@ -422,8 +424,9 @@ export default function VentasPage() {
           <option value="web">Web</option>
         </select>
       </div>
+      </StickyBar>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="card" style={{ padding: 0 }}>
         <div className="table-wrap">
           <table className="table">
             <thead>

@@ -156,7 +156,7 @@ export default function BackupsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="card" style={{ padding: 0 }}>
         <h3 style={{ margin: 16 }}>Respaldos ({archivos.length})</h3>
         <table className="table" style={{ margin: 0 }}>
           <thead>

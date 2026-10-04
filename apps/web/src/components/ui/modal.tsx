@@ -18,9 +18,11 @@ export default function Modal({ title, onClose, children, size = "default", foot
     document.addEventListener("keydown", onKey);
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("modal-open");
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previous;
+      document.body.classList.remove("modal-open");
     };
   }, [onClose]);
 
