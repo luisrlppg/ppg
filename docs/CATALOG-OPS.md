@@ -49,7 +49,7 @@ ops:
 |---|---|---|
 | `attr.ensure` | `name`, `values?` | Crea el atributo (y valores) si no existe. |
 | `attr.rename` | `from`, `to` | Renombra el atributo. |
-| `attr.merge` | `from`, `into` | Mueve variantes/ejes/permitidos/pasos al atributo destino y borra el origen. |
+| `attr.merge` | `from`, `into`, `prefer?` | Mueve variantes/ejes/permitidos/pasos al atributo destino y borra el origen. `prefer` (`target` por defecto) decide qué valor gana si la variante ya tenía valor en el destino. |
 | `attr.delete` | `name`, `cascade?` | Borra el atributo. Si tiene variantes exige `cascade: true`. Aborta si está en `ProductPasso`. |
 | `attr.assignAxis` | `product`, `attribute`, `sortOrder?` | Agrega el eje al producto (`ProductAttributeLine`). |
 | `attr.unassignAxis` | `product`, `attribute` | Quita el eje y las asignaciones de las variantes de ese producto. |

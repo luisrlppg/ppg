@@ -139,14 +139,15 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       const target = await ensureAttr(tx, o.into);
       if (target.id === origin.id) return;
       const vas = await tx.variantAttribute.findMany({ where: { attributeId: origin.id }, include: { value: true } });
+      const prefer = o.prefer ?? "target";
       for (const va of vas) {
         const tv = await ensureValue(tx, target.id, va.value.valor);
         const existing = await tx.variantAttribute.findUnique({
           where: { variantId_attributeId: { variantId: va.variantId, attributeId: target.id } },
         });
         if (existing) {
+          if (prefer === "origin") await tx.variantAttribute.update({ where: { id: existing.id }, data: { valueId: tv.id } });
           await tx.variantAttribute.delete({ where: { id: va.id } });
-          await tx.variantAttribute.update({ where: { id: existing.id }, data: { valueId: tv.id } });
         } else {
           await tx.variantAttribute.update({ where: { id: va.id }, data: { attributeId: target.id, valueId: tv.id } });
         }

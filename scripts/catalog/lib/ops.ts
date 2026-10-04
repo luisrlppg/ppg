@@ -5,7 +5,7 @@ export type Op =
   | { op: "attr.ensure"; name: string; values?: string[] }
   | { op: "attr.rename"; from: string; to: string }
   | { op: "attr.delete"; name: string; cascade?: boolean }
-  | { op: "attr.merge"; from: string; into: string }
+  | { op: "attr.merge"; from: string; into: string; prefer?: "origin" | "target" }
   | { op: "attr.assignAxis"; product: string; attribute: string; sortOrder?: number }
   | { op: "attr.unassignAxis"; product: string; attribute: string }
   | { op: "attr.restrictValues"; product: string; attribute: string; values: string[] }

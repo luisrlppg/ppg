@@ -1,0 +1,8 @@
+version: 1
+name: taparrosca-forma
+description: unifica Forma de Taparrosca (elimina Tipo; "Mini yadis" -> "Yadis")
+ops:
+  # Tipo de Taparrosca se fusiona en Forma; en conflicto gana el valor de Forma.
+  - { op: attr.merge, from: "Tipo de Taparrosca", into: "Forma de Taparrosca", prefer: target }
+  # Mini yadis es una forma Yadis mas corta: se fusiona en Yadis.
+  - { op: value.merge, attribute: "Forma de Taparrosca", from: "Mini yadis", into: "Yadis" }
