@@ -1,6 +1,6 @@
 #!/bin/bash
 # PPG ERP - Dev Server Manager (un solo comando, alias: ppg)
-# Uso: ./scripts/ppg.sh <start|stop|restart|reload|status|logs|db>
+# Uso: ./scripts/ppg.sh <start|stop|restart|reload|status|logs|db|backup|restore>
 #   start    bootstrap completo (postgres + deps + migraciones) y arranca con hot-reload
 #   stop     detiene api + web
 #   restart  stop + start
@@ -10,6 +10,8 @@
 #   db       muestra modo+estado de PostgreSQL
 #   db <native|docker>   elige el motor de PostgreSQL (persistido en .env) y lo levanta
 #   db stop  detiene el motor de PostgreSQL del modo actual
+#   backup [nombre]      punto de retorno: vuelca la BD a docs/backups/ppg-<fecha>[-nombre].dump
+#   restore [archivo] [--yes]  restaura un respaldo (el más reciente si se omite); sobrescribe datos
 #
 # PostgreSQL: PPG_DB_MODE=auto|native|docker (en .env; default auto).
 #   auto   usa la URL activa; si no responde prueba cluster nativo y luego Docker.
@@ -76,6 +78,13 @@ pg_ready_url() {
 }
 
 pg_local_ready() { pg_ready_url "$DATABASE_URL"; }
+
+# URL activa según el motor, sin query string: pg_dump/pg_restore/psql no aceptan ?schema=public
+active_db_url() {
+  local url="$DATABASE_URL"
+  [ "$PPG_DB_MODE" = "docker" ] && url="$DATABASE_URL_DOCKER"
+  printf '%s' "${url%%\?*}"
+}
 
 # --- PostgreSQL ---
 start_native() {
@@ -352,6 +361,75 @@ do_db() {
   esac
 }
 
+# --- Respaldos ---
+do_backup() {
+  local name="${1:-}"
+  local dir="$ROOT/docs/backups"
+  local url ts file
+  url=$(active_db_url)
+  mkdir -p "$dir"
+  ts=$(date +%Y%m%d-%H%M%S)
+  if [ -n "$name" ]; then
+    file="$dir/ppg-${ts}-${name}.dump"
+  else
+    file="$dir/ppg-${ts}.dump"
+  fi
+
+  echo "==> Respaldando la base de datos -> $file"
+  pg_dump "$url" -Fc -f "$file"
+  echo "Punto de retorno creado."
+  echo "Restaurar con: $0 restore \"$file\""
+}
+
+do_restore() {
+  local file="" assume_yes=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      --yes|-y) assume_yes=1 ;;
+      *) file="$arg" ;;
+    esac
+  done
+
+  local dir="$ROOT/docs/backups"
+  if [ -z "$file" ]; then
+    file=$(ls -1t "$dir"/*.dump 2>/dev/null | head -1 || true)
+    [ -z "$file" ] && file=$(ls -1t "$dir"/*.sql 2>/dev/null | head -1 || true)
+  fi
+  if [ -z "$file" ] || [ ! -f "$file" ]; then
+    echo "ERROR: no se encontró archivo de respaldo." >&2
+    echo "Uso: $0 restore [archivo] [--yes]" >&2
+    exit 1
+  fi
+
+  local url
+  url=$(active_db_url)
+  echo "==> Restaurando: $file"
+  echo "    Destino:     $url"
+  if [ "$assume_yes" != 1 ]; then
+    read -r -p "Esto SOBRESCRIBE los datos actuales. ¿Continuar? [s/N] " reply
+    case "$reply" in
+      s|S|si|Si|SI|y|Y) ;;
+      *) echo "Cancelado."; return 0 ;;
+    esac
+  fi
+
+  if services_running; then
+    echo "==> Deteniendo api+web para evitar conexiones activas"
+    do_stop
+  fi
+
+  if pg_restore -l "$file" >/dev/null 2>&1; then
+    echo "==> Formato custom: pg_restore --clean --if-exists"
+    pg_restore --clean --if-exists --no-owner --no-privileges -d "$url" "$file"
+  else
+    echo "==> Formato SQL plano: recreando schema public y aplicando"
+    psql "$url" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
+    psql "$url" -v ON_ERROR_STOP=1 -f "$file"
+  fi
+
+  echo "Restauración completa. Levanta servicios con: $0 start"
+}
+
 # --- Main ---
 ACTION="${1:-}"
 case "$ACTION" in
@@ -362,9 +440,13 @@ case "$ACTION" in
   status)  do_status ;;
   logs)    do_logs ;;
   db)      do_db "${2:-}" ;;
+  backup)  do_backup "${2:-}" ;;
+  restore) do_restore "${@:2}" ;;
   *)
-    echo "Uso: $0 <start|stop|restart|reload|status|logs|db>"
+    echo "Uso: $0 <start|stop|restart|reload|status|logs|db|backup|restore>"
     echo "     ppg db <native|docker|auto|stop>   (motor de PostgreSQL)"
+    echo "     ppg backup [nombre]                (punto de retorno en docs/backups/)"
+    echo "     ppg restore [archivo] [--yes]      (restaura el respaldo más reciente si se omite)"
     exit 1
     ;;
 esac

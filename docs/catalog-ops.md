@@ -28,7 +28,9 @@ pnpm exec dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog
 pnpm exec dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/odoo-diff.ts
 ```
 
-> Antes de `--apply`, respalda: `pg_dump "$DATABASE_URL" > docs/backups/ppg-backup-$(date +%Y%m%d-%H%M%S).sql`.
+> Antes de `--apply`, crea un punto de retorno: `pnpm db:backup` (o `ppg backup [nombre]`).
+> Restaura con `ppg restore` (ver [`scripts.md`](./scripts.md)). Nota: `pg_dump` no acepta el
+> `?schema=public` de `DATABASE_URL`; los comandos de `ppg` ya lo manejan.
 
 ## Formato del archivo de ops
 

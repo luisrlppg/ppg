@@ -36,6 +36,7 @@ export interface ProductoLite {
   uom: string;
   basePrice: number;
   hasVariants: boolean;
+  vendible: boolean;
   activo: boolean;
   imagen: string | null;
   categoria: string | null;
@@ -51,7 +52,6 @@ export interface Variante {
   stockMin: number;
   stockMax: number;
   longLead: boolean;
-  published: boolean;
   activo: boolean;
   stockActual: number;
   uom?: string;
@@ -88,6 +88,7 @@ export interface ProductoDetalle {
   basePrice: number;
   categoryId: number | null;
   hasVariants: boolean;
+  vendible: boolean;
   activo: boolean;
   category: { id: number; nombre: string } | null;
   variantes: (Variante & { porUbicacion?: unknown })[];
@@ -121,7 +122,6 @@ export interface Existencia {
   stockMin: number;
   stockMax: number;
   longLead: boolean;
-  publicado: boolean;
   estado: "normal" | "bajo" | "critico";
   porUbicacion: Record<number, { location: string; qty: number }>;
   valoracion: { attribute: string; valor: string }[];
@@ -139,7 +139,6 @@ export interface ExistenciaDe {
   stockMin: number;
   stockMax: number;
   longLead: boolean;
-  published: boolean;
   activo: boolean;
   notas: string | null;
   stockActual: number;
@@ -220,7 +219,8 @@ export interface ProductoPublico {
   uom: string;
   basePrice: number;
   hasVariants: boolean;
-  variantesPublicadas: VariantePublica[];
+  tienePasos: boolean;
+  variantes: VariantePublica[];
 }
 
 export interface VentaLinea {
@@ -416,6 +416,13 @@ export interface ResolucionVariante {
 export interface ConfiguracionLinea {
   pasos?: { pregunta: string; opciones: string[]; seleccion: string }[];
   resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
+}
+
+export interface BackupFile {
+  nombre: string;
+  bytes: number;
+  modificado: string;
+  formato: "custom" | "sql";
 }
 
 export interface StatsReporte {

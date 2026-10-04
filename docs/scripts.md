@@ -16,6 +16,18 @@ Para datos/migración Odoo, ver la sección al final.
   idempotente. `--dry`/`--apply`.
 - `reset-variants.ts` — limpia variantes y atributos/valores.
 
+## Respaldos — `scripts/ppg.sh backup|restore`
+
+Punto de retorno rápido de la BD (datos reales). Ver [`development.md`](./development.md).
+
+- `ppg backup [nombre]` → `pg_dump -Fc` a `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
+- `ppg restore [archivo] [--yes]` → detiene api+web y restaura con `pg_restore --clean --if-exists`
+  (sin archivo, usa el `.dump` más reciente; acepta `.sql` plano recreando el schema `public`).
+- Alias: `pnpm db:backup` · `pnpm db:restore`.
+- `docs/backups/` está en `.gitignore`.
+- **UI:** `apps/web/src/app/backups/page.tsx` + `apps/api/src/backups/` (módulo NestJS, sólo `admin`)
+  hacen lo mismo desde el navegador (crear/descargar/subir/restaurar/eliminar).
+
 ## Reorganizaciones one-off (histórico)
 
 Todas soportan `--dry`/`--apply`.
@@ -55,7 +67,7 @@ Todas soportan `--dry`/`--apply`.
   subensamblados pendientes y excluye pigmentos/oficina. Genera
   `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`. `--apply` fija
   `StockLevel` (motivo `ajuste`) sólo en renglones `ajuste`; **`--reset`** borra todo el stock y recarga
-  el snapshot Odoo (destructivo: respaldar con `pg_dump` antes).
+  el snapshot Odoo (destructivo: usar `ppg backup` antes).
 - `odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**:
   `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `odoo-migration-plan.ts` — plan de migración.

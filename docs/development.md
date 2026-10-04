@@ -23,7 +23,28 @@ pnpm db:deploy              # APLICAR migraciones SIN interactividad (usar SIEMP
 pnpm db:seed                # auth + catálogos + ubicaciones + clientes + atributos + productos base
 pnpm db:seed:products       # BOM + ejes + passos del storefront (requiere productos ya sembrados)
 pnpm db:studio              # visor de datos Prisma
+pnpm db:backup [nombre]     # punto de retorno de la BD -> docs/backups/
+pnpm db:restore [archivo]   # restaura un respaldo (el más reciente si se omite)
 ```
+
+### Punto de retorno (respaldos)
+
+Desde la **UI**: menú **Respaldos** (`http://localhost:3000/backups`, sólo `admin`) — crear, listar,
+descargar, subir, restaurar y eliminar.
+
+Desde CLI, para pruebas que puedan escribir datos no reales:
+
+```bash
+ppg backup pre-prueba       # o: pnpm db:backup pre-prueba
+# ... pruebas ...
+ppg restore                 # restaura el .dump más reciente (pide confirmación)
+ppg restore docs/backups/ppg-<fecha>-pre-prueba.dump --yes
+```
+
+- `backup` vuelca la BD con `pg_dump -Fc` en `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
+- `restore` detiene api+web, **sobrescribe** los datos (`pg_restore --clean --if-exists`) y avisa
+  cuándo volver a levantar (`ppg start`). Acepta `.dump` (custom) o `.sql` (texto plano).
+- Los comandos usan la URL sin `?schema=public` (pg_dump/pg_restore/psql no aceptan ese query param).
 
 ### Gestor de servidores `scripts/ppg.sh`
 

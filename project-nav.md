@@ -113,12 +113,23 @@ Registrados en `app.module.ts`.
 ### 2.9 Clientes / partners → `clientes/`
 - `clientes.controller.ts` (87) · `clientes.service.ts` (137): `list`/`get`/`create`/`update`/`deactivate` + `importar` (CSV).
 
-### 2.10 Auth → `auth/`
+### 2.10 Respaldos de BD → `backups/`
+- `backups.controller.ts` — `@Controller("backups")` **sólo `admin`** (`JwtAuthGuard`+`RolesGuard`):
+  - `GET backups` (listar) · `POST backups` (crear, body `{nombre?}`)
+  - `POST backups/:nombre/restaurar` · `POST backups/subir` (multipart campo `archivo`)
+  - `GET backups/:nombre/descargar` (stream) · `DELETE backups/:nombre`
+- `backups.service.ts`: opera `docs/backups/`; `pg_dump -Fc` al crear; al restaurar usa
+  `pg_restore --clean --if-exists` (`.dump`) o recrea `public` + `psql -f` (`.sql`). Sanitiza
+  nombres (evita path traversal) y usa la URL sin `?schema=public`.
+- `backups.module.ts` importa `AuthModule`.
+- CLI equivalente (mismo directorio): `ppg backup|restore` / `pnpm db:backup|db:restore`.
+
+### 2.11 Auth → `auth/`
 - `auth.controller.ts` (92): `login` (JWT + cookie httpOnly), `logout`, `me`.
 - `auth.service.ts` (78): `validate` (bcrypt) · `findById` · `sign` · `verify` · `toPublic`.
 - Guards `guards/jwt-auth.guard.ts` (cookie → `req.user`) y `guards/roles.guard.ts` (`@Roles()`); decorator `decorators/roles.decorator.ts`.
 
-### 2.11 Soporte transversal
+### 2.12 Soporte transversal
 - `prisma/prisma.service.ts` (15) — wrapper Prisma.
 - `common/util.ts` (20) — `dec`, `isNumberOrStringNumber`, `toUom`, `toTipoComponente` (candidato a modularizar).
 - `common/valores-permitidos.ts` (81) — `valoresPermitidosLote` (subconjunto de valores por eje, sin N+1).
@@ -145,6 +156,7 @@ y `AppShell` (excepto tienda y login).
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
 | Monitor stock | `app/monitor/page.tsx` | 156 | estado + acciones |
+| Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin) |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
 | Shell | `components/app-shell.tsx` | 105 | layout auth-gated: sidebar, `GET /auth/me`, logout |
@@ -184,6 +196,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` |
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
+| Respaldos de la BD (punto de retorno) | `apps/api/src/backups/` · `app/backups/page.tsx` (UI) · `scripts/ppg.sh` (`backup`/`restore`) |
 | Login / roles / JWT | `apps/api/src/auth/` |
 | Tipos shared | `apps/web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` (ver `docs/development.md`) |

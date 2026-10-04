@@ -12,6 +12,8 @@
     "db:seed:demo": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-demo.ts",
     "db:seed:demo:ventas": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/seed-demo-ventas.ts",
     "db:studio": "dotenv -e .env -- pnpm --filter @ppg/db exec prisma studio",
+    "db:backup": "bash scripts/ppg.sh backup",
+    "db:restore": "bash scripts/ppg.sh restore",
     "cat:snapshot": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/snapshot.ts",
     "cat:apply": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/apply.ts",
     "cat:odoo-diff": "dotenv -e .env -- pnpm --filter @ppg/db exec tsx ../../scripts/catalog/odoo-diff.ts",

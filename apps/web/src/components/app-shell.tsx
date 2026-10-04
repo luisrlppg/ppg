@@ -15,6 +15,7 @@ const LINKS: { href: string; label: string; match?: string[] }[] = [
   { href: "/inventario", label: "Inventario" },
   { href: "/clientes", label: "Clientes" },
   { href: "/monitor", label: "Monitor" },
+  { href: "/backups", label: "Respaldos" },
 ];
 
 function iniciales(nombre: string): string {

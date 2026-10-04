@@ -31,7 +31,7 @@ async function main() {
 
   console.log(`Ops: ${parsed.name} (${parsed.ops.length} operaciones)${parsed.description ? ` — ${parsed.description}` : ""}`);
   if (!APPLY) console.log("(dry-run) No se escribirá nada. Usa --apply para aplicar.");
-  console.log("Backup recomendado: pg_dump \"$DATABASE_URL\" > docs/backups/ppg-backup-$(date +%Y%m%d-%H%M%S).sql\n");
+  console.log("Backup recomendado: pnpm db:backup  (o `ppg backup [nombre]`)\n");
 
   const result: EngineResult = { logs: [], warns: [] };
   await prisma
