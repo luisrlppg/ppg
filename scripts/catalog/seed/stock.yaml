@@ -247,10 +247,6 @@ ops:
     location: I3
     qty: 1668
   - op: stock.set
-    sku: TPR-0016
-    location: I3
-    qty: 6000
-  - op: stock.set
     sku: TPR-0017
     location: I3
     qty: 8000

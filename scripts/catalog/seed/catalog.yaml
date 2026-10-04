@@ -627,6 +627,14 @@ ops:
       - Yadis
       - Normal
       - Triangular
+      - 18mm
+      - 23mm
+      - 25mm
+      - 26mm
+      - 30mm
+      - 37mm
+      - 38mm
+      - 44mm
   - op: attr.ensure
     name: Grosor cerda
     values:
@@ -737,11 +745,11 @@ ops:
     sortOrder: 2
   - op: attr.assignAxis
     product: Pincel
-    attribute: Agujero de Mango
+    attribute: Altura de Mango
     sortOrder: 0
   - op: attr.assignAxis
     product: Pincel
-    attribute: Altura de Mango
+    attribute: Agujero de Mango
     sortOrder: 0
   - op: attr.assignAxis
     product: Pincel
@@ -755,10 +763,6 @@ ops:
     product: Pincel
     attribute: Tamaño rosca
     sortOrder: 3
-  - op: attr.assignAxis
-    product: Taparrosca
-    attribute: Altura de Taparrosca
-    sortOrder: 0
   - op: attr.assignAxis
     product: Taparrosca
     attribute: Color de Taparrosca
@@ -782,6 +786,10 @@ ops:
   - op: attr.assignAxis
     product: Taparrosca con Pincel
     attribute: Agujero de Mango
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Color de Taparrosca
     sortOrder: 3
   - op: attr.assignAxis
     product: Taparrosca con Pincel
@@ -1202,34 +1210,35 @@ ops:
     product: Taparrosca con Pincel
     steps:
       - sortOrder: 1
-        panel: 0
-        pregunta: ¿Qué tamaño de rosca necesitas?
+        panel: 1
+        pregunta: Selecciona la rosca
         attribute: Tamaño rosca
-        variantProduct: Mango
+        variantProduct: Taparrosca
       - sortOrder: 2
-        panel: 0
-        pregunta: ¿Qué altura de vastago prefieres?
-        attribute: Altura de Mango
-        variantProduct: Mango
-      - sortOrder: 3
-        panel: 0
-        pregunta: ¿Qué tipo de agujero tiene el vastago?
-        attribute: Agujero de Mango
-        variantProduct: Mango
-      - sortOrder: 4
-        panel: 0
-        pregunta: ¿Qué forma de tapa prefieres?
+        panel: 2
+        pregunta: Selecciona la tapa
         attribute: Forma de Taparrosca
+        variantProduct: Taparrosca
+      - sortOrder: 3
+        panel: 3
+        pregunta: Selecciona el color de la taparrosca
+        attribute: Color de Taparrosca
+        variantProduct: Taparrosca
+      - sortOrder: 4
+        panel: 4
+        pregunta: Selecciona una altura de mango
+        attribute: Altura de Mango
         variantProduct: Pincel
       - sortOrder: 5
-        panel: 0
-        pregunta: ¿De qué color quieres la tapa?
-        attribute: Color de Tapa con Pincel
-        variantProduct: Taparrosca con Pincel
+        panel: 5
+        pregunta: Selecciona el agujero
+        attribute: Agujero de Mango
+        variantProduct: Pincel
       - sortOrder: 6
-        panel: 0
-        pregunta: ¿Cuántas unidades necesitas?
-        variantProduct: Taparrosca con Pincel
+        panel: 6
+        pregunta: Selecciona el color de cerda
+        attribute: Color de Cerda de Pincel
+        variantProduct: Pincel
   - op: bom.set
     product: Rimel Silicon
     components:
@@ -1908,470 +1917,462 @@ ops:
     sku: TPR-0001
     product: Taparrosca
     attrs:
-      Forma de Taparrosca: Normal
-      Tamaño rosca: 10mm
-      Altura de Taparrosca: 18mm
+      Forma de Taparrosca: 18mm
       Color de Taparrosca: Negro
+      Tamaño rosca: 10mm
+    notas: "Altura original: 18mm"
   - op: variant.define
     sku: TPR-0002
     product: Taparrosca
     attrs:
-      Tamaño rosca: 10mm
-      Altura de Taparrosca: 18mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 10mm
+      Forma de Taparrosca: 18mm
+    notas: "Altura original: 18mm"
   - op: variant.define
     sku: TPR-0003
     product: Taparrosca
     attrs:
-      Forma de Taparrosca: Normal
-      Tamaño rosca: 10mm
-      Altura de Taparrosca: 18mm
+      Forma de Taparrosca: 18mm
       Color de Taparrosca: Transparente
+      Tamaño rosca: 10mm
+    notas: "Altura original: 18mm"
   - op: variant.define
     sku: TPR-0004
     product: Taparrosca
     attrs:
-      Tamaño rosca: 10mm
-      Altura de Taparrosca: 37mm
       Color de Taparrosca: Negro
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 10mm
+      Forma de Taparrosca: 37mm
     min: 10
     max: 100
+    notas: "Altura original: 37mm"
   - op: variant.define
     sku: TPR-0005
     product: Taparrosca
     attrs:
-      Forma de Taparrosca: Normal
-      Tamaño rosca: 10mm
-      Altura de Taparrosca: 37mm
+      Forma de Taparrosca: 37mm
       Color de Taparrosca: Transparente
+      Tamaño rosca: 10mm
     min: 10
     max: 100
+    notas: "Altura original: 37mm"
   - op: variant.define
     sku: TPR-0006
     product: Taparrosca
     attrs:
-      Tamaño rosca: 13mm
-      Altura de Taparrosca: 23mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 23mm
     min: 8500
     max: 25500
+    notas: "Altura original: 23mm"
   - op: variant.define
     sku: TPR-0007
     product: Taparrosca
     attrs:
-      Tamaño rosca: 13mm
-      Altura de Taparrosca: 30mm
       Color de Taparrosca: Negro
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 30mm
     min: 50000
     max: 150000
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0008
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 30mm
-      Tamaño rosca: 13mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 30mm
     min: 30000
     max: 60000
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0009
     product: Taparrosca
     attrs:
-      Tamaño rosca: 13mm
-      Altura de Taparrosca: 30mm
       Color de Taparrosca: Oro
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 30mm
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0010
     product: Taparrosca
     attrs:
-      Tamaño rosca: 13mm
-      Forma de Taparrosca: Normal
-      Altura de Taparrosca: 30mm
       Color de Taparrosca: Plata
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 30mm
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0011
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 30mm
+      Color de Taparrosca: Negro
       Tamaño rosca: 13mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Negro
     min: 8500
     max: 17000
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0012
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 30mm
-      Forma de Taparrosca: Normal
-      Tamaño rosca: 13mm
       Color de Taparrosca: Rosa 0992
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 30mm
+    notas: "Altura original: 30mm"
   - op: variant.define
     sku: TPR-0013
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 35mm
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Bala
       Tamaño rosca: 13mm
-      Color de Taparrosca: Negro
+    notas: "Altura original: 35mm"
   - op: variant.define
     sku: TPR-0014
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 35mm
+      Color de Taparrosca: Blanco
       Forma de Taparrosca: Bala
       Tamaño rosca: 13mm
-      Color de Taparrosca: Blanco
+    notas: "Altura original: 35mm"
   - op: variant.define
     sku: TPR-0015
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 35mm
+      Color de Taparrosca: Plata
       Forma de Taparrosca: Bala
       Tamaño rosca: 13mm
-      Color de Taparrosca: Plata
-  - op: variant.define
-    sku: TPR-0016
-    product: Taparrosca
-    attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 13mm
-      Color de Taparrosca: Negro
-      Forma de Taparrosca: Yadis
+    notas: "Altura original: 35mm"
   - op: variant.define
     sku: TPR-0017
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 44mm
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Triangular
       Tamaño rosca: 13mm
-      Color de Taparrosca: Negro
     min: 22000
     max: 44000
+    notas: "Altura original: 44mm"
   - op: variant.define
     sku: TPR-0018
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 44mm
-      Tamaño rosca: 13mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: 44mm
     min: 8000
     max: 12000
+    notas: "Altura original: 44mm"
   - op: variant.define
     sku: TPR-0019
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 44mm
-      Tamaño rosca: 13mm
       Color de Taparrosca: Blanco
+      Tamaño rosca: 13mm
       Forma de Taparrosca: Triangular
     min: 8000
     max: 12000
+    notas: "Altura original: 44mm"
   - op: variant.define
     sku: TPR-0020
     product: Taparrosca
     attrs:
-      Forma de Taparrosca: Normal
-      Altura de Taparrosca: 25mm
-      Tamaño rosca: 15mm
+      Forma de Taparrosca: 25mm
       Color de Taparrosca: Negro
+      Tamaño rosca: 15mm
+    notas: "Altura original: 25mm"
   - op: variant.define
     sku: TPR-0021
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 25mm
-      Tamaño rosca: 15mm
-      Forma de Taparrosca: Normal
       Color de Taparrosca: Blanco
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 25mm
+    notas: "Altura original: 25mm"
   - op: variant.define
     sku: TPR-0022
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 25mm
-      Tamaño rosca: 15mm
-      Forma de Taparrosca: Normal
       Color de Taparrosca: Transparente
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 25mm
+    notas: "Altura original: 25mm"
   - op: variant.define
     sku: TPR-0023
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 26mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 26mm
+    notas: "Altura original: 26mm"
   - op: variant.define
     sku: TPR-0024
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Forma de Taparrosca: Normal
-      Tamaño rosca: 15mm
       Color de Taparrosca: Negro
+      Forma de Taparrosca: 38mm
+      Tamaño rosca: 15mm
     min: 30000
     max: 75000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0025
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Hexagonal
       Tamaño rosca: 15mm
-      Color de Taparrosca: Negro
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0026
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Yadis
       Tamaño rosca: 15mm
-      Color de Taparrosca: Negro
     min: 27000
     max: 51000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0027
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Transparente
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 38mm
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0028
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Transparente
+      Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
     min: 24000
     max: 130000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0029
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Blanco
-      Forma de Taparrosca: Normal
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 38mm
     min: 24000
     max: 50000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0030
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Blanco
+      Tamaño rosca: 15mm
       Forma de Taparrosca: Hexagonal
     min: 18000
     max: 54000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0031
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Blanco
+      Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0032
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Amatista
       Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Amatista
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0033
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Menta
       Forma de Taparrosca: Yadis
       Tamaño rosca: 15mm
-      Color de Taparrosca: Menta
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0034
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Morado satin
       Forma de Taparrosca: Yadis
       Tamaño rosca: 15mm
-      Color de Taparrosca: Morado satin
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0035
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Orquidea
       Forma de Taparrosca: Yadis
       Tamaño rosca: 15mm
-      Color de Taparrosca: Orquidea
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0036
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Rosa glither
+      Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0037
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 15mm
       Color de Taparrosca: Sara
+      Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0038
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Tutifruti
       Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Tutifruti
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0039
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Vegas
       Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Vegas
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0040
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Vino
       Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Vino
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0041
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
+      Color de Taparrosca: Watermelon
       Tamaño rosca: 15mm
       Forma de Taparrosca: Yadis
-      Color de Taparrosca: Watermelon
     min: 12000
     max: 30000
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0042
     product: Taparrosca
     attrs:
-      Altura de Taparrosca: 38mm
-      Tamaño rosca: 18mm
-      Forma de Taparrosca: Normal
       Color de Taparrosca: Transparente
+      Tamaño rosca: 18mm
+      Forma de Taparrosca: 38mm
+    notas: "Altura original: 38mm"
   - op: variant.define
     sku: TPR-0043
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Negro
     min: 20000
     max: 80000
   - op: variant.define
     sku: TPR-0044
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Blanco
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Blanco
     min: 12000
     max: 50000
   - op: variant.define
     sku: TPR-0045
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Bugambilia
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Bugambilia
   - op: variant.define
     sku: TPR-0046
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Desconocido
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Desconocido
   - op: variant.define
     sku: TPR-0047
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Transparente
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Transparente
   - op: variant.define
     sku: TPR-0048
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Plata cromada
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Plata cromada
   - op: variant.define
     sku: TPR-0049
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Negro mate
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
-      Color de Taparrosca: Negro mate
   - op: variant.define
     sku: TPR-0050
     product: Taparrosca
     attrs:
+      Color de Taparrosca: Negro
       Forma de Taparrosca: Rebeca
       Tamaño rosca: 15mm
-      Color de Taparrosca: Negro
     min: 15000
     max: 30000
   - op: variant.define
     sku: TPR-13mm-rebeca-rosa-erika-rubio
     product: Taparrosca
     attrs:
+      Forma de Taparrosca: Rebeca
       Tamaño rosca: 13mm
       Color de Taparrosca: Rosa erika rubio
-      Forma de Taparrosca: Rebeca
     min: 120000
     max: 360000
   - op: variant.define
     sku: TPR-rebeca-15mm-rosa-ultra
     product: Taparrosca
     attrs:
+      Forma de Taparrosca: Rebeca
       Tamaño rosca: 15mm
       Color de Taparrosca: Rosa ultra
-      Forma de Taparrosca: Rebeca
     min: 12000
     max: 15000
   - op: variant.define
@@ -2383,7 +2384,7 @@ ops:
       Forma de Taparrosca: Hexagonal
       Agujero de Mango: Plano
       Altura de Vastago: 10mm
-      Color de Tapa con Pincel: Negro
+      Color de Taparrosca: Negro
   - op: variant.define
     sku: BOT-0001
     product: Botella

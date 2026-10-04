@@ -5,6 +5,12 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 
 ## Decisiones vigentes (reorgs ya aplicados)
 
+- **Taparrosca (2026-10-04):** `Altura de Taparrosca` se fusionó dentro de `Forma de
+  Taparrosca` (el número es la forma; `Bala`/`Rebeca` conservan nombre; su altura va a
+  `notas`). Se eliminó la variante errónea `TPR-0016`. El color del ensamble usa
+  `Color de Taparrosca`. `Altura de Taparrosca` y `Color de Tapa con Pincel` se conservan
+  porque los usa "Tapa con Pincel". Ops: `scripts/catalog/ops/taparrosca-wizard.yaml`.
+  Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
 - **BTVPE (2026-10-04):** eje `Tamaño de Botella` en Botella (`Mini`/`Alta`/`Chica`/`Grande`);
   se retiró `Capacidad de Botella` (mL → `notas`); `Color de Cepillo Silicon` (Blanco/Negro) eje de
   Cepillo Silicon; nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`);

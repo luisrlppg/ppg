@@ -1,0 +1,101 @@
+# Wizard Taparrosca con Pincel (Modelo B)
+# - Fusiona Altura de Taparrosca dentro de Forma de Taparrosca (el numero es la forma)
+# - Bala conserva nombre; su altura va a notas. Rebeca sin altura.
+# - Elimina la variante errónea TPR-0016 (13mm Yadis 38mm).
+# - 'Color de Tapa con Pincel' y 'Altura de Taparrosca' se conservan (los usa 'Tapa con Pincel').
+version: 1
+name: taparrosca-wizard
+description: "Fusiona forma/altura en Forma de Taparrosca y define los pasos del wizard de Taparrosca con Pincel"
+ops:
+  - op: attr.ensure
+    name: "Forma de Taparrosca"
+    values: [18mm, 23mm, 25mm, 26mm, 30mm, 37mm, 38mm, 44mm, Bala, Hexagonal, Rebeca, Triangular, Yadis]
+  - { op: variant.delete, sku: TPR-0016, allowStock: true }
+  - { op: variant.define, sku: TPR-0001, product: Taparrosca, attrs: { "Tamaño rosca": "10mm", "Forma de Taparrosca": "18mm", "Color de Taparrosca": "Negro" }, notas: "Altura original: 18mm" }
+  - { op: variant.define, sku: TPR-0002, product: Taparrosca, attrs: { "Tamaño rosca": "10mm", "Forma de Taparrosca": "18mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 18mm" }
+  - { op: variant.define, sku: TPR-0003, product: Taparrosca, attrs: { "Tamaño rosca": "10mm", "Forma de Taparrosca": "18mm", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 18mm" }
+  - { op: variant.define, sku: TPR-0004, product: Taparrosca, attrs: { "Tamaño rosca": "10mm", "Forma de Taparrosca": "37mm", "Color de Taparrosca": "Negro" }, notas: "Altura original: 37mm" }
+  - { op: variant.define, sku: TPR-0005, product: Taparrosca, attrs: { "Tamaño rosca": "10mm", "Forma de Taparrosca": "37mm", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 37mm" }
+  - { op: variant.define, sku: TPR-0006, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "23mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 23mm" }
+  - { op: variant.define, sku: TPR-0007, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Negro" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0008, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0009, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Oro" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0010, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Plata" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0011, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Negro" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0012, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Rosa 0992" }, notas: "Altura original: 30mm" }
+  - { op: variant.define, sku: TPR-0013, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Bala", "Color de Taparrosca": "Negro" }, notas: "Altura original: 35mm" }
+  - { op: variant.define, sku: TPR-0014, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Bala", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 35mm" }
+  - { op: variant.define, sku: TPR-0015, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Bala", "Color de Taparrosca": "Plata" }, notas: "Altura original: 35mm" }
+  - { op: variant.define, sku: TPR-0017, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Triangular", "Color de Taparrosca": "Negro" }, notas: "Altura original: 44mm" }
+  - { op: variant.define, sku: TPR-0018, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "44mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 44mm" }
+  - { op: variant.define, sku: TPR-0019, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Triangular", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 44mm" }
+  - { op: variant.define, sku: TPR-0020, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "25mm", "Color de Taparrosca": "Negro" }, notas: "Altura original: 25mm" }
+  - { op: variant.define, sku: TPR-0021, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "25mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 25mm" }
+  - { op: variant.define, sku: TPR-0022, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "25mm", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 25mm" }
+  - { op: variant.define, sku: TPR-0023, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "26mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 26mm" }
+  - { op: variant.define, sku: TPR-0024, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Negro" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0025, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Hexagonal", "Color de Taparrosca": "Negro" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0026, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Negro" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0027, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0028, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0029, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0030, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Hexagonal", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0031, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Blanco" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0032, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Amatista" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0033, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Menta" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0034, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Morado satin" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0035, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Orquidea" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0036, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Rosa glither" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0037, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Sara" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0038, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Tutifruti" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0039, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Vegas" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0040, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Vino" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0041, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Watermelon" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0042, product: Taparrosca, attrs: { "Tamaño rosca": "18mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Transparente" }, notas: "Altura original: 38mm" }
+  - { op: variant.define, sku: TPR-0043, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Negro" } }
+  - { op: variant.define, sku: TPR-0044, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Blanco" } }
+  - { op: variant.define, sku: TPR-0045, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Bugambilia" } }
+  - { op: variant.define, sku: TPR-0046, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Desconocido" } }
+  - { op: variant.define, sku: TPR-0047, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Transparente" } }
+  - { op: variant.define, sku: TPR-0048, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Plata cromada" } }
+  - { op: variant.define, sku: TPR-0049, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Negro mate" } }
+  - { op: variant.define, sku: TPR-0050, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Negro" } }
+  - { op: variant.define, sku: TPR-13mm-rebeca-rosa-erika-rubio, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Rosa erika rubio" } }
+  - { op: variant.define, sku: TPR-rebeca-15mm-rosa-ultra, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Rosa ultra" } }
+  - { op: variant.set, sku: TP-10mm-10mm-plano-hexagonal-negro, attribute: "Color de Taparrosca", value: Negro }
+  - { op: attr.unassignAxis, product: Taparrosca, attribute: "Altura de Taparrosca" }
+  - { op: variant.clear, sku: TP-10mm-10mm-plano-hexagonal-negro, attribute: "Color de Tapa con Pincel" }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Color de Taparrosca", sortOrder: 3 }
+  - op: step.set
+    product: "Taparrosca con Pincel"
+    steps:
+      - sortOrder: 1
+        panel: 1
+        pregunta: "Selecciona la rosca"
+        attribute: "Tamaño rosca"
+        variantProduct: "Taparrosca"
+      - sortOrder: 2
+        panel: 2
+        pregunta: "Selecciona la tapa"
+        attribute: "Forma de Taparrosca"
+        variantProduct: "Taparrosca"
+      - sortOrder: 3
+        panel: 3
+        pregunta: "Selecciona el color de la taparrosca"
+        attribute: "Color de Taparrosca"
+        variantProduct: "Taparrosca"
+      - sortOrder: 4
+        panel: 4
+        pregunta: "Selecciona una altura de mango"
+        attribute: "Altura de Mango"
+        variantProduct: "Pincel"
+      - sortOrder: 5
+        panel: 5
+        pregunta: "Selecciona el agujero"
+        attribute: "Agujero de Mango"
+        variantProduct: "Pincel"
+      - sortOrder: 6
+        panel: 6
+        pregunta: "Selecciona el color de cerda"
+        attribute: "Color de Cerda de Pincel"
+        variantProduct: "Pincel"

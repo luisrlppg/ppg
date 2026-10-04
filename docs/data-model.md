@@ -44,6 +44,10 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 - **Colores:** `Color de Cepillo Silicon` (Blanco/Negro) es eje de **Cepillo Silicon**; el cepillo
   nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`). Los BTVPE usan
   `Forma de Sobretapa` (no `Forma de Taparrosca`, que sigue para otros productos).
+- **Taparrosca (2026-10-04):** `Altura de Taparrosca` se fusionó en `Forma de Taparrosca` (el
+  valor es el número de altura, p. ej. `38mm`, o el nombre `Bala`/`Rebeca`); la altura original
+  queda en `notas`. El ensamble **Taparrosca con Pincel** usa `Color de Taparrosca` para el color
+  y toma la altura/agujero/color de cerda del componente **Pincel**. Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
 - **Palillos** (reorg `scripts/reorg-palillos.ts`):
   - **Palillo Sin Cepillo** (id 42, `P0014`) — componente; eje `Color de Palillo`.
   - **Palillo Citologico Sin Cepillo** (`P0032`) — componente; eje `Color de Palillo Citologico` (sólo `Blanco`).

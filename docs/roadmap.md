@@ -20,6 +20,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Wizard de Taparrosca (2026-10-04):** "Taparrosca con Pincel" pasó a Modelo B. Se fusionó
+  `Altura de Taparrosca` dentro de `Forma de Taparrosca` (el número es la forma; `Bala`/`Rebeca`
+  conservan nombre, altura a `notas`); se eliminó la variante errónea `TPR-0016`; el color del
+  ensamble usa `Color de Taparrosca`. Pasos: rosca → tapa → color → altura de mango → agujero →
+  color de cerda (bloque aplicador desde **Pincel**). Ops `scripts/catalog/ops/taparrosca-wizard.yaml`.
+  Ver [`plan-taparrosca.md`](./plan-taparrosca.md). Pendiente: verificar en runtime el color de cerda.
 - **Alta de venta en modal con wizard (2026-10-04):** la vista "Nueva venta" (`/ventas`) ahora abre un
   `Modal` con wizard de 3 pasos (Cliente → Producto → Revisión) y stepper; el stepper y las acciones
   quedan fijos y solo la lista hace scroll interno. Permite **crear el cliente sin salir** desde
