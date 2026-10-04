@@ -8,6 +8,8 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
    `productos/[id]/page.tsx` (954), `inventario/page.tsx` (797), `reportes/page.tsx` (718),
    `ventas/page.tsx` (472), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
+3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (Taparrosca sin `Forma`,
+   `PIN-0011`, crosswalk con SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
 
 ## Candidatos a refactor transversal
 
@@ -18,6 +20,14 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Toolkit de catálogo + seed declarativo (2026-10-04):** `scripts/catalog/` con
+  `snapshot`/`apply`/`odoo-diff`/`export-seed`; alias `cat:snapshot|apply|odoo-diff|export-seed|seed|stock`.
+  El catálogo se define con ops YAML idempotentes y se reproduce con el seed versionado
+  (`scripts/catalog/seed/`). Verificado: reconstruye la BD actual con 0 cambios y un schema vacío con
+  los mismos conteos. Ver [`catalog-ops.md`](./catalog-ops.md) y [`catalog-state.md`](./catalog-state.md).
+- **Reorgs de catálogo (2026-10-03/04):** Vastago (quita `Agujero de Vastago`, `Tipo de Vastago` =
+  Normal/Mod-prosa); `Tipo de Mango` → `Ceja`+`Agujero de Mango` (Pincel sincronizado desde Mango);
+  Taparrosca `Tipo de Taparrosca` → `Forma de Taparrosca` y `Mini yadis` → `Yadis`.
 - **UI más clara de procesos (2026-09-30):** se crearon los componentes compartidos `components/ui/`
   (`PageHeader`, `Modal`, `ConfirmDialog`, `HelpNote`, `Segmented`) + tokens en `app/globals.css`.
   `/productos` ya no duplica tabs de catálogos (movidos a `/catalogos`); el detalle de producto tiene

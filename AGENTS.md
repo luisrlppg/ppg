@@ -11,6 +11,23 @@ ERP propio de PPG que reemplaza a Odoo. Monorepo `pnpm`: **NestJS** (`apps/api`,
 y en `docs/`. Entrega actual: **E3** (producción/reportes). Admin `admin`/`admin123`
 (créditos y puertos en `docs/development.md`).
 
+## Reglas básicas
+
+1. **Lee solo lo necesario:** abre el documento del área (tabla de abajo); no cargues contexto que no vayas a usar.
+2. **Actualiza la doc que revisaste si tu cambio la afecta**, en el mismo cambio.
+3. **Catálogo:** usa ops declarativas (`docs/catalog-ops.md`), no scripts one-off.
+4. **Migraciones:** nunca `prisma migrate dev` en shell no-TTY; usa `pnpm db:deploy`.
+5. **Mapa vivo:** si mueves/renombras zonas, actualiza `project-nav.md`.
+
+Qué actualizar según el cambio:
+
+- Rutas/zonas de código → `project-nav.md`
+- Catálogo (atributos/valores/ejes/variantes/seed) → `docs/catalog-state.md` (+ `docs/roadmap.md` si hay pendientes)
+- Reglas/patrones → `docs/conventions.md`
+- Modelo de datos / migraciones → `docs/data-model.md` / `docs/development.md`
+- Scripts/comandos → `docs/scripts.md`
+- Trabajo hecho/pendiente → `docs/roadmap.md`
+
 ## Índice de documentación
 
 | Documento | Úsalo cuando… |
@@ -20,7 +37,8 @@ y en `docs/`. Entrega actual: **E3** (producción/reportes). Admin `admin`/`admi
 | [`docs/conventions.md`](./docs/conventions.md) | vayas a **escribir/modificar código** (patrones NestJS/Next, reglas de negocio técnicas, migraciones). |
 | [`docs/data-model.md`](./docs/data-model.md) | toques el **modelo de datos** PPG (productos, atributos, cepillos, pasos, variantes). |
 | [`REQUIREMENTS.md`](./REQUIREMENTS.md) | necesites el **qué y por qué** (visión, reglas de negocio §5, modelo de tablas §4, plan E0–E5 §10). |
-| [`docs/CATALOG-OPS.md`](./docs/CATALOG-OPS.md) | vayas a **cambiar el catálogo** (atributos, valores, ejes, variantes) con ops YAML declarativas. |
+| [`docs/catalog-ops.md`](./docs/catalog-ops.md) | vayas a **cambiar el catálogo** (atributos, valores, ejes, variantes) con ops YAML y el seed declarativo. |
+| [`docs/catalog-state.md`](./docs/catalog-state.md) | necesites el **estado del catálogo** (decisiones vigentes, valores canónicos y pendientes). |
 | [`docs/scripts.md`](./docs/scripts.md) | busques un **script** (seed, reorg, toolkit de catálogo, migración/reconciliación Odoo). |
 | [`docs/plan-btvpe.md`](./docs/plan-btvpe.md) | trabajes en **productos tipo envase cosmético (BTVPE)**. |
 | [`docs/roadmap.md`](./docs/roadmap.md) | necesites **pendientes**, deuda técnica o trabajo reciente/contexto. |
@@ -32,8 +50,7 @@ y en `docs/`. Entrega actual: **E3** (producción/reportes). Admin `admin`/`admi
 2. Según la tabla de arriba, abre **sólo** el documento del área (normalmente `project-nav.md`).
 3. En `project-nav.md` (§2 API / §3 Web / §4 atajo) ubica el **archivo y la zona/línea** exactos.
 4. Antes de editar, lee los patrones de `docs/conventions.md`.
-5. Si toca datos/catálogo, ve a `docs/CATALOG-OPS.md` (ops declarativas) en vez de escribir un script nuevo.
-6. Actualiza `project-nav.md` si mueves o renombras zonas relevantes.
+5. Si toca datos/catálogo, ve a `docs/catalog-ops.md` (ops declarativas) en vez de escribir un script nuevo.
 
 ## Rutas de entrada por tipo de tarea
 
@@ -44,8 +61,9 @@ y en `docs/`. Entrega actual: **E3** (producción/reportes). Admin `admin`/`admi
 - **Base de datos / migraciones:** `packages/db/prisma/schema.prisma` → flujo de migración en
   `docs/development.md` (genera con `--create-only`, aplica con `pnpm db:deploy`; **nunca**
   `migrate dev` en shell no-TTY). Modelo: `docs/data-model.md`.
-- **Catálogo / atributos / variantes:** `docs/CATALOG-OPS.md` (ops YAML) + `docs/scripts.md`
-  (toolkit `scripts/catalog/`). No crees un script one-off nuevo.
+- **Catálogo / atributos / variantes / seed:** `docs/catalog-ops.md` (cómo: ops YAML + `cat:*`) y
+  `docs/catalog-state.md` (estado y pendientes); toolkit en `docs/scripts.md`. No crees scripts
+  one-off. Tras ediciones manuales en la UI: `pnpm cat:export-seed`.
 - **Migración / reconciliación Odoo:** `docs/scripts.md` (sección Odoo) + `docs/data-model.md`.
 - **Reglas de negocio / requisitos:** `REQUIREMENTS.md` (+ `docs/plan-btvpe.md` para BTVPE).
 - **Bugs de flujo ventas→OFs o producción:** `project-nav.md` §2.2 (`ventas.confirmar`),

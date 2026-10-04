@@ -1,12 +1,13 @@
 # scripts.md — Catálogo de scripts
 
 Scripts de utilidad en `scripts/`. Para cambios de catálogo, prefiere el toolkit declarativo
-de [`CATALOG-OPS.md`](./CATALOG-OPS.md); los scripts one-off quedan como referencia histórica.
+de [`catalog-ops.md`](./catalog-ops.md); los scripts one-off quedan como referencia histórica.
 Para datos/migración Odoo, ver la sección al final.
 
 ## Seed y demo
 
-- `seed-products.ts` — configura estructura BOM + `ProductAttributeLine` + `ProductPasso`.
+- `seed-products.ts` — **legacy** (usa nombres de atributo viejos; el seed vigente es `cat:seed`,
+  ver [`catalog-ops.md`](./catalog-ops.md)): configura estructura BOM + `ProductAttributeLine` + `ProductPasso`.
 - `seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3
   (reportes/producción); idempotente.
 - `seed-demo-ventas.ts` — variantes únicas + combo taparrosca SIN stock para probar ventas →
@@ -61,7 +62,7 @@ Todas soportan `--dry`/`--apply`.
 
 ## Toolkit de catálogo (actual) — `scripts/catalog/`
 
-Ver detalle y formato de ops en [`CATALOG-OPS.md`](./CATALOG-OPS.md).
+Ver detalle y formato de ops en [`catalog-ops.md`](./catalog-ops.md).
 
 - `snapshot.ts` → `docs/catalog-snapshot.{json,md}` (estado canónico).
 - `apply.ts --file <ops.yaml> [--apply]` — motor genérico de ops declarativas (idempotente, transaccional).

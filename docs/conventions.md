@@ -37,3 +37,7 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     igual que los archivos existentes. No añadas comentarios explicativos redundantes; **no** comentes código evidente.
 16. **Actualiza el mapa:** si mueves/renombras archivos o cambias zonas relevantes, actualiza
     `project-nav.md` (§2/§3/§4) para que las referencias sigan siendo válidas.
+17. **Catálogo:** cámbialo con **ops declarativas** (`scripts/catalog/`, ver `docs/catalog-ops.md`);
+    no crees scripts one-off. Valida con `pnpm cat:snapshot` + dry-run (`cat:apply --file …`).
+    Tras editar valores de variantes en la UI, corre `pnpm cat:export-seed` para volcarlos al seed.
+    Estado y pendientes: `docs/catalog-state.md`.

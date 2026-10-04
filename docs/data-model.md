@@ -4,6 +4,11 @@ Resumen del modelo **específico de PPG**. La especificación formal de tablas e
 [`../REQUIREMENTS.md`](../REQUIREMENTS.md) §4 (Modelo de datos v1) y el esquema real en
 `packages/db/prisma/schema.prisma`.
 
+## Gestión del catálogo
+
+El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
+[`catalog-ops.md`](./catalog-ops.md) (cómo) y [`catalog-state.md`](./catalog-state.md) (estado y pendientes).
+
 ## Entidades clave
 
 - **`Attribute` es global** (sin `productId`).
@@ -19,11 +24,18 @@ Resumen del modelo **específico de PPG**. La especificación formal de tablas e
 
 ## Productos base
 
-- **Vástago** (ID 1) — producto base, sin BOM.
-- **Cerda** (ID 2) — uom `kg`, consumible.
-- **Pincel** (ID 3) — ensamble: Vástago + Cerda.
-- **Taparrosca con Pincel** (ID 4) — ensamble: Pincel + Vástago.
-- **PVC** — uom `kg`.
+IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
+
+- **Mango** (id 1, `VAST`) — mango; componente de las líneas con mango.
+- **Cerda** (id 2, `CERD`) — uom `kg`, consumible.
+- **Pincel** (id 3, `PIN`) — pincel (ejes `Ceja`, `Altura de Mango`, `Agujero de Mango`,
+  `Tamaño rosca`, `Color de Cerda de Pincel`); hereda `Ceja`/`Agujero` de Mango.
+- **Taparrosca** (id 4, `TPR`) — tapa (ejes `Altura/Color/Forma de Taparrosca` + `Tamaño rosca`).
+- **Taparrosca con Pincel** (id 5, `TP`) — ensamble: Pincel + Taparrosca.
+- **Vastago** (id 7, `VST`) — vástago; sin BOM.
+- **Sobretapa** (id 8, `STP`) · **Escurridor** (id 9, `ESC`) · **Cepillo Silicon** (id 10, `CSI`) ·
+  **Cepillo Nylon** (id 11, `CNI`).
+- **PVC** (id 86, `PVC`) — uom `kg`.
 - **Palillos** (reorg `scripts/reorg-palillos.ts`):
   - **Palillo Sin Cepillo** (id 42, `P0014`) — componente; eje `Color de Palillo`.
   - **Palillo Citologico Sin Cepillo** (`P0032`) — componente; eje `Color de Palillo Citologico` (sólo `Blanco`).
@@ -43,7 +55,7 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 `Color de Sobretapa`, `Color de Escurridor`, `Color de Taparrosca`, `Color de Tapon`,
 `Color de Tapa con Pincel`, `Color de Palillo`, `Color de Cepillo Nylon`,
 `Color de Cepillo Silicon`, `Color de Cerda de Pincel`, `Color de Cerda de Cepillo`,
-`Color de PVC`, `Tipo de Vastago`, `Tipo de Botella`, `Tipo de Taparrosca`,
+`Color de PVC`, `Tipo de Vastago`, `Tipo de Botella`,
 `Tipo de Tapa con Pincel`, `Tipo de Sobretapa`, `Tipo de Punta`, `Forma de Taparrosca`,
 `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
 `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`, `Capacidad de Botella`.

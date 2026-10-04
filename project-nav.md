@@ -181,7 +181,8 @@ Reutilízalos en vez de inventar clases nuevas:
 | Login / roles / JWT | `apps/api/src/auth/` |
 | Tipos shared | `apps/web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` (ver `docs/development.md`) |
-| Datos / catálogo / scripts Odoo | `docs/scripts.md` + `docs/CATALOG-OPS.md` |
+| Catálogo (cambiar ops/seed · estado · toolkit) | `docs/catalog-ops.md` + `docs/catalog-state.md` + `scripts/catalog/` |
+| Datos / migración y reconciliación Odoo | `docs/scripts.md` |
 
 ---
 
