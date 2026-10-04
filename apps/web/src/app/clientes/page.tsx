@@ -7,19 +7,10 @@ import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import Segmented from "@/components/ui/segmented";
 import ClienteCard from "@/components/clientes/cliente-card";
+import ClienteFormModal from "@/components/clientes/cliente-form-modal";
 import { api } from "@/lib/api";
 import { guardarVistaClientes, leerVistaClientes, type VistaClientes } from "@/lib/local-store";
 import type { Partner } from "@/lib/types";
-
-interface Form {
-  nombre: string;
-  empresa: string;
-  telefono: string;
-  direccion: string;
-  email: string;
-}
-
-const vacio: Form = { nombre: "", empresa: "", telefono: "", direccion: "", email: "" };
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Partner[]>([]);
@@ -38,22 +29,23 @@ export default function ClientesPage() {
 
   // ------------------------------------------------------------- Alta/edición
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<Form>(vacio);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [guardando, setGuardando] = useState(false);
+  const [editando, setEditando] = useState<Partner | null>(null);
 
   function abrirNuevo() {
-    setForm(vacio);
-    setEditId(null);
+    setEditando(null);
     setError("");
     setShowModal(true);
   }
 
   function abrirEditar(c: Partner) {
-    setForm({ nombre: c.nombre, empresa: c.empresa ?? "", telefono: c.telefono ?? "", direccion: c.direccion ?? "", email: c.email ?? "" });
-    setEditId(c.id);
+    setEditando(c);
     setError("");
     setShowModal(true);
+  }
+
+  function cerrarModal() {
+    setShowModal(false);
+    setEditando(null);
   }
 
   const cargar = useCallback(async () => {
@@ -66,32 +58,11 @@ export default function ClientesPage() {
     return () => clearTimeout(t);
   }, [cargar]);
 
-  async function guardar(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.nombre.trim()) {
-      setError("El nombre es obligatorio.");
-      return;
-    }
-    setGuardando(true);
+  async function guardado(esNuevo: boolean) {
+    cerrarModal();
     setError("");
-    try {
-      const body = JSON.stringify({ ...form, nombre: form.nombre.trim() });
-      if (editId === null) {
-        await api("/clientes", { method: "POST", body });
-        setMsg("Cliente agregado.");
-      } else {
-        await api(`/clientes/${editId}`, { method: "PATCH", body });
-        setMsg("Cliente actualizado.");
-      }
-      setShowModal(false);
-      setForm(vacio);
-      setEditId(null);
-      await cargar();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setGuardando(false);
-    }
+    setMsg(esNuevo ? "Cliente agregado." : "Cliente actualizado.");
+    await cargar();
   }
 
   // ------------------------------------------------------------------ Eliminar
@@ -257,42 +228,11 @@ export default function ClientesPage() {
       )}
 
       {showModal && (
-        <Modal
-          title={editId === null ? "Nuevo cliente" : "Editar cliente"}
-          onClose={() => { setShowModal(false); setForm(vacio); setEditId(null); }}
-          size="lg"
-        >
-          <form onSubmit={guardar}>
-            <label>
-              Nombre *
-              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Nombre de la persona o empresa" autoFocus />
-            </label>
-            <label>
-              Empresa
-              <input value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} placeholder="opcional" />
-            </label>
-            <label>
-              Teléfono
-              <input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} placeholder="opcional" />
-            </label>
-            <label>
-              Dirección
-              <input value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} placeholder="opcional" />
-            </label>
-            <label>
-              Email
-              <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="opcional" />
-            </label>
-            <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
-              <button type="button" className="btn ghost" onClick={() => { setShowModal(false); setForm(vacio); setEditId(null); }}>
-                Cancelar
-              </button>
-              <button className="btn primary" disabled={guardando}>
-                {guardando ? "Guardando…" : editId === null ? "Agregar cliente" : "Guardar cambios"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <ClienteFormModal
+          cliente={editando}
+          onGuardado={() => guardado(editando === null)}
+          onCerrar={cerrarModal}
+        />
       )}
 
       {mostrarCsv && (

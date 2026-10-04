@@ -26,7 +26,8 @@ export default function VentasPage() {
   const [fEstado, setFEstado] = useState("");
   const [fOrigen, setFOrigen] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [vista, setVista] = useState<"lista" | "nueva" | "detalle">("lista");
+  const [vista, setVista] = useState<"lista" | "detalle">("lista");
+  const [nuevaOpen, setNuevaOpen] = useState(false);
   const [detalle, setDetalle] = useState<Venta | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -122,26 +123,6 @@ export default function VentasPage() {
   const badgeEntrega = (e: string) => (e === "entregado" ? "normal" : e === "parcial" ? "bajo" : "critico");
 
   // ------------------------------------------------------------------ UI
-  if (vista === "nueva") {
-    return (
-      <AppShell>
-        <PageHeader
-          breadcrumb={[{ label: "Ventas", href: "/ventas" }, { label: "Nueva venta" }]}
-          title="Nueva venta"
-          subtitle="Elige los productos del catálogo público y configúralos con el asistente guiado."
-          actions={
-            <button className="btn ghost" onClick={() => { setVista("lista"); setError(""); setMsg(""); }}>
-              Volver
-            </button>
-          }
-        />
-        {error && <div className="error">{error}</div>}
-        {msg && <div className="msg-ok">{msg}</div>}
-        <NuevaVenta onCreada={(id) => abrirDetalle(id)} onError={(m) => setError(m)} onMsg={(m) => setMsg(m)} />
-      </AppShell>
-    );
-  }
-
   if (vista === "detalle" && detalle) {
     const d = detalle;
     const pendientes = d.lines.filter((l) => l.cantidad - (l.qtyDelivered ?? 0) > 0).length;
@@ -405,7 +386,7 @@ export default function VentasPage() {
         title="Ventas"
         subtitle="Órdenes locales y web. Confirma para generar el desglose/neteo y las OFs; luego despacha por línea."
         actions={
-          <button className="btn primary" onClick={() => { setVista("nueva"); setError(""); setMsg(""); }}>
+          <button className="btn primary" onClick={() => { setNuevaOpen(true); setError(""); setMsg(""); }}>
             + Nueva venta
           </button>
         }
@@ -467,6 +448,22 @@ export default function VentasPage() {
           </table>
         </div>
       </div>
+
+      {nuevaOpen && (
+        <Modal
+          title="Nueva venta"
+          onClose={() => { setNuevaOpen(false); setError(""); setMsg(""); }}
+          size="lg"
+        >
+          {error && <div className="error">{error}</div>}
+          {msg && <div className="msg-ok">{msg}</div>}
+          <NuevaVenta
+            onCreada={(id) => { setNuevaOpen(false); abrirDetalle(id); }}
+            onError={(m) => setError(m)}
+            onMsg={(m) => setMsg(m)}
+          />
+        </Modal>
+      )}
     </AppShell>
   );
 }

@@ -41,7 +41,7 @@ Registrados en `app.module.ts`.
 - `productos.service.ts` (593), zonas:
   - `list` 34 · `get` (detalle + componentes + variantes) 73 · `create` 122
   - `update` (registra `PriceChange`) 157 · `deactivate` 202
-  - `setEjes` 209 · `setValoresPermitidos` 226 (tabla `ProductAttributeValue`) · `setComponentes` (BOM) 255
+  - `setEjes` 209 · `setValoresPermitidos` 226 (tabla `ProductAttributeValue`) · `setComponentes` (BOM) 255 · `getPasos`/`setPasos` (wizard)
   - `variantesDeProducto` 276 · `buscarVariantes` 292 · `createVariant` 324 · `updateVariant` 341
   - `setVariantAttribute` 349 · `removeVariantAttribute` 370 · `setVariantPrice` 378 · `setPackagings` 401
   - `grid` 430 · `materializar` (crea UNA variante puntual, idempotente) 434
@@ -98,10 +98,13 @@ Registrados en `app.module.ts`.
 ### 2.7 Storefront público → `public/`
 - `public.controller.ts` (53) — `@Controller("public")` **público**
   - `GET public/productos` · `GET public/productos/:id/pasos` · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
-- `public.service.ts` (210):
-  - `crearPedido` (precio recalculado en servidor) 31 · `consultarPedido` 73
-  - `productosPublicos` (productos con ≥1 variante activa y publicada) 98 · `catalogo` 128
-  - **`getPasos`** 146: arma pasos guiados; las opciones salen de las **variantes publicadas del producto navegado** (`productId`), no del `variantProductId`. Batcheado (1 query de valores + 1 de variantes). Compartido por tienda y modal de ventas; en web `lib/pasos-cache.ts` cachea 30 s.
+- `public.service.ts`:
+  - `crearPedido` (precio recalculado en servidor) · `consultarPedido`
+  - `productosPublicos` (≥1 variante publicada **o** con pasos) · `catalogo`
+  - **`getPasos(productId, seleccion?)`**: Modelo B — opciones de las **variantes activas del componente** (`variantProductId`), filtradas por valores permitidos y por compatibilidad con la selección (cascada, ej. rosca). Devuelve `panel`.
+  - **`resolverConfiguracion(productId, seleccion, {crear})`**: une la selección + ejes derivados y materializa/reutiliza la variante vendible.
+- `public.controller.ts`: `GET/POST public/productos/:id/pasos` · `POST public/productos/:id/resolver`.
+  Compartido por tienda y modal; en web `lib/pasos-wizard.ts` (paneles/cascada) y `lib/pasos-cache.ts` (TTL 30 s).
 
 ### 2.8 Monitor de stock bajo + notificaciones → `monitor/`
 - `monitor.controller.ts` (73) · `monitor.service.ts` (240): `listarBajo` 66 · **`afterStockChange`** (dispara sólo al pasar a bajo) 104 · `checkAll` 165 · `enviarAlerta` 192 · `enviarPrueba` 208.
@@ -133,23 +136,24 @@ y `AppShell` (excepto tienda y login).
 |---|---|---|---|
 | Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos |
 | Lista productos | `app/productos/page.tsx` | 395 | grid/tabla + alta en modal; eliminar con fallback a desactivar |
-| Detalle/edición producto | `app/productos/[id]/page.tsx` | 954 | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
+| Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
-| Ventas | `app/ventas/page.tsx` | 472 | lista/detalle/confirmar/despachar; alta en `components/ventas/nueva-venta.tsx` (167) + `modal-config-variante.tsx` (338) |
+| Ventas | `app/ventas/page.tsx` | 469 | lista/detalle/confirmar/despachar; alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 322): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas, alta de cliente inline (`components/clientes/cliente-form-modal.tsx`) + `modal-config-variante.tsx` (338) |
 | Fabricación (OFs) | `app/fabricacion/page.tsx` | 431 | listar/acciones/detalle; **+ Nueva OF** y **Reponer** (mín/máx con preview) |
 | Inventario | `app/inventario/page.tsx` | 797 | toolbar + 4 vistas (Por ubicación / Por variante / Por variante min max / Por producto); cantidad editable (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
 | Reportes de producción | `app/reportes/page.tsx` | 718 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
-| Clientes | `app/clientes/page.tsx` | 353 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`) |
+| Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
 | Monitor stock | `app/monitor/page.tsx` | 156 | estado + acciones |
-| Storefront guiado (6 pasos) | `app/tienda/[productId]/page.tsx` | 422 | público, sin AppShell; selección/filtrado por conjunto de variantes (`opcionesDelPaso`) |
+| Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
 | Shell | `components/app-shell.tsx` | 105 | layout auth-gated: sidebar, `GET /auth/me`, logout |
 
 ### 3.2 Librerías compartidas (`apps/web/src/lib/`)
 - `api.ts` (31) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`.
 - `types.ts` (408) — **todos** los tipos de dominio; añade aquí los tipos nuevos de forma centralizada.
-- `pasos-cache.ts` (17) — cachea 30 s `getPasos` por productId (tienda y modal).
+- `pasos-cache.ts` — cachea 30 s `getPasos` por productId; `getPasosConSeleccion` (POST) para la cascada.
+- `pasos-wizard.ts` — lógica compartida del wizard (paneles por `panel`, auto-selección, resolver).
 - `csv.ts` (14) — `descargarCSV(nombre, filas)` con BOM para Excel.
 - `local-store.ts` (81) — preferencias de UI en `localStorage` (`ppg.*`).
 - `avatar.ts` (13) — iniciales para avatares de clientes.
@@ -173,10 +177,12 @@ Reutilízalos en vez de inventar clases nuevas:
 | Alta manual de OF / reponer mín-máx | `fabricacion.service.ts:113` y `:175` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |
-| Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos` 146) · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` |
+| Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`, `resolverConfiguracion`) · `public.controller.ts` · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` · `lib/pasos-wizard.ts` |
+| Editar los pasos guiados de un producto | `productos.service.ts` (`getPasos`/`setPasos`) · `app/productos/[id]/page.tsx` (sección "Pasos guiados") |
 | Productos públicos (grid de ventas) | `public.service.ts` (`productosPublicos` 98) · `public.controller.ts` |
 | Precios / catálogo público | `public.service.ts` (`catalogo` 128) · `productos.service.ts` (`setVariantPrice` 378) |
 | Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` |
+| Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
 | Login / roles / JWT | `apps/api/src/auth/` |
 | Tipos shared | `apps/web/src/lib/types.ts` |
