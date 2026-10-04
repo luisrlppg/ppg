@@ -240,6 +240,7 @@ vez de inventar clases nuevas:
 | Notas internas de variante (medidas/grosor) | `ProductVariant.notas`; `scripts/seed-cepillos-notas.ts`; página de variante `app/productos/[id]/variantes/[vid]/page.tsx` |
 | Crosswalk Odoo↔PPG | `scripts/odoo-migration/mapeo-odoo-ppg.csv` (por variante) + `mapping-odoo.csv` (por plantilla) |
 | Palillos (separar sin/con cepillo) | `scripts/reorg-palillos.ts` (`--dry`/`--apply`) |
+| Reorg de Vastago (quitar `Agujero de Vastago`, simplificar `Tipo de Vastago`) | `scripts/reorg-vastago.ts` (`--dry`/`--apply`) |
 
 ---
 

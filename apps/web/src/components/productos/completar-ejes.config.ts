@@ -5,21 +5,7 @@ export interface DerivacionRule {
 }
 
 /** Reglas para derivar un eje a partir de otro (por nombre de producto). */
-export const DERIVACIONES: Record<string, DerivacionRule[]> = {
-  Vastago: [
-    {
-      from: "Punta",
-      to: "Agujero de Vastago",
-      map: {
-        Delineador: "Delineador",
-        Nylon: "Cepillo Nylon",
-        Gloss: "Lip Gloss",
-        "Silicon chico": "Cepillo Silicon chico",
-        "Silicon grande": "Cepillo Silicon grande",
-      },
-    },
-  ],
-};
+export const DERIVACIONES: Record<string, DerivacionRule[]> = {};
 
 /** Valores por defecto por producto y atributo. */
 export const DEFAULTS: Record<string, Record<string, string>> = {

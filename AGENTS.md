@@ -48,7 +48,7 @@ scripts/      # Scripts de utilidad
   `Color de Cerda de Cepillo`, `Color de PVC`, `Tipo de Mango`, `Tipo de Vastago`, `Tipo de Botella`,
   `Tipo de Taparrosca`, `Tipo de Tapa con Pincel`, `Tipo de Sobretapa`, `Tipo de Punta`,
   `Forma de Taparrosca`, `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
-  `Agujero de Vastago`, `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`,
+  `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`,
   `Capacidad de Botella`.
 - Compartidos legítimos: `Tamaño rosca`, `Ceja`, `Punta`, `Grosor cerda`,
   `Medida pincel`, `Logo`, `Versión del vástago`, `Densidad`.
@@ -120,6 +120,7 @@ por compatibilidad en la respuesta.
 - `scripts/reorg-cepillos-grosor.ts` — one-off: quita el eje `Grosor cerda` del Cepillo Nylon y mueve el grosor a `notas` (`grosor: N"`); codifica el grosor en la forma (5.75"→`… Prosa`, 4"→`Bala Barradas`/`Pino Barradas`); borra valores de Forma huérfanos. Ejes finales: Forma + Color (todas las formas, incluidas las `… Prosa`, llevan color; por defecto Negro). `--dry`/`--apply`.
 - `scripts/seed-cepillos-notas.ts` — carga las medidas/grosor de los cepillos como nota interna de la variante (`ProductVariant.notas`). Idempotente. `--dry`/`--apply`.
 - `scripts/reorg-palillos.ts` — one-off: separa el producto `Palillo`: renombra id 42 → `Palillo Sin Cepillo` (eje `Color de Palillo`), crea `Palillo Citologico Sin Cepillo` (`P0032`, eje `Color de Palillo Citologico` solo `Blanco`), `Palillo con Cepillo` (`P0033`, ejes color/cerda/forma) y `Palillo Citologico con Cepillo` (`P0034`, eje `Color de Palillo Citologico`); renumera variantes y define los BOM (palillo + `Cepillo Nylon`, exacto). Idempotente. `--dry`/`--apply`.
+- `scripts/reorg-vastago.ts` — one-off: elimina el atributo `Agujero de Vastago` (lo sustituye `Punta`) y deja `Tipo de Vastago` sólo con `Normal` y `Mod-prosa` (VST-0010 pasa a `Punta=Delineador`+`Tipo=Normal` conservando stock; elimina las variantes Externo/Casquillo/Sin rosca con su stock y los valores huérfanos). Idempotente. `--dry`/`--apply`.
 - `scripts/odoo-migration/reconcile-stock.ts` — reconcilia `docs/odoo_inv.csv` (Odoo) contra la existencia de PPG (**BD `StockLevel` por defecto**; `--ppg <csv>` usa un export): mapea Odoo→SKU con `mapeo-odoo-ppg.csv`, deja **subensamblados pendientes** (SVC/SVP/VC/VP/SV/Gloss/Tapa con Vástago Sin Rosca) y excluye pigmentos/oficina. Genera `docs/odoo-inventario-diferencias.csv` y `docs/odoo-inventario-correccion.csv`. `--apply` fija `StockLevel` (motivo `ajuste`, ref "reconciliación Odoo") sólo en los renglones `ajuste`; **`--reset`** borra todo el stock (`StockMove` + `StockLevel`) y recarga sólo el snapshot de Odoo actual (qty > 0; negativas omitidas). Destructivo: respaldar con `pg_dump` antes.
 - `scripts/odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**: `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `scripts/ppg.sh` — único gestor de servidores (alias `ppg` en `~/.bashrc`): `ppg start|stop|restart|reload|status|logs|db`. `start` hace bootstrap completo (Postgres + deps + migraciones) y arranca api+web con hot-reload en background; `reload` aplica migraciones y reinicia; `db <native|docker|auto|stop>` elige el motor de Postgres (persistido como `PPG_DB_MODE` en `.env`). **No siembra.**
