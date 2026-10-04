@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
@@ -10,9 +11,9 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsIn, IsNotEmpty, IsString } from "class-validator";
 import type { Request, Response } from "express";
-import { type PublicUser } from "@ppg/shared";
+import { type PublicUser, type SeparadorMiles, SEPARADORES_MILES } from "@ppg/shared";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
@@ -24,6 +25,11 @@ class LoginDto {
   @IsString()
   @IsNotEmpty()
   password!: string;
+}
+
+class PreferenciasDto {
+  @IsIn(SEPARADORES_MILES as unknown as string[])
+  separadorMiles!: SeparadorMiles;
 }
 
 function parseDuration(value: string): number {
@@ -60,6 +66,7 @@ export class AuthController {
       nombre: user.nombre,
       active: user.active,
       role: user.role.name as "admin" | "supervisor" | "operador",
+      separadorMiles: user.separadorMiles as SeparadorMiles,
     };
     const token = this.auth.sign({
       id: authUser.id,
@@ -89,5 +96,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() req: Request) {
     return { user: this.auth.toPublic((req as any).user) };
+  }
+
+  @Patch("preferences")
+  @UseGuards(JwtAuthGuard)
+  async preferences(@Body() dto: PreferenciasDto, @Req() req: Request) {
+    const user = (req as any).user;
+    await this.auth.setSeparadorMiles(user.id, dto.separadorMiles);
+    return { user: this.auth.toPublic({ ...user, separadorMiles: dto.separadorMiles }) };
   }
 }

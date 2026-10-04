@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useFormatCantidad } from "@/lib/preferences";
 
 interface Props {
   value: number;
@@ -13,6 +14,7 @@ interface Props {
  * Esc cancela. Si el valor no cambia o queda vacío, no se registra nada.
  */
 export default function CantidadEditable({ value, disabled, onSave }: Props) {
+  const formatCantidad = useFormatCantidad();
   const [editando, setEditando] = useState(false);
   const [val, setVal] = useState("");
   const cancelarRef = useRef(false);
@@ -79,7 +81,7 @@ export default function CantidadEditable({ value, disabled, onSave }: Props) {
       disabled={disabled}
       title="Clic para editar (registra un ajuste)"
     >
-      {value === 0 ? "—" : value}
+      {value === 0 ? "—" : formatCantidad(value)}
     </button>
   );
 }

@@ -7,6 +7,7 @@ import PageHeader from "@/components/ui/page-header";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import EmpaquesVariante from "@/components/productos/empaques-variante";
 import { api } from "@/lib/api";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { ExistenciaDe, Packaging } from "@/lib/types";
 
 export default function VariantePage() {
@@ -14,6 +15,7 @@ export default function VariantePage() {
   const router = useRouter();
   const prodId = Number(id);
   const variantId = Number(vid);
+  const formatCantidad = useFormatCantidad();
 
   const [v, setV] = useState<ExistenciaDe | null>(null);
   const [empaques, setEmpaques] = useState<Packaging[]>([]);
@@ -185,7 +187,7 @@ export default function VariantePage() {
             {v.porUbicacion.map((l) => (
               <tr key={l.locationId}>
                 <td>{l.location}</td>
-                <td className="num">{l.qty}</td>
+                <td className="num">{formatCantidad(l.qty)}</td>
               </tr>
             ))}
             {v.porUbicacion.length === 0 && <tr><td colSpan={2} className="empty">Sin existencia.</td></tr>}
@@ -193,7 +195,7 @@ export default function VariantePage() {
           <tfoot>
             <tr>
               <td><strong>Total</strong></td>
-              <td className="num"><strong>{v.stockActual}</strong></td>
+              <td className="num"><strong>{formatCantidad(v.stockActual)}</strong></td>
             </tr>
           </tfoot>
         </table>
@@ -226,7 +228,7 @@ export default function VariantePage() {
         <ul className="step-list" style={{ fontSize: "0.95rem" }}>
           {v.movimientos.map((m) => (
             <li key={m.id} style={{ padding: "10px 12px" }}>
-              <strong>{m.qty > 0 ? "+" : ""}{m.qty}</strong> · {m.motivo}
+              <strong>{m.qty > 0 ? "+" : ""}{formatCantidad(m.qty)}</strong> · {m.motivo}
               {m.location ? ` (${m.location.nombre})` : ""}
               <div className="small muted">{m.ref ?? ""} · {new Date(m.createdAt).toLocaleString("es-MX")}</div>
             </li>

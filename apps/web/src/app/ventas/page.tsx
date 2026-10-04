@@ -8,6 +8,7 @@ import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import NuevaVenta from "@/components/ventas/nueva-venta";
 import { api } from "@/lib/api";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { Venta } from "@/lib/types";
 
 interface VentaLista {
@@ -22,6 +23,7 @@ interface VentaLista {
 }
 
 export default function VentasPage() {
+  const formatCantidad = useFormatCantidad();
   const [ventas, setVentas] = useState<VentaLista[]>([]);
   const [fEstado, setFEstado] = useState("");
   const [fOrigen, setFOrigen] = useState("");
@@ -220,11 +222,11 @@ export default function VentasPage() {
                         <strong>{l.producto}</strong>
                         <div className="small muted">{l.nombre} · {l.sku}</div>
                       </td>
-                      <td className="num">{l.cantidad} {l.uom}</td>
+                      <td className="num">{formatCantidad(l.cantidad)} {l.uom}</td>
                       <td className="num">${(l.precioUnitario ?? 0).toFixed(2)}</td>
                       <td className="num">${(l.subtotal ?? 0).toFixed(2)}</td>
                       <td>
-                        {l.qtyDelivered ?? 0}/{l.cantidad}
+                        {formatCantidad(l.qtyDelivered ?? 0)}/{formatCantidad(l.cantidad)}
                       </td>
                       <td>
                         <span className={`badge ${badgeEntrega(l.estadoEntrega)}`}>{l.estadoEntrega}</span>
@@ -263,7 +265,7 @@ export default function VentasPage() {
                     {d.resumen!.fabricar.map((f) => (
                       <li key={`F${f.variantId}`}>
                         <span className={`badge ${f.tipo === "ensamble" ? "bajo" : "normal"}`}>{f.tipo}</span>{" "}
-                        <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {f.cantidad}
+                        <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {formatCantidad(f.cantidad)}
                       </li>
                     ))}
                   </ul>
@@ -277,7 +279,7 @@ export default function VentasPage() {
                   <ul className="step-list">
                     {d.resumen!.comprar.map((c) => (
                       <li key={`C${c.variantId}`}>
-                        <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {c.cantidad}
+                        <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {formatCantidad(c.cantidad)}
                       </li>
                     ))}
                   </ul>
@@ -309,12 +311,12 @@ export default function VentasPage() {
                           <td>
                             <strong>{of.producto}</strong> <span className="muted small">({of.sku})</span>
                           </td>
-                          <td className="num">{of.cantidad}</td>
+                          <td className="num">{formatCantidad(of.cantidad)}</td>
                           <td>
                             <span className={`badge ${of.tipo === "ensamble" ? "bajo" : "normal"}`}>{of.tipo}</span>
                           </td>
                           <td>{of.estado}</td>
-                          <td className="small muted">{(of.lines ?? []).map((l) => `${l.nombre} ×${l.cantidadRequerida}`).join(" · ")}</td>
+                          <td className="small muted">{(of.lines ?? []).map((l) => `${l.nombre} ×${formatCantidad(l.cantidadRequerida)}`).join(" · ")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -354,7 +356,7 @@ export default function VentasPage() {
               <strong>{despacho.producto}</strong> · {despacho.sku}
             </p>
             <label>
-              Cantidad a despachar (máx {despacho.max})
+              Cantidad a despachar (máx {formatCantidad(despacho.max)})
               <input
                 type="number"
                 step="0.001"

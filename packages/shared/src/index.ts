@@ -1,11 +1,15 @@
 export const ROLES = ["admin", "supervisor", "operador"] as const;
 export type Role = (typeof ROLES)[number];
 
+export const SEPARADORES_MILES = ["espacio", "coma"] as const;
+export type SeparadorMiles = (typeof SEPARADORES_MILES)[number];
+
 export interface PublicUser {
   id: number;
   username: string;
   nombre: string;
   role: Role;
+  separadorMiles: SeparadorMiles;
 }
 
 export interface LoginResponse {
@@ -50,3 +54,22 @@ export const CAMPOS_PRECIO = ["base", "variante"] as const;
 
 export const MONITOR_CHANNELS = ["email", "telegram", "callmebot"] as const;
 export type MonitorChannel = (typeof MONITOR_CHANNELS)[number];
+
+// --- Formato de cantidades ---
+
+const qtyFmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 });
+
+/**
+ * Formatea una cantidad con separador de miles y punto decimal.
+ * `1234.5` → `"1,234.5"` (coma) o `"1 234.5"` (espacio). "—" para nulos/vacíos.
+ */
+export function formatCantidad(
+  valor: number | string | null | undefined,
+  separador: SeparadorMiles = "coma",
+): string {
+  if (valor === null || valor === undefined || valor === "") return "—";
+  const n = typeof valor === "number" ? valor : Number(valor);
+  if (!Number.isFinite(n)) return String(valor);
+  const texto = qtyFmt.format(n);
+  return separador === "espacio" ? texto.replace(/,/g, "\u00A0") : texto;
+}

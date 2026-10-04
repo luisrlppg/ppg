@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
+import { PreferencesProvider } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 
 const LINKS: { href: string; label: string; match?: string[] }[] = [
@@ -92,6 +93,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span>{user.role}</span>
           </div>
           <span className="avatar">{iniciales(user.nombre)}</span>
+          <Link className="btn ghost sm" href="/ajustes">
+            Ajustes
+          </Link>
           <button
             className="btn ghost sm"
             type="button"
@@ -101,7 +105,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="screen">{children}</main>
+      <PreferencesProvider initial={user.separadorMiles}>
+        <main className="screen">{children}</main>
+      </PreferencesProvider>
     </>
   );
 }

@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import StatsProduccion from "@/components/reportes/stats-produccion";
 import { api } from "@/lib/api";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 import type {
   LoteUbicar,
@@ -80,6 +81,7 @@ interface UltimoReporte {
 type Tab = "reporte" | "bandeja" | "ubicar" | "stats";
 
 export default function ReportesPage() {
+  const formatCantidad = useFormatCantidad();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [tab, setTab] = useState<Tab>("bandeja");
   const [error, setError] = useState("");
@@ -431,7 +433,7 @@ export default function ReportesPage() {
             <option value="">— Sin OF —</option>
             {ofs.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.numero} · {o.producto} {o.nombre} × {o.cantidad}
+                {o.numero} · {o.producto} {o.nombre} × {formatCantidad(o.cantidad)}
               </option>
             ))}
           </select>
@@ -552,7 +554,7 @@ export default function ReportesPage() {
                   {r.personas > 1 ? ` · ${r.personas} pers.` : ""}
                   {r.manufacturingOrder ? ` · OF ${r.manufacturingOrder}` : ""}
                   <div className="small muted">
-                    {r.lineas} líneas · final {r.totalFinal} {r.totalConsumo > 0 ? ` · consumo ${r.totalConsumo}` : ""}
+                    {r.lineas} líneas · final {formatCantidad(r.totalFinal)} {r.totalConsumo > 0 ? ` · consumo ${formatCantidad(r.totalConsumo)}` : ""}
                   </div>
                 </span>
                 <span style={{ flex: 0 }}>
@@ -584,7 +586,7 @@ export default function ReportesPage() {
               {detalle.lines.map((l) => (
                 <li key={l.id}>
                   <span className={`badge ${l.tipo === "final" ? "normal" : "critico"}`}>{l.tipo}</span>{" "}
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {Number(l.ok)} {l.uom}
+                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {formatCantidad(Number(l.ok))} {l.uom}
                   <div className="small muted">Sección: {l.seccion}</div>
                 </li>
               ))}
@@ -614,9 +616,9 @@ export default function ReportesPage() {
               {detalle.lines.map((l) => (
                 <li key={l.id}>
                   <span className={`badge ${l.tipo === "final" ? "normal" : "critico"}`}>{l.tipo}</span>{" "}
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {Number(l.ok)} {l.uom}
+                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {formatCantidad(Number(l.ok))} {l.uom}
                   {l.tipo === "final" && l.pendienteUbicar > 0 && (
-                    <div className="small muted">aplicado {Number(l.qtyAplicada)} · por ubicar {Number(l.pendienteUbicar)}</div>
+                    <div className="small muted">aplicado {formatCantidad(Number(l.qtyAplicada))} · por ubicar {formatCantidad(Number(l.pendienteUbicar))}</div>
                   )}
                 </li>
               ))}
@@ -646,7 +648,7 @@ export default function ReportesPage() {
             <li key={l.lineaId} style={{ background: "#fafafa", borderRadius: 8, padding: "8px 12px" }}>
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <span>
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) · {l.pendiente} {l.uom}
+                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) · {formatCantidad(l.pendiente)} {l.uom}
                   <div className="small muted">del reporte {l.reporte}</div>
                 </span>
               </div>

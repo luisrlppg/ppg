@@ -20,7 +20,7 @@ apps/
   web/        # Next.js App Router (puerto 3000, proxy /api → :3001)
 packages/
   db/         # Prisma schema + migraciones + seed (@ppg/db)
-  shared/     # Tipos/constantes compartidos (@ppg/shared)
+  shared/     # Tipos/constantes compartidos (@ppg/shared; incluye `formatCantidad`)
 scripts/      # Scripts de utilidad, migración Odoo y toolkit de catálogo
 docs/         # Documentación (este mapa vive en la raíz)
 infra/        # Dockerfiles + Caddyfile (perfil full)
@@ -125,8 +125,8 @@ Registrados en `app.module.ts`.
 - CLI equivalente (mismo directorio): `ppg backup|restore` / `pnpm db:backup|db:restore`.
 
 ### 2.11 Auth → `auth/`
-- `auth.controller.ts` (92): `login` (JWT + cookie httpOnly), `logout`, `me`.
-- `auth.service.ts` (78): `validate` (bcrypt) · `findById` · `sign` · `verify` · `toPublic`.
+  - `auth.controller.ts`: `login` (JWT + cookie httpOnly), `logout`, `me`, `PATCH preferences` (separador de miles).
+  - `auth.service.ts`: `validate` (bcrypt) · `findById` · `setSeparadorMiles` · `sign` · `verify` · `toPublic`.
 - Guards `guards/jwt-auth.guard.ts` (cookie → `req.user`) y `guards/roles.guard.ts` (`@Roles()`); decorator `decorators/roles.decorator.ts`.
 
 ### 2.12 Soporte transversal
@@ -156,6 +156,7 @@ y `AppShell` (excepto tienda y login).
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
 | Monitor stock | `app/monitor/page.tsx` | 156 | estado + acciones |
+| Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles) |
 | Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin) |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
@@ -168,6 +169,7 @@ y `AppShell` (excepto tienda y login).
 - `pasos-wizard.ts` — lógica compartida del wizard (paneles por `panel`, auto-selección, resolver).
 - `csv.ts` (14) — `descargarCSV(nombre, filas)` con BOM para Excel.
 - `local-store.ts` (81) — preferencias de UI en `localStorage` (`ppg.*`).
+- `preferences.tsx` — `PreferencesProvider` + `usePreferences`/`useFormatCantidad` (separador de miles por usuario, persistido en BD).
 - `avatar.ts` (13) — iniciales para avatares de clientes.
 
 ### 3.3 Componentes UI compartidos (`components/ui/`)

@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
-import type { PublicUser, Role } from "@ppg/shared";
+import type { PublicUser, Role, SeparadorMiles } from "@ppg/shared";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface JwtPayload {
@@ -16,6 +16,7 @@ export interface AuthUser {
   nombre: string;
   active: boolean;
   role: Role;
+  separadorMiles: SeparadorMiles;
 }
 
 @Injectable()
@@ -48,7 +49,12 @@ export class AuthService {
       nombre: user.nombre,
       active: user.active,
       role: user.role.name as Role,
+      separadorMiles: user.separadorMiles as SeparadorMiles,
     };
+  }
+
+  async setSeparadorMiles(id: number, separadorMiles: SeparadorMiles): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { separadorMiles } });
   }
 
   sign(user: { id: number; username: string; role: string }): string {
@@ -74,6 +80,7 @@ export class AuthService {
       username: user.username,
       nombre: user.nombre,
       role: user.role,
+      separadorMiles: user.separadorMiles,
     };
   }
 }

@@ -7,6 +7,7 @@ import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { FaltanteCompra, OrdenFabricacion, OrigenOF, VarianteBuscada } from "@/lib/types";
 
 const badgeEstado = (e: string) => (e === "hecha" ? "normal" : e === "en_progreso" ? "bajo" : e === "cancelada" ? "critico" : "");
@@ -27,6 +28,7 @@ function origenTexto(of: OrdenFabricacion): string {
 }
 
 export default function FabricacionPage() {
+  const formatCantidad = useFormatCantidad();
   const [ofs, setOfs] = useState<OrdenFabricacion[]>([]);
   const [faltantes, setFaltantes] = useState<FaltanteCompra[]>([]);
   const [fEstado, setFEstado] = useState("");
@@ -252,7 +254,7 @@ export default function FabricacionPage() {
             <div style={{ background: "#fff8e6", border: "1px solid #f5e0a0", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <strong>
-                  {detalle.numero} · {detalle.producto} {detalle.nombre} ({detalle.sku}) × {detalle.cantidad}
+                  {detalle.numero} · {detalle.producto} {detalle.nombre} ({detalle.sku}) × {formatCantidad(detalle.cantidad)}
                 </strong>
                 <span style={{ flex: 0 }}>
                   <span className={`badge ${detalle.tipo === "ensamble" ? "bajo" : "normal"}`}>{detalle.tipo}</span>{" "}
@@ -264,8 +266,8 @@ export default function FabricacionPage() {
               <ul className="step-list">
                 {detalle.lines?.map((l) => (
                   <li key={l.id}>
-                    <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {l.cantidadRequerida} {l.uom}
-                    {l.cantidadReservada > 0 ? ` · reservado: ${l.cantidadReservada}` : ""}
+                    <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {formatCantidad(l.cantidadRequerida)} {l.uom}
+                    {l.cantidadReservada > 0 ? ` · reservado: ${formatCantidad(l.cantidadReservada)}` : ""}
                   </li>
                 ))}
               </ul>
@@ -311,7 +313,7 @@ export default function FabricacionPage() {
               <li key={of.id} onClick={() => setSelId(of.id)} style={{ cursor: "pointer", background: selId === of.id ? "#fff8e6" : undefined }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
                   <span>
-                    <strong>{of.numero}</strong> · {of.producto} {of.nombre} ({of.sku}) × {of.cantidad}
+                    <strong>{of.numero}</strong> · {of.producto} {of.nombre} ({of.sku}) × {formatCantidad(of.cantidad)}
                     <div className="small muted">
                       {origenTexto(of) ? `${origenTexto(of)} · ` : ""}
                       {of.componenteVariantes ?? 0} componentes
@@ -335,7 +337,7 @@ export default function FabricacionPage() {
           <ul className="step-list">
             {faltantes.map((f) => (
               <li key={f.variantId}>
-                <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {f.cantidad}
+                <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {formatCantidad(f.cantidad)}
                 <div className="small muted">Pedidos: {f.pedidos.join(", ")}</div>
               </li>
             ))}
@@ -361,7 +363,7 @@ export default function FabricacionPage() {
             )}
             {varSel && (
               <p className="muted small">
-                <strong>{varSel.producto}</strong> · {varSel.nombre} ({varSel.sku}) · Stock: {varSel.stockActual} {varSel.uom}
+                <strong>{varSel.producto}</strong> · {varSel.nombre} ({varSel.sku}) · Stock: {formatCantidad(varSel.stockActual)} {varSel.uom}
               </p>
             )}
             <div className="row">

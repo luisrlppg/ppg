@@ -12,6 +12,7 @@ import Segmented from "@/components/ui/segmented";
 import ProductoCard from "@/components/productos/producto-card";
 import { api } from "@/lib/api";
 import { guardarVistaProductos, leerVistaProductos, type VistaProductos } from "@/lib/local-store";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { Categoria, ProductoLite } from "@/lib/types";
 
 const CATALOGOS = [
@@ -22,6 +23,7 @@ const CATALOGOS = [
 
 export default function ProductosPage() {
   const router = useRouter();
+  const formatCantidad = useFormatCantidad();
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
@@ -287,7 +289,7 @@ export default function ProductosPage() {
                     />
                   </td>
                   <td className="num">{p.variantes}</td>
-                  <td className="num">{p.stockTotal}</td>
+                  <td className="num">{formatCantidad(p.stockTotal)}</td>
                   <td>
                     <button type="button" className="btn ghost sm" onClick={() => setPorEliminar(p)}>
                       Eliminar

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { StatsReporte } from "@/lib/types";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function StatsProduccion({ onError }: Props) {
+  const formatCantidad = useFormatCantidad();
   const [stats, setStats] = useState<StatsReporte | null>(null);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -63,11 +65,11 @@ export default function StatsProduccion({ onError }: Props) {
           <div className="grid-2" style={{ marginTop: 10 }}>
             <div className="card" style={{ margin: 0 }}>
               <p className="muted small" style={{ margin: 0 }}>Total producido (final)</p>
-              <strong style={{ fontSize: "1.4rem" }}>{stats.totalFinal}</strong>
+              <strong style={{ fontSize: "1.4rem" }}>{formatCantidad(stats.totalFinal)}</strong>
             </div>
             <div className="card" style={{ margin: 0 }}>
               <p className="muted small" style={{ margin: 0 }}>Consumos registrados</p>
-              <strong style={{ fontSize: "1.4rem" }}>{stats.totalConsumo}</strong>
+              <strong style={{ fontSize: "1.4rem" }}>{formatCantidad(stats.totalConsumo)}</strong>
             </div>
             <div className="card" style={{ margin: 0 }}>
               <p className="muted small" style={{ margin: 0 }}>Reportes aplicados</p>
@@ -98,7 +100,7 @@ export default function StatsProduccion({ onError }: Props) {
                   return (
                     <tr key={s.seccion}>
                       <td>{s.seccion}</td>
-                      <td>{s.unidades}</td>
+                      <td>{formatCantidad(s.unidades)}</td>
                       <td>{s.unidadesPorPersonaHora}</td>
                       <td>
                         <div style={{ background: "#eee", borderRadius: 6, overflow: "hidden", height: 14 }}>
@@ -132,7 +134,7 @@ export default function StatsProduccion({ onError }: Props) {
                   <tr key={c.variantId}>
                     <td>{c.producto}</td>
                     <td>{c.nombre}</td>
-                    <td>{c.unidades}</td>
+                    <td>{formatCantidad(c.unidades)}</td>
                   </tr>
                 ))}
                 {stats.consumo.length === 0 && (

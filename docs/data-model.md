@@ -24,6 +24,8 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
   Sustituye al retirado `ProductVariant.published`.
 - **`ProductPasso`** — pasos del storefront (ver abajo).
 - **`ProductComponent`** — BOM; componentes `exacto` vs `consumible`.
+- **`User.separadorMiles`** — preferencia personal de formato de cantidades (`"coma"` default o
+  `"espacio"`); la edita cada usuario en **Ajustes** (`PATCH /auth/preferences`).
 
 ## Productos base
 

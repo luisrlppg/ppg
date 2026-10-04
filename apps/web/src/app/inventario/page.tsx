@@ -9,12 +9,14 @@ import Segmented from "@/components/ui/segmented";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
 import { api } from "@/lib/api";
 import { descargarCSV } from "@/lib/csv";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
 type Accion = "entrada" | "salida" | "mover";
 type Vista = "ubicacion" | "variante" | "variante-minmax" | "producto";
 
 export default function InventarioPage() {
+  const formatCantidad = useFormatCantidad();
   const [exist, setExist] = useState<Existencia[]>([]);
   const [locs, setLocs] = useState<Ubicacion[]>([]);
   const [movs, setMovs] = useState<Movimiento[]>([]);
@@ -111,7 +113,7 @@ export default function InventarioPage() {
         if (accion === "salida") {
           const disponible = exist.find((x) => x.variantId === selId)?.porUbicacion[Number(ubiId)]?.qty ?? 0;
           if (qty > disponible) {
-            setError(`Stock insuficiente en la ubicación: hay ${disponible} y se intentan sacar ${qty}.`);
+            setError(`Stock insuficiente en la ubicación: hay ${formatCantidad(disponible)} y se intentan sacar ${formatCantidad(qty)}.`);
             return;
           }
         }
@@ -149,7 +151,7 @@ export default function InventarioPage() {
         body: JSON.stringify({ variantId, locationId, nuevaCantidad }),
       });
       if (r.resultado.sinCambio) notify(null, "Sin cambios.");
-      else notify(null, `Ajuste registrado (${r.resultado.delta > 0 ? "+" : ""}${r.resultado.delta}).`);
+      else notify(null, `Ajuste registrado (${r.resultado.delta > 0 ? "+" : ""}${formatCantidad(r.resultado.delta)}).`);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -431,13 +433,13 @@ export default function InventarioPage() {
                       </div>
                     </td>
                     <td className="num">
-                      <strong>{v.stockActual}</strong>
+                      <strong>{formatCantidad(v.stockActual)}</strong>
                     </td>
-                    <td className="num">{v.stockMin > 0 ? v.stockMin : "—"}</td>
-                    <td className="num">{v.stockMax > 0 ? v.stockMax : "—"}</td>
+                    <td className="num">{v.stockMin > 0 ? formatCantidad(v.stockMin) : "—"}</td>
+                    <td className="num">{v.stockMax > 0 ? formatCantidad(v.stockMax) : "—"}</td>
                     <td className="small muted">
                       {Object.values(v.porUbicacion)
-                        .map((l) => `${l.location}: ${l.qty}`)
+                        .map((l) => `${l.location}: ${formatCantidad(l.qty)}`)
                         .join(" · ") || "—"}
                     </td>
                   </tr>
@@ -468,7 +470,7 @@ export default function InventarioPage() {
                     </td>
                     <td className="num">{g.variantes}</td>
                     <td className="num">
-                      <strong>{g.stock}</strong>
+                      <strong>{formatCantidad(g.stock)}</strong>
                     </td>
                   </tr>
                 ))}
@@ -574,7 +576,7 @@ export default function InventarioPage() {
             <li key={m.id} style={{ padding: "10px 12px" }}>
               <strong>
                 {m.qty > 0 ? "+" : ""}
-                {m.qty}
+                {formatCantidad(m.qty)}
               </strong>{" "}
               {m.variant?.sku ?? "—"} · {m.motivo}
               {m.location ? ` (${m.location.nombre})` : ""}
@@ -611,7 +613,7 @@ export default function InventarioPage() {
             </label>
             {seleccion && (
               <p className="muted small" style={{ margin: "0 0 8px" }}>
-                <strong>{seleccion.producto}</strong> · {seleccion.nombre} ({seleccion.sku}) · Stock total: {seleccion.stockActual} {seleccion.uom}
+                <strong>{seleccion.producto}</strong> · {seleccion.nombre} ({seleccion.sku}) · Stock total: {formatCantidad(seleccion.stockActual)} {seleccion.uom}
               </p>
             )}
 
@@ -630,7 +632,7 @@ export default function InventarioPage() {
 
             {accion === "salida" && seleccion && (
               <p className="muted small" style={{ margin: "0 0 8px" }}>
-                Disponible en la ubicación: <strong>{disponible} {seleccion.uom}</strong>
+                Disponible en la ubicación: <strong>{formatCantidad(disponible)} {seleccion.uom}</strong>
               </p>
             )}
 

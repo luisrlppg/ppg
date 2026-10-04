@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import CompletarEjes from "@/components/productos/completar-ejes";
 import { api } from "@/lib/api";
 import { borrarSeleccion, guardarSeleccion, leerSeleccion } from "@/lib/local-store";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { Atributo, Categoria, Grid, GridCombo, GridVarianteExistente, PassoRow, ProductoDetalle, Variante } from "@/lib/types";
 
 interface BomRow {
@@ -35,6 +36,7 @@ export default function ProductoDetallePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const prodId = Number(id);
+  const formatCantidad = useFormatCantidad();
   const [d, setD] = useState<ProductoDetalle | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [atributos, setAtributos] = useState<Atributo[]>([]);
@@ -1081,7 +1083,7 @@ export default function ProductoDetallePage() {
                       )}
                     </div>
                   </td>
-                  <td>{v.stockActual}</td>
+                  <td>{formatCantidad(v.stockActual)}</td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <input type="checkbox" checked={v.longLead} onChange={() => toggle(v, "longLead")} style={{ width: "auto" }} />
                   </td>

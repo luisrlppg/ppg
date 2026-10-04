@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { colorAvatar, iniciales } from "@/lib/avatar";
+import { useFormatCantidad } from "@/lib/preferences";
 import type { ProductoLite } from "@/lib/types";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ProductoCard({ producto, onEliminar }: Props) {
+  const formatCantidad = useFormatCantidad();
   const [imgError, setImgError] = useState(false);
   const src = producto.imagen;
   const mostrarPlaceholder = !src || imgError;
@@ -36,7 +38,7 @@ export default function ProductoCard({ producto, onEliminar }: Props) {
             <span className="kbd-chip">{producto.categoria ?? "Sin categoría"}</span>
             <span className="kbd-chip">{producto.variantes} var.</span>
             <span className="kbd-chip">
-              {producto.stockTotal} {producto.uom}
+              {formatCantidad(producto.stockTotal)} {producto.uom}
             </span>
           </div>
           <span className="muted small">${Number(producto.basePrice).toFixed(2)}</span>

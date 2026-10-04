@@ -29,15 +29,20 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     `HelpNote`) y las clases/tokens de `app/globals.css`. No inventes clases nuevas.
 12. **Exportaciones CSV en cliente** usan `lib/csv.ts`; respetan los filtros/vista activa.
 13. **Preferencias de UI** (vista tabla/grid, selecciones de ejes): `local-store.ts` (`ppg.*` en `localStorage`).
+14. **Cantidades mostradas:** formatea las cantidades visibles con `useFormatCantidad()` de
+    `@/lib/preferences` (respeta la preferencia del usuario: coma `1,234.56` o espacio `1 234.56`).
+    No lo apliques en **inputs editables** ni en filas de **CSV/exportaciones** (deben quedar crudas).
+    El API que no tiene contexto de usuario usa `formatCantidad` de `@ppg/shared` con el default `coma`.
+    Si tocas `@ppg/shared`, corre `pnpm --filter @ppg/shared build`.
 
 ## General
 
-14. **No-interactividad:** nunca dejes comandos que pidan input (CI/agente). Prefiere flags no interactivos.
-15. **Comentarios opcionales:** usa `{/* */}` (web) y `// ---` (api) para marcar secciones grandes,
+15. **No-interactividad:** nunca dejes comandos que pidan input (CI/agente). Prefiere flags no interactivos.
+16. **Comentarios opcionales:** usa `{/* */}` (web) y `// ---` (api) para marcar secciones grandes,
     igual que los archivos existentes. No añadas comentarios explicativos redundantes; **no** comentes código evidente.
-16. **Actualiza el mapa:** si mueves/renombras archivos o cambias zonas relevantes, actualiza
+17. **Actualiza el mapa:** si mueves/renombras archivos o cambias zonas relevantes, actualiza
     `project-nav.md` (§2/§3/§4) para que las referencias sigan siendo válidas.
-17. **Catálogo:** cámbialo con **ops declarativas** (`scripts/catalog/`, ver `docs/catalog-ops.md`);
+18. **Catálogo:** cámbialo con **ops declarativas** (`scripts/catalog/`, ver `docs/catalog-ops.md`);
     no crees scripts one-off. Valida con `pnpm cat:snapshot` + dry-run (`cat:apply --file …`).
     Tras editar valores de variantes en la UI, corre `pnpm cat:export-seed` para volcarlos al seed.
     Estado y pendientes: `docs/catalog-state.md`.

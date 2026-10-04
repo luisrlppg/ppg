@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Prisma } from "@ppg/db";
+import { formatCantidad } from "@ppg/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { Notificadores } from "./monitor.notificadores";
 
@@ -196,8 +197,8 @@ export class MonitorService {
       `${canal} STOCK BAJO${crtitico} — PPG`,
       `Producto: ${v.producto}`,
       `Variante: ${v.nombre} (${v.sku})`,
-      `Existencia: ${v.stockActual} ${v.uom}`,
-      `Mínimo: ${v.stockMin} ${v.uom}`,
+      `Existencia: ${formatCantidad(v.stockActual)}`,
+      `Mínimo: ${formatCantidad(v.stockMin)}`,
       v.longLead ? "Tipo de entrega largo: reponer YA" : "Requiere reponer",
     ];
     const subject = lines[0];
