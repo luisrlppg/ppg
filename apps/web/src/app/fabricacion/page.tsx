@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
@@ -27,8 +28,9 @@ function origenTexto(of: OrdenFabricacion): string {
   return of.generatedFrom ? `de ${of.generatedFrom}` : "";
 }
 
-export default function FabricacionPage() {
+function FabricacionInner() {
   const formatCantidad = useFormatCantidad();
+  const searchParams = useSearchParams();
   const [ofs, setOfs] = useState<OrdenFabricacion[]>([]);
   const [faltantes, setFaltantes] = useState<FaltanteCompra[]>([]);
   const [fEstado, setFEstado] = useState("");
@@ -78,6 +80,12 @@ export default function FabricacionPage() {
   useEffect(() => {
     if (selId !== null) abrirDetalle(selId);
   }, [selId, abrirDetalle, cargar]);
+
+  useEffect(() => {
+    const of = searchParams.get("of");
+    if (of && Number(of) !== selId) setSelId(Number(of));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function iniciar(id: number) {
     setCargando(true);
@@ -465,5 +473,13 @@ export default function FabricacionPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+export default function FabricacionPage() {
+  return (
+    <Suspense fallback={<AppShell><p className="muted">Cargando…</p></AppShell>}>
+      <FabricacionInner />
+    </Suspense>
   );
 }

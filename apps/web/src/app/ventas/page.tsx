@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
@@ -26,6 +27,7 @@ interface VentaLista {
 
 export default function VentasPage() {
   const formatCantidad = useFormatCantidad();
+  const router = useRouter();
   const [ventas, setVentas] = useState<VentaLista[]>([]);
   const [fEstado, setFEstado] = useState("");
   const [fOrigen, setFOrigen] = useState("");
@@ -34,6 +36,7 @@ export default function VentasPage() {
   const [nuevaOpen, setNuevaOpen] = useState(false);
   const [detalle, setDetalle] = useState<Venta | null>(null);
   const [desglose, setDesglose] = useState<Desglose | null>(null);
+  const [desgloseOpen, setDesgloseOpen] = useState(false);
   const [imprimirVenta, setImprimirVenta] = useState<Venta | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -57,6 +60,7 @@ export default function VentasPage() {
     setVista("detalle");
     setError("");
     setMsg("");
+    setDesgloseOpen(false);
     try {
       setDesglose(await api<Desglose>(`/ventas/${id}/desglose`));
     } catch {
@@ -289,11 +293,35 @@ export default function VentasPage() {
 
         {desglose && desglose.lineas.length > 0 && (
           <>
-            <h4>Desglose de componentes</h4>
-            <HelpNote>
-              Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
-              stock nivel por nivel. Crea una OF por cada componente que falte y esté marcado como fabricable.
-            </HelpNote>
+            <button
+              type="button"
+              onClick={() => setDesgloseOpen((v) => !v)}
+              aria-expanded={desgloseOpen}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                margin: "16px 0 0",
+                padding: 0,
+                border: 0,
+                background: "transparent",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                color: "inherit",
+              }}
+            >
+              <span aria-hidden="true" style={{ fontSize: "0.8em", color: "var(--brand)" }}>
+                {desgloseOpen ? "▾" : "▸"}
+              </span>
+              Desglose de componentes ({desglose.lineas.length})
+            </button>
+            {desgloseOpen && (
+              <>
+                <HelpNote>
+                  Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
+                  stock nivel por nivel. Crea una OF por cada componente que falte y esté marcado como fabricable.
+                </HelpNote>
             <div className="card" style={{ padding: 0 }}>
               <div className="table-wrap">
                 <table className="table">
@@ -324,7 +352,7 @@ export default function VentasPage() {
                             {l.suficiente ? (
                               <span className="badge normal">Suficiente</span>
                             ) : l.fabricable ? (
-                              <span className={`badge ${l.tipo === "ensamble" ? "bajo" : "critico"}`}>Fabricar {l.tipo}</span>
+                              <span className={`badge ${l.tipo === "ensamble" ? "bajo" : "critico"}`}>{l.tipo === "ensamble" ? "Ensamblar" : "Fabricar"}</span>
                             ) : (
                               <span className="badge bajo">Comprar</span>
                             )}
@@ -347,43 +375,27 @@ export default function VentasPage() {
                 </table>
               </div>
             </div>
+              </>
+            )}
           </>
         )}
 
         {d.confirmadaAt && (
           <>
-            <h4>Resumen guardado (al confirmar)</h4>
-            <div className="grid-2">
-              <div className="card">
-                <h4 style={{ marginTop: 0 }}>Fabricar / Ensamblar</h4>
-                {(d.resumen?.fabricar ?? []).length ? (
-                  <ul className="step-list">
-                    {d.resumen!.fabricar.map((f) => (
-                      <li key={`F${f.variantId}`}>
-                        <span className={`badge ${f.tipo === "ensamble" ? "bajo" : "normal"}`}>{f.tipo}</span>{" "}
-                        <strong>{f.producto}</strong> {f.nombre} ({f.sku}) × {formatCantidad(f.cantidad)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">Todo está cubierto por el stock existente.</p>
-                )}
-              </div>
-              <div className="card">
-                <h4 style={{ marginTop: 0 }}>Pendientes de compra</h4>
-                <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
-                {(d.resumen?.comprar ?? []).length ? (
-                  <ul className="step-list">
-                    {d.resumen!.comprar.map((c) => (
-                      <li key={`C${c.variantId}`}>
-                        <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {formatCantidad(c.cantidad)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">Sin pendientes de compra.</p>
-                )}
-              </div>
+            <div className="card">
+              <h4 style={{ marginTop: 0 }}>Pendientes de compra</h4>
+              <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
+              {(d.resumen?.comprar ?? []).length ? (
+                <ul className="step-list">
+                  {d.resumen!.comprar.map((c) => (
+                    <li key={`C${c.variantId}`}>
+                      <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {formatCantidad(c.cantidad)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">Sin pendientes de compra.</p>
+              )}
             </div>
 
             {(d.ordenesFabricacion ?? []).length > 0 && (
@@ -408,7 +420,7 @@ export default function VentasPage() {
                     </thead>
                     <tbody>
                       {d.ordenesFabricacion.map((of) => (
-                        <tr key={of.id}>
+                        <tr key={of.id} onClick={() => router.push(`/fabricacion?of=${of.id}`)} style={{ cursor: "pointer" }}>
                           <td>{of.numero}</td>
                           <td>
                             <strong>{of.producto}</strong> <span className="muted small">({of.sku})</span>
