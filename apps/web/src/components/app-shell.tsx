@@ -6,17 +6,46 @@ import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/preferences";
 
-const LINKS: { href: string; label: string; icon: string; match?: string[]; roles?: string[] }[] = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  match?: string[];
+  roles?: string[];
+}
+
+interface NavSection {
+  id: string;
+  label: string;
+  roles?: string[];
+  items: NavItem[];
+}
+
+const LINKS: NavItem[] = [
   { href: "/", label: "Inicio", icon: "🏠" },
   { href: "/reportes", label: "Reportes", icon: "📋" },
   { href: "/ventas", label: "Ventas", icon: "🧾" },
   { href: "/fabricacion", label: "Fabricación", icon: "🏭" },
   { href: "/productos", label: "Productos", icon: "📦", match: ["/productos", "/catalogos"] },
-  { href: "/costos", label: "Costos", icon: "💰", roles: ["admin", "supervisor"] },
   { href: "/inventario", label: "Inventario", icon: "📊" },
   { href: "/clientes", label: "Clientes", icon: "👥" },
-  { href: "/monitor", label: "Monitor", icon: "🔔" },
-  { href: "/backups", label: "Respaldos", icon: "💾" },
+];
+
+const SECTIONS: NavSection[] = [
+  {
+    id: "admin",
+    label: "Administración",
+    roles: ["admin", "supervisor"],
+    items: [{ href: "/costos", label: "Costos", icon: "💰", roles: ["admin", "supervisor"] }],
+  },
+  {
+    id: "ajustes",
+    label: "Ajustes",
+    items: [
+      { href: "/ajustes", label: "Ajustes", icon: "⚙️" },
+      { href: "/backups", label: "Respaldos", icon: "💾" },
+    ],
+  },
 ];
 
 function iniciales(nombre: string): string {
@@ -29,20 +58,51 @@ function iniciales(nombre: string): string {
     .toUpperCase();
 }
 
+function esActivo(href: string, match: string[] | undefined, pathname: string): boolean {
+  return (match ?? [href]).some((p) =>
+    p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
 
   useEffect(() => {
     const saved = localStorage.getItem("ppg.sidebar.collapsed");
     if (saved !== null) setCollapsed(saved === "1");
+
+    const abiertas: Record<string, boolean> = {};
+    for (const s of SECTIONS) {
+      const v = localStorage.getItem(`ppg.sidebar.section.${s.id}`);
+      abiertas[s.id] = v === null ? true : v === "1";
+    }
+    setSeccionesAbiertas(abiertas);
   }, []);
+
+  useEffect(() => {
+    const activa = SECTIONS.find((s) =>
+      s.items.some((it) => esActivo(it.href, it.match, pathname)),
+    );
+    if (activa) {
+      setSeccionesAbiertas((prev) => (prev[activa.id] ? prev : { ...prev, [activa.id]: true }));
+    }
+  }, [pathname]);
 
   function toggleCollapsed() {
     setCollapsed((c) => {
       localStorage.setItem("ppg.sidebar.collapsed", c ? "0" : "1");
       return !c;
+    });
+  }
+
+  function toggleSeccion(id: string) {
+    setSeccionesAbiertas((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      localStorage.setItem(`ppg.sidebar.section.${id}`, next[id] ? "1" : "0");
+      return next;
     });
   }
 
@@ -66,6 +126,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const visible = (roles: string[] | undefined) => !roles || roles.includes(user.role);
+
+  function renderLink(item: NavItem) {
+    const active = esActivo(item.href, item.match, pathname);
+    return (
+      <Link key={item.href} href={item.href} className={active ? "active" : ""} title={item.label}>
+        <span className="icon" aria-hidden="true">
+          {item.icon}
+        </span>
+        <span className="label">{item.label}</span>
+      </Link>
+    );
+  }
+
   return (
     <div className={`app-layout${collapsed ? " collapsed" : ""}`}>
       <aside className="sidebar">
@@ -84,17 +158,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="sidebar-links">
-          {LINKS.filter((l) => !l.roles || l.roles.includes(user.role)).map((l) => {
-            const active = (l.match ?? [l.href]).some((p) =>
-              p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
-            );
+          {LINKS.filter((l) => visible(l.roles)).map(renderLink)}
+          {SECTIONS.filter((s) => visible(s.roles)).map((section) => {
+            const abierta = collapsed || (seccionesAbiertas[section.id] ?? true);
             return (
-              <Link key={l.href} href={l.href} className={active ? "active" : ""} title={l.label}>
-                <span className="icon" aria-hidden="true">
-                  {l.icon}
-                </span>
-                <span className="label">{l.label}</span>
-              </Link>
+              <div key={section.id} className="sidebar-section">
+                <button
+                  type="button"
+                  className="sidebar-section-header"
+                  onClick={() => toggleSeccion(section.id)}
+                  aria-expanded={seccionesAbiertas[section.id] ?? true}
+                >
+                  <span className="section-label">{section.label}</span>
+                  <span className="chevron" aria-hidden="true">
+                    {abierta ? "▾" : "▸"}
+                  </span>
+                </button>
+                {abierta && (
+                  <div className="sidebar-section-items">
+                    {section.items.filter((it) => visible(it.roles)).map(renderLink)}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -107,9 +192,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="sidebar-actions">
-            <Link className="btn ghost sm" href="/ajustes" title="Ajustes">
-              <span className="label">Ajustes</span>
-            </Link>
             <button
               className="btn ghost sm"
               type="button"

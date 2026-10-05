@@ -109,6 +109,9 @@ Registrados en `app.module.ts`.
 ### 2.8 Monitor de stock bajo + notificaciones → `monitor/`
 - `monitor.controller.ts` (73) · `monitor.service.ts` (240): `listarBajo` 66 · **`afterStockChange`** (dispara sólo al pasar a bajo) 104 · `checkAll` 165 · `enviarAlerta` 192 · `enviarPrueba` 208.
 - `monitor.notificadores.ts` (76): `sendTelegram` / `sendCallMeBot` / `sendEmail`.
+- **Página web retirada (2026-10-05):** `app/monitor/page.tsx` se eliminó (la vista vive ahora en
+  Inventario/Fabricación). El módulo backend y los disparadores de stock siguen vigentes; el
+  dashboard aún consume `GET /monitor/stock-bajo` para el conteo de bajo stock.
 
 ### 2.9 Clientes / partners → `clientes/`
 - `clientes.controller.ts` (87) · `clientes.service.ts` (137): `list`/`get`/`create`/`update`/`deactivate` + `importar` (CSV).
@@ -161,19 +164,18 @@ y `AppShell` (excepto tienda y login).
 | Lista productos | `app/productos/page.tsx` | 402 | grid/tabla + alta en modal; sin botón eliminar (el borrado vive en el detalle del producto) |
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
-| Ventas | `app/ventas/page.tsx` | 516 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** arranca **colapsado** (click en el encabezado para expandir) y muestra necesita/stock/falta + estado (Fabricar/Ensamblar/Comprar); alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
-| Fabricación (necesidades) | `app/fabricacion/page.tsx` | 254 | dos listas separadas **Por mínimo** / **Por ventas** (fabricables faltantes; ensambles como *Armar* solo lectura) + **Pendientes de compra**; botón **Ingresar producción** (`GET /inventario/ubicaciones` → `POST /fabricacion/produccion`) con paso extra para elegir ubicación |
+| Ventas | `app/ventas/page.tsx` | 516 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** es **siempre visible (no colapsable)** y muestra necesita/stock/falta + estado (Fabricar/Ensamblar/Comprar); alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
+| Fabricación (necesidades) | `app/fabricacion/page.tsx` | 281 | **Por ventas** primero, luego **Por mínimo** (colapsable, arranca cerrado) —fabricables faltantes; ensambles como *Armar* solo lectura— + **Pendientes de compra**; botón **Ingresar producción** (`GET /inventario/ubicaciones` → `POST /fabricacion/produccion`) con paso extra para elegir ubicación |
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
 | Reportes de producción | `app/reportes/page.tsx` | 693 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
-| Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin`/`supervisor` |
+| Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin`/`supervisor`; en el menú vive en la sección **Administración** |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
-| Monitor stock | `app/monitor/page.tsx` | 102 | estado (bajo stock + eventos) y enlace a Fabricación |
-| Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles) |
-| Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin) |
+| Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles); en el menú encabeza la sección **Ajustes** |
+| Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin); en el menú vive en la sección **Ajustes** |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
-| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), `useAuth()` del `PreferencesProvider` global, logout |
+| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), con **secciones colapsables** de encabezado (**Administración** [admin/supervisor] → Costos; **Ajustes** → Ajustes/Respaldos; estado en `ppg.sidebar.section.<id>`, se auto-abre la sección de la ruta activa). `useAuth()` del `PreferencesProvider` global, logout |
 
 ### 3.2 Librerías compartidas (`apps/web/src/lib/`)
 - `api.ts` (31) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`.
@@ -210,8 +212,8 @@ Reutilízalos en vez de inventar clases nuevas:
 | Editar los pasos guiados de un producto | `productos.service.ts` (`getPasos`/`setPasos`) · `app/productos/[id]/page.tsx` (sección "Pasos guiados") |
 | Productos públicos (lista de ventas) | `public.service.ts` (`productosPublicos` ~112, filtra `Product.vendible`) · `public.controller.ts` |
 | Precios / catálogo público | `public.service.ts` (`catalogo` 128) · `productos.service.ts` (`setVariantPrice` 378) |
-| Costo estándar por producto / desglose / margen | `apps/api/src/costos/` · `app/costos/page.tsx` |
-| Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` |
+| Costo estándar por producto / desglose / margen | `apps/api/src/costos/` · `app/costos/page.tsx` (sección de menú **Administración**) |
+| Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` (**sin página web**; bajo stock se ve en Inventario/Fabricación) |
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
 | Respaldos de la BD (punto de retorno) | `apps/api/src/backups/` · `app/backups/page.tsx` (UI) · `scripts/ppg.sh` (`backup`/`restore`) |

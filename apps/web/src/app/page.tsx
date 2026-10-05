@@ -14,7 +14,6 @@ const MODULES = [
   { href: "/productos", title: "Productos y variantes", desc: "Catálogo, grid de combos, precios, empaques por variante y listas de materiales (BOM)." },
   { href: "/inventario", title: "Inventario", desc: "Existencia por ubicación, ajustes, transferencias y entrada de producción." },
   { href: "/clientes", title: "Clientes", desc: "Alta, edición e importación por CSV de los clientes." },
-  { href: "/monitor", title: "Monitor de stock", desc: "Bajo stock, alertas por Telegram / WhatsApp / email y eventos." },
 ];
 
 interface Pendientes {
@@ -48,7 +47,7 @@ export default function Home() {
     { href: "/ventas", value: pend?.ventasAbiertas ?? 0, label: "Ventas abiertas", alert: (pend?.ventasAbiertas ?? 0) > 0 },
     { href: "/fabricacion", value: pend?.necesidades ?? 0, label: "Necesidades de fabricación", alert: (pend?.necesidades ?? 0) > 0 },
     { href: "/fabricacion", value: pend?.faltantes ?? 0, label: "Pendientes de compra", alert: (pend?.faltantes ?? 0) > 0 },
-    { href: "/monitor", value: pend?.bajoStock ?? 0, label: "Productos con bajo stock", alert: (pend?.bajoStock ?? 0) > 0 },
+    { href: "/inventario", value: pend?.bajoStock ?? 0, label: "Productos con bajo stock", alert: (pend?.bajoStock ?? 0) > 0 },
   ];
 
   return (
