@@ -275,8 +275,26 @@ export interface DesgloseLinea {
   salesOrderLineId: number | null;
 }
 
+export interface DesgloseNodo {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  requerido: number;
+  stockActual: number;
+  faltante: number;
+  suficiente: boolean;
+  fabricable: boolean;
+  comprable: boolean;
+  tipo?: "fabricacion" | "ensamble";
+  salesOrderLineId: number | null;
+  componentes: DesgloseNodo[];
+}
+
 export interface Desglose {
   lineas: DesgloseLinea[];
+  arbol: DesgloseNodo[];
   fabricar: ResumenItem[];
   comprar: ResumenItem[];
 }

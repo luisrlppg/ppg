@@ -17,4 +17,4 @@ export interface ConfiguracionLinea {
   resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
 }
 
-export type { Desglose, DesgloseLinea } from "../fabricacion/planificacion.service";
+export type { Desglose, DesgloseLinea, DesgloseNodo } from "../fabricacion/planificacion.service";

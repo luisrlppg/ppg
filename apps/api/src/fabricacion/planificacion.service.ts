@@ -29,8 +29,26 @@ export interface DesgloseLinea {
   salesOrderLineId: number | null;
 }
 
+export interface DesgloseNodo {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  requerido: number;
+  stockActual: number;
+  faltante: number;
+  suficiente: boolean;
+  fabricable: boolean;
+  comprable: boolean;
+  tipo?: "fabricacion" | "ensamble";
+  salesOrderLineId: number | null;
+  componentes: DesgloseNodo[];
+}
+
 export interface Desglose {
   lineas: DesgloseLinea[];
+  arbol: DesgloseNodo[];
   fabricar: PlanItem[];
   comprar: PlanItem[];
 }
@@ -100,6 +118,7 @@ export class PlanificacionService {
     const raiz = new Set<number>();
     const lineaOrigen = new Map<number, number | null>();
     const disponible = new Map<number, number>();
+    const arbol: DesgloseNodo[] = [];
 
     const stockDisponible = (v: VarianteCtx) => {
       if (!disponible.has(v.id)) {
@@ -114,7 +133,7 @@ export class PlanificacionService {
       path: number[],
       salesOrderLineId: number | null,
       esRaiz: boolean,
-    ): Promise<void> => {
+    ): Promise<DesgloseNodo> => {
       if (path.includes(variantId)) throw new BadRequestException("BOM con dependencia circular");
       const v = await this.load(tx, variantId, cache);
       requerido.set(variantId, (requerido.get(variantId) ?? 0) + cantidad);
@@ -127,9 +146,30 @@ export class PlanificacionService {
       const cubierto = Math.min(disp, cantidad);
       disponible.set(variantId, disp - cubierto);
       const falta = cantidad - cubierto;
-      if (falta <= 0) return;
-      faltante.set(variantId, (faltante.get(variantId) ?? 0) + falta);
-      if (!v.product.fabricable || v.product.components.length === 0) return;
+      if (falta > 0) faltante.set(variantId, (faltante.get(variantId) ?? 0) + falta);
+
+      const tipo = v.product.fabricable
+        ? v.product.components.length > 1
+          ? "ensamble"
+          : "fabricacion"
+        : undefined;
+      const nodo: DesgloseNodo = {
+        variantId,
+        sku: v.sku,
+        nombre: v.nombre,
+        producto: v.product.nombre,
+        uom: v.product.uom,
+        requerido: cantidad,
+        stockActual: v.stockLevels.reduce((a, l) => a + dec(l.qty), 0),
+        faltante: falta,
+        suficiente: falta <= 0,
+        fabricable: v.product.fabricable,
+        comprable: v.product.comprable,
+        tipo,
+        salesOrderLineId,
+        componentes: [],
+      };
+      if (falta <= 0 || !v.product.fabricable || v.product.components.length === 0) return nodo;
       for (const c of v.product.components) {
         const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
           productId: v.productId,
@@ -138,12 +178,15 @@ export class PlanificacionService {
         if (!compVariant) {
           throw new BadRequestException(`No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`);
         }
-        await explotar(compVariant.id, falta * dec(c.cantidad), [...path, variantId], salesOrderLineId, false);
+        nodo.componentes.push(
+          await explotar(compVariant.id, falta * dec(c.cantidad), [...path, variantId], salesOrderLineId, false),
+        );
       }
+      return nodo;
     };
 
     for (const d of demandas) {
-      await explotar(d.variantId, d.cantidad, [], d.salesOrderLineId ?? null, true);
+      arbol.push(await explotar(d.variantId, d.cantidad, [], d.salesOrderLineId ?? null, true));
     }
 
     const lineas: DesgloseLinea[] = [];
@@ -186,7 +229,7 @@ export class PlanificacionService {
         a.producto.localeCompare(b.producto) ||
         a.nombre.localeCompare(b.nombre),
     );
-    return { lineas, fabricar, comprar };
+    return { lineas, arbol, fabricar, comprar };
   }
 
   /** Descuenta una variante de sus ubicaciones (prefiere "Almacén principal"). */

@@ -31,6 +31,13 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Desglose de venta en árbol plegable (2026-10-06):** `GET /ventas/:id/desglose` ahora devuelve,
+  además de `lineas` (lista plana agregada que sigue usando Fabricación), un `arbol` de
+  `DesgloseNodo` construido por raíz vendida (`planificacion.desglosar`). En el detalle de venta
+  cada producto vendido es un nodo raíz con toggle para plegar/desplegar sus componentes (arrancan
+  **desplegados**); los descendientes se listan aplanados con sangría por profundidad (solo un nivel
+  de plegado). UI en `app/ventas/page.tsx`; tipos en `lib/types.ts`. Sin migración.
+
 - **Menú lateral por secciones y retiro de la página Monitor (2026-10-05):** `components/app-shell.tsx`
   pasó de lista plana a **secciones colapsables** con encabezado: **Administración** (solo
   `admin`/`supervisor`) contiene **Costos**; **Ajustes** contiene **Preferencias** (`/ajustes`) y

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
@@ -11,7 +11,7 @@ import NuevaVenta from "@/components/ventas/nueva-venta";
 import DocumentoVenta from "@/components/ventas/documento-venta";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
-import type { Desglose, Venta } from "@/lib/types";
+import type { Desglose, DesgloseNodo, Venta } from "@/lib/types";
 
 interface VentaLista {
   id: number;
@@ -34,7 +34,7 @@ export default function VentasPage() {
   const [nuevaOpen, setNuevaOpen] = useState(false);
   const [detalle, setDetalle] = useState<Venta | null>(null);
   const [desglose, setDesglose] = useState<Desglose | null>(null);
-  const [desgloseOpen, setDesgloseOpen] = useState(false);
+  const [desgloseColapsados, setDesgloseColapsados] = useState<Set<string>>(new Set());
   const [imprimirVenta, setImprimirVenta] = useState<Venta | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -58,7 +58,7 @@ export default function VentasPage() {
     setVista("detalle");
     setError("");
     setMsg("");
-    setDesgloseOpen(false);
+    setDesgloseColapsados(new Set());
     try {
       setDesglose(await api<Desglose>(`/ventas/${id}/desglose`));
     } catch {
@@ -135,6 +135,35 @@ export default function VentasPage() {
 
   const badgeVenta = (e: string) => (e === "despachada" ? "normal" : e === "abierta" ? "bajo" : "critico");
   const badgeEntrega = (e: string) => (e === "entregado" ? "normal" : e === "parcial" ? "bajo" : "critico");
+
+  const claveRaiz = (n: DesgloseNodo) => `r${n.salesOrderLineId ?? n.variantId}`;
+
+  function toggleDesglose(key: string) {
+    setDesgloseColapsados((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function aplanarComponentes(n: DesgloseNodo, depth = 1): { nodo: DesgloseNodo; depth: number }[] {
+    const out: { nodo: DesgloseNodo; depth: number }[] = [];
+    for (const h of n.componentes) {
+      out.push({ nodo: h, depth });
+      out.push(...aplanarComponentes(h, depth + 1));
+    }
+    return out;
+  }
+
+  const badgeDesglose = (l: DesgloseNodo) =>
+    l.suficiente ? (
+      <span className="badge normal">Suficiente</span>
+    ) : l.fabricable ? (
+      <span className={`badge ${l.tipo === "ensamble" ? "bajo" : "critico"}`}>{l.tipo === "ensamble" ? "Ensamblar" : "Fabricar"}</span>
+    ) : (
+      <span className="badge bajo">Comprar</span>
+    );
 
   // ------------------------------------------------------------------ UI
   if (vista === "detalle" && detalle) {
@@ -267,37 +296,15 @@ export default function VentasPage() {
           </div>
         </div>
 
-        {desglose && desglose.lineas.length > 0 && (
+        {desglose && desglose.arbol.length > 0 && (
           <>
-            <button
-              type="button"
-              onClick={() => setDesgloseOpen((v) => !v)}
-              aria-expanded={desgloseOpen}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                margin: "16px 0 0",
-                padding: 0,
-                border: 0,
-                background: "transparent",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: "1.1rem",
-                color: "inherit",
-              }}
-            >
-              <span aria-hidden="true" style={{ fontSize: "0.8em", color: "var(--brand)" }}>
-                {desgloseOpen ? "▾" : "▸"}
-              </span>
+            <h3 style={{ margin: "16px 0 8px", fontSize: "1.1rem" }}>
               Desglose de componentes ({desglose.lineas.length})
-            </button>
-            {desgloseOpen && (
-              <>
-                <HelpNote>
-                  Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
-                  stock nivel por nivel. Lo que falte se produce y registra desde <a href="/fabricacion">Fabricación</a>.
-                </HelpNote>
+            </h3>
+            <HelpNote>
+              Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
+              stock nivel por nivel. Lo que falte se produce y registra desde <a href="/fabricacion">Fabricación</a>.
+            </HelpNote>
             <div className="card" style={{ padding: 0 }}>
               <div className="table-wrap">
                 <table className="table">
@@ -311,35 +318,74 @@ export default function VentasPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {desglose.lineas.map((l) => {
+                    {desglose.arbol.map((raiz) => {
+                      const key = claveRaiz(raiz);
+                      const colapsado = desgloseColapsados.has(key);
+                      const hijos = aplanarComponentes(raiz);
+                      const tieneHijos = hijos.length > 0;
                       return (
-                        <tr key={l.variantId} style={l.raiz ? { background: "#fafafa" } : undefined}>
-                          <td>
-                            <strong>{l.producto}</strong>
-                            {l.raiz && <span className="badge info" style={{ marginLeft: 6 }}>Vendido</span>}
-                            <div className="small muted">{l.nombre} · {l.sku}</div>
-                          </td>
-                          <td className="num">{formatCantidad(l.requerido)} {l.uom}</td>
-                          <td className="num">{formatCantidad(l.stockActual)} {l.uom}</td>
-                          <td className="num">{l.faltante > 0 ? formatCantidad(l.faltante) : "—"}</td>
-                          <td>
-                            {l.suficiente ? (
-                              <span className="badge normal">Suficiente</span>
-                            ) : l.fabricable ? (
-                              <span className={`badge ${l.tipo === "ensamble" ? "bajo" : "critico"}`}>{l.tipo === "ensamble" ? "Ensamblar" : "Fabricar"}</span>
-                            ) : (
-                              <span className="badge bajo">Comprar</span>
-                            )}
-                          </td>
-                        </tr>
+                        <Fragment key={key}>
+                          <tr style={{ background: "#fafafa" }}>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {tieneHijos ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDesglose(key)}
+                                    aria-expanded={!colapsado}
+                                    title={colapsado ? "Expandir componentes" : "Colapsar componentes"}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      width: 18,
+                                      height: 18,
+                                      padding: 0,
+                                      border: 0,
+                                      background: "transparent",
+                                      cursor: "pointer",
+                                      color: "var(--brand)",
+                                      fontSize: "0.8rem",
+                                    }}
+                                  >
+                                    <span aria-hidden="true">{colapsado ? "▸" : "▾"}</span>
+                                  </button>
+                                ) : (
+                                  <span style={{ width: 18, display: "inline-block" }} />
+                                )}
+                                <div>
+                                  <strong>{raiz.producto}</strong>
+                                  <span className="badge info" style={{ marginLeft: 6 }}>Vendido</span>
+                                  <div className="small muted">{raiz.nombre} · {raiz.sku}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="num">{formatCantidad(raiz.requerido)} {raiz.uom}</td>
+                            <td className="num">{formatCantidad(raiz.stockActual)} {raiz.uom}</td>
+                            <td className="num">{raiz.faltante > 0 ? formatCantidad(raiz.faltante) : "—"}</td>
+                            <td>{badgeDesglose(raiz)}</td>
+                          </tr>
+                          {tieneHijos &&
+                            !colapsado &&
+                            hijos.map(({ nodo: h, depth }, i) => (
+                              <tr key={`${key}-${h.variantId}-${i}`}>
+                                <td style={{ paddingLeft: 12 + depth * 20 }}>
+                                  <strong>{h.producto}</strong>
+                                  <div className="small muted">{h.nombre} · {h.sku}</div>
+                                </td>
+                                <td className="num">{formatCantidad(h.requerido)} {h.uom}</td>
+                                <td className="num">{formatCantidad(h.stockActual)} {h.uom}</td>
+                                <td className="num">{h.faltante > 0 ? formatCantidad(h.faltante) : "—"}</td>
+                                <td>{badgeDesglose(h)}</td>
+                              </tr>
+                            ))}
+                        </Fragment>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
             </div>
-              </>
-            )}
           </>
         )}
 

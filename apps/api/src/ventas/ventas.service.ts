@@ -6,7 +6,7 @@ import { MonitorService } from "../monitor/monitor.service";
 import { PlanificacionService } from "../fabricacion/planificacion.service";
 import { ConfiguracionLinea, Desglose, ResumenNeteo } from "./ventas.types";
 
-export type { ResumenItem, ResumenNeteo, ConfiguracionLinea, Desglose, DesgloseLinea } from "./ventas.types";
+export type { ResumenItem, ResumenNeteo, ConfiguracionLinea, Desglose, DesgloseLinea, DesgloseNodo } from "./ventas.types";
 
 function placeholderNumero(): string {
   return `PEND-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
