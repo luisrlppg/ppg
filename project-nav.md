@@ -67,10 +67,11 @@ Registrados en `app.module.ts`.
 
 ### 2.3 Reportes de producción → `reportes/`
 - `reportes.controller.ts` (127) — rutas `/api/reportes...`
-- `reportes.service.ts` (414), zonas:
-  - `list` 53 · `ultimo` (prefill) 104 · `get` 139 · `crear` 171 · `editar` 197 (`list`/`ultimo` excluyen reportes `interno`)
-  - **`aplicar`** (mueve stock final/consumo; **ya no cierra la OF**) 222 · `cancelar` 297 · `lotes` 307 (incluye reportes internos) · `ubicar` 333
-  - `stats` 394 y `exportar` 399 delegan en módulos externos (excluyen reportes `interno`)
+- `reportes.service.ts`, zonas:
+  - `cepillosNylon` (datos del wizard: producto `CNI` + `grid` de ejes/variantes) · `list` · `ultimo` (prefill) · `get` · `crear` · `editar` (`list`/`ultimo` excluyen reportes `interno`)
+  - **`aplicar`** (mueve stock final/consumo; **ya no cierra la OF**) · `cancelar` · `lotes` (incluye reportes internos) · `ubicar`
+  - `stats` y `exportar` delegan en módulos externos (excluyen reportes `interno`)
+  - Ruta del wizard: `GET /reportes/cepillos-nylon` (roles `admin`/`operador`; estática antes de `:id`)
 - `reportes.constants.ts` (11): `TURNOS`, `SECCIONES`, `HORAS_TURNO`.
 - `reportes.stats.ts` (72): métricas de productividad. `reportes.export.ts` (55): CSV.
 
@@ -179,7 +180,7 @@ y `AppShell` (excepto tienda y login).
 | Ventas | `app/ventas/page.tsx` | 516 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** es **siempre visible** y se agrupa en **árbol por producto vendido**: cada línea vendida es el nodo raíz (badge *Vendido*) con toggle para plegar/desplegar sus componentes (arrancan **desplegados**), que se listan aplanados con sangría por profundidad; muestra necesita/stock/falta + estado (Fabricar/Ensamblar/Comprar) calculado **sobre lo pendiente**, y si la línea está `entregado` la raíz se marca **Entregado** sin cantidades (`—`); alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
 | Fabricación (necesidades) | `app/fabricacion/page.tsx` | 281 | **Por ventas** primero, luego **Por mínimo** (colapsable, arranca cerrado) —fabricables faltantes; ensambles como *Armar* solo lectura— + **Pendientes de compra**; botón **Ingresar producción** (`GET /inventario/ubicaciones` → `POST /fabricacion/produccion`) con paso extra para elegir ubicación |
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
-| Reportes de producción | `app/reportes/page.tsx` | 693 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
+| Reportes de producción | `app/reportes/page.tsx` | — | **captura por pasos**: setup (toggle Matutino/Vespertino, fecha, personas, "Comenzar") → wizard *Producción de cepillos de Nylon* (máquina → forma → color → cantidad, repetible) → finalizar deja el reporte **pendiente** para bandeja/aplicar; bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin` (guardia en la página); en el menú vive en la sección **Administración** |
 | Usuarios | `app/usuarios/page.tsx` | — | CRUD de cuentas (sólo `admin`): alta (usuario/nombre/contraseña/rol), edición de nombre/rol/activo, cambio de contraseña y activar/desactivar. No permite auto-desactivarse ni quitarse el rol admin |
@@ -217,7 +218,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Desglose de componentes / necesidades de fabricación | `ventas.service.ts` (`desglose`, `confirmar`) + `fabricacion/fabricacion.service.ts` (`necesidades`, `registrarProduccion`) + `fabricacion/planificacion.service.ts` (`desglosar`) |
 | Despachar línea / consumo de stock (ensambles consumen componentes) | `ventas.service.ts` (`despacharLinea`) + `planificacion.service.ts` (`consumirEnsamble`) |
 | Documento de venta PDF (IVA, imagen) | `components/ventas/documento-venta.tsx` (overlay/descarga) · `components/ventas/documento-venta-pdf.tsx` (layout `@react-pdf/renderer`) · `app/ventas/page.tsx` (overlay `imprimirVenta`) · `ventas.service.get` (`imagen`) |
-| Reporte de producción / aplicar | `reportes.service.ts` (`aplicar`) |
+| Reporte de producción / aplicar / wizard de cepillos | `reportes.service.ts` (`aplicar`, `cepillosNylon`) · `app/reportes/page.tsx` |
 | Panel de Fabricación: mínimos, ventas y alta de producción | `fabricacion.service.ts` (`necesidades`, `registrarProduccion`) · `app/fabricacion/page.tsx` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |

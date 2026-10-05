@@ -3,35 +3,39 @@
 import { useCallback, useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
+import Segmented from "@/components/ui/segmented";
 import StatsProduccion from "@/components/reportes/stats-produccion";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 import type {
+  CepillosNylonGrid,
   LoteUbicar,
   Reporte,
   ReporteDetalle,
   SeccionReporte,
-  Turno,
   TipoLineaReporte,
+  Turno,
   Ubicacion,
-  VarianteBuscada,
 } from "@/lib/types";
 
-const TURNOS: { value: Turno; label: string }[] = [
-  { value: "matutino", label: "Matutino (8h)" },
-  { value: "vespertino", label: "Vespertino (7.5h)" },
-  { value: "nocturno", label: "Nocturno (8h)" },
+type TurnoCaptura = Extract<Turno, "matutino" | "vespertino">;
+type Maquina = Extract<SeccionReporte, "maquina1" | "maquina2" | "maquina3">;
+
+const TURNOS: { value: TurnoCaptura; label: string }[] = [
+  { value: "matutino", label: "Matutino" },
+  { value: "vespertino", label: "Vespertino" },
 ];
 
-const SECCIONES: { value: SeccionReporte; label: string }[] = [
+const HORAS_TURNO: Record<TurnoCaptura, number> = {
+  matutino: 8,
+  vespertino: 7.5,
+};
+
+const MAQUINAS: { value: Maquina; label: string }[] = [
   { value: "maquina1", label: "Máquina 1" },
   { value: "maquina2", label: "Máquina 2" },
   { value: "maquina3", label: "Máquina 3" },
-  { value: "ensamble", label: "Ensamble" },
-  { value: "ensartado", label: "Ensartado" },
-  { value: "pegado", label: "Pegado" },
-  { value: "perforado", label: "Perforado" },
 ];
 
 function hoy(): string {
@@ -39,11 +43,8 @@ function hoy(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function turnoPorHora(): Turno {
-  const h = new Date().getHours();
-  if (h >= 6 && h < 14) return "matutino";
-  if (h >= 14 && h < 22) return "vespertino";
-  return "nocturno";
+function turnoPorHora(): TurnoCaptura {
+  return new Date().getHours() < 14 ? "matutino" : "vespertino";
 }
 
 function aDate(s: string): string {
@@ -65,15 +66,8 @@ interface LineaForm {
   seccion: SeccionReporte;
   tipo: TipoLineaReporte;
   cantidad: string;
-}
-
-interface UltimoReporte {
-  turno: Turno;
-  fecha: string;
-  personas: number;
-  horasTrabajadas?: number;
-  notas?: string;
-  lines: { variantId: number; sku: string; nombre: string; producto: string; uom: string; seccion: SeccionReporte; tipo: TipoLineaReporte; ok: number }[];
+  forma: string;
+  color: string;
 }
 
 type Tab = "reporte" | "bandeja" | "ubicar" | "stats";
@@ -98,113 +92,139 @@ export default function ReportesPage() {
   const esGestion = user?.role === "admin";
 
   // ------------------------------------------------------------------ Formulario
-  const [turno, setTurno] = useState<Turno>(turnoPorHora);
+  const [fase, setFase] = useState<"setup" | "captura">("setup");
+  const [turno, setTurno] = useState<TurnoCaptura>(turnoPorHora);
   const [fecha, setFecha] = useState(hoy);
   const [personas, setPersonas] = useState("1");
-  const [horas, setHoras] = useState("");
-  const [notas, setNotas] = useState("");
   const [lines, setLines] = useState<LineaForm[]>([]);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [editandoNumero, setEditandoNumero] = useState("");
-  const [busqVar, setBusqVar] = useState("");
-  const [resultados, setResultados] = useState<VarianteBuscada[]>([]);
   const [guardando, setGuardando] = useState(false);
 
-  useEffect(() => {
-    if (!busqVar.trim()) {
-      setResultados([]);
+  // ------------------------------------------------------------------ Wizard
+  const [grid, setGrid] = useState<CepillosNylonGrid | null>(null);
+  const [cargandoGrid, setCargandoGrid] = useState(false);
+  const [maquina, setMaquina] = useState<Maquina | null>(null);
+  const [formaId, setFormaId] = useState<number | null>(null);
+  const [colorId, setColorId] = useState<number | null>(null);
+  const [cantidad, setCantidad] = useState("1");
+
+  const ejes = grid?.ejes ?? [];
+  const shapeIdx = ejes.findIndex((e) => /forma/i.test(e.nombre));
+  const colorIdx = ejes.findIndex((e) => /color/i.test(e.nombre));
+  const shapeEje = shapeIdx >= 0 ? ejes[shapeIdx] : null;
+  const colorEje = colorIdx >= 0 ? ejes[colorIdx] : null;
+
+  function coloresDeForma(fid: number): { id: number; valor: string }[] {
+    if (!grid || !colorEje) return [];
+    const ids = new Set(
+      grid.existentes.filter((v) => v.valueIds[shapeIdx] === fid).map((v) => v.valueIds[colorIdx]),
+    );
+    return colorEje.valores.filter((c) => ids.has(c.id));
+  }
+
+  function resolverVariante(fid: number, cid: number) {
+    return grid?.existentes.find((v) => v.valueIds[shapeIdx] === fid && v.valueIds[colorIdx] === cid) ?? null;
+  }
+
+  async function cargarGrid(): Promise<CepillosNylonGrid> {
+    if (grid) return grid;
+    const g = await api<CepillosNylonGrid>("/reportes/cepillos-nylon");
+    setGrid(g);
+    return g;
+  }
+
+  async function comenzar() {
+    if (!(Number(personas) >= 1)) {
+      setError("Indica al menos 1 persona.");
       return;
     }
-    const t = setTimeout(() => {
-      api<VarianteBuscada[]>(`/productos/variantes?search=${encodeURIComponent(busqVar)}`)
-        .then(setResultados)
-        .catch(() => setResultados([]));
-    }, 200);
-    return () => clearTimeout(t);
-  }, [busqVar]);
-
-  const cargarPrefill = useCallback(async (t: Turno) => {
+    setError("");
+    setMsg("");
+    setCargandoGrid(true);
     try {
-      const u = await api<UltimoReporte | null>(`/reportes/ultimo?turno=${t}`);
-      if (u && u.lines.length) {
-        setLines(
-          u.lines.map((l) => ({
-            key: `${l.variantId}-${l.seccion}-${Date.now()}${Math.random()}`,
-            variantId: l.variantId,
-            sku: l.sku,
-            nombre: l.nombre,
-            producto: l.producto,
-            uom: l.uom,
-            seccion: l.seccion,
-            tipo: l.tipo,
-            cantidad: String(l.ok),
-          })),
-        );
-        setPersonas(String(u.personas));
-        setHoras(u.horasTrabajadas ? String(u.horasTrabajadas) : "");
-        setNotas(u.notas ?? "");
-      } else {
-        setLines([]);
-      }
-    } catch {
-      setLines([]);
+      await cargarGrid();
+      setMaquina(null);
+      setFormaId(null);
+      setColorId(null);
+      setCantidad("1");
+      setFase("captura");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setCargandoGrid(false);
     }
-  }, []);
+  }
 
-  useEffect(() => {
-    if (editandoId === null) cargarPrefill(turno);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [turno]);
-
-  function agregarLinea(v: VarianteBuscada) {
-    if (lines.some((l) => l.variantId === v.id)) {
-      setMsg("Esa variante ya está en el reporte.");
+  function agregarCepillo() {
+    if (maquina === null || formaId === null || colorId === null) return;
+    const variante = resolverVariante(formaId, colorId);
+    if (!variante) {
+      setError("No existe una variante para esa forma y color.");
       return;
     }
+    if (!(Number(cantidad) > 0)) {
+      setError("Cantidad inválida.");
+      return;
+    }
+    if (lines.some((l) => l.variantId === variante.varianteId && l.seccion === maquina)) {
+      setError("Ese cepillo ya está agregado en esa máquina.");
+      return;
+    }
+    const forma = shapeEje?.valores.find((v) => v.id === formaId)?.valor ?? "—";
+    const color = colorEje?.valores.find((v) => v.id === colorId)?.valor ?? "—";
     setLines([
       ...lines,
       {
-        key: `${v.id}-${Date.now()}${Math.random()}`,
-        variantId: v.id,
-        sku: v.sku,
-        nombre: v.nombre,
-        producto: v.producto,
-        uom: v.uom,
-        seccion: "maquina1",
-        tipo: v.uom === "metro" ? "consumo" : "final",
-        cantidad: "1",
+        key: `${variante.varianteId}-${maquina}-${Date.now()}${Math.random()}`,
+        variantId: variante.varianteId,
+        sku: variante.sku,
+        nombre: variante.nombre,
+        producto: grid?.nombre ?? "Cepillo Nylon",
+        uom: "pieza",
+        seccion: maquina,
+        tipo: "final",
+        cantidad,
+        forma,
+        color,
       },
     ]);
-    setBusqVar("");
-    setResultados([]);
+    setError("");
+    setMsg("");
+    setMaquina(null);
+    setFormaId(null);
+    setColorId(null);
+    setCantidad("1");
   }
 
-  function cambiarLinea(key: string, campo: string, valor: string | SeccionReporte | TipoLineaReporte) {
-    setLines(lines.map((l) => (l.key === key ? { ...l, [campo]: valor } : l)));
+  function cambiarCantidad(key: string, valor: string) {
+    setLines(lines.map((l) => (l.key === key ? { ...l, cantidad: valor } : l)));
   }
 
   function limpiarForm() {
+    setFase("setup");
     setLines([]);
     setPersonas("1");
-    setHoras("");
-    setNotas("");
+    setFecha(hoy());
     setEditandoId(null);
     setEditandoNumero("");
-    setFecha(hoy());
+    setMaquina(null);
+    setFormaId(null);
+    setColorId(null);
+    setCantidad("1");
   }
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     if (lines.length === 0) {
-      setError("Agrega al menos una línea con conteo.");
+      setError("Agrega al menos un cepillo.");
       return;
     }
     const dto = {
       turno,
       fecha,
       personas: Number(personas) || 1,
-      horasTrabajadas: horas ? Number(horas) : undefined,
-      notas: notas || undefined,
+      horasTrabajadas: HORAS_TURNO[turno],
       lines: lines.map((l) => ({ variantId: l.variantId, seccion: l.seccion, tipo: l.tipo, ok: Number(l.cantidad) })),
     };
     setGuardando(true);
@@ -253,14 +273,19 @@ export default function ReportesPage() {
     api<ReporteDetalle>(`/reportes/${selId}`).then(setDetalle).catch((err) => setError((err as Error).message));
   }, [selId, cargarBandeja, tab]);
 
-  function iniciarEdicion(d: ReporteDetalle) {
-    setTurno(d.turno);
-    setFecha(aDate(d.fecha));
-    setPersonas(String(d.personas));
-    setHoras(d.horasTrabajadas ? String(d.horasTrabajadas) : "");
-    setNotas(d.notas ?? "");
-    setLines(
-      d.lines.map((l) => ({
+  async function iniciarEdicion(d: ReporteDetalle) {
+    let g = grid;
+    try {
+      g = await cargarGrid();
+    } catch {
+      g = null;
+    }
+    const idxShape = g ? g.ejes.findIndex((e) => /forma/i.test(e.nombre)) : -1;
+    const idxColor = g ? g.ejes.findIndex((e) => /color/i.test(e.nombre)) : -1;
+    const mapeadas: LineaForm[] = [];
+    const otras: LineaForm[] = [];
+    for (const l of d.lines) {
+      const base = {
         key: `${l.variantId}-${l.seccion}-${l.id}`,
         variantId: l.variantId,
         sku: l.sku,
@@ -270,12 +295,29 @@ export default function ReportesPage() {
         seccion: l.seccion,
         tipo: l.tipo,
         cantidad: String(Number(l.ok)),
-      })),
-    );
+      };
+      const ex = g?.existentes.find((v) => v.varianteId === l.variantId);
+      if (g && ex && idxShape >= 0 && idxColor >= 0) {
+        const fid = ex.valueIds[idxShape];
+        const cid = ex.valueIds[idxColor];
+        mapeadas.push({
+          ...base,
+          forma: g.ejes[idxShape].valores.find((x) => x.id === fid)?.valor ?? "—",
+          color: g.ejes[idxColor].valores.find((x) => x.id === cid)?.valor ?? "—",
+        });
+      } else {
+        otras.push({ ...base, forma: "—", color: "—" });
+      }
+    }
+    setTurno(d.turno === "vespertino" ? "vespertino" : "matutino");
+    setFecha(aDate(d.fecha));
+    setPersonas(String(d.personas));
+    setLines([...mapeadas, ...otras]);
     setEditandoId(d.id);
     setEditandoNumero(d.numero);
     setError("");
     setMsg("");
+    setFase("captura");
     setTab("reporte");
   }
 
@@ -372,137 +414,167 @@ export default function ReportesPage() {
   }
 
   // ------------------------------------------------------------------ UI
-  const submitForm = (
-    <form onSubmit={guardar} className="card">
-      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4 }}>
-        <h4 style={{ margin: 0 }}>
-          {editandoId ? `Editando ${editandoNumero} (pendiente)` : "Reporte del día"}
-        </h4>
-        {editandoId && (
-          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
-            Cancelar edición
-          </button>
-        )}
-      </div>
+  const setupForm = (
+    <form
+      className="card"
+      style={{ maxWidth: 620, margin: "0 auto" }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        comenzar();
+      }}
+    >
+      <h4 style={{ marginTop: 0, textAlign: "center" }}>Reporte del día</h4>
+      <p className="muted small" style={{ textAlign: "center", marginTop: 0 }}>
+        Elige el turno, la fecha y cuántas personas trabajaron.
+      </p>
       <div className="row" style={{ alignItems: "end", flexWrap: "wrap" }}>
-        <div>
+        <div style={{ flex: 1, minWidth: 220 }}>
           <span className="muted small">Turno</span>
-          <div className="row" style={{ gap: 6 }}>
-            {TURNOS.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                className="btn"
-                style={turno === t.value ? { background: "#1a3a8a", color: "#fff", borderColor: "#1a3a8a" } : undefined}
-                onClick={() => setTurno(t.value)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <Segmented value={turno} onChange={(v) => setTurno(v as TurnoCaptura)} options={TURNOS} />
         </div>
-        <label>
+        <label style={{ width: 160 }}>
           Fecha
           <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
         </label>
-        <label style={{ width: 90 }}>
+        <label style={{ width: 110 }}>
           Personas
           <input type="number" min="1" value={personas} onChange={(e) => setPersonas(e.target.value)} />
         </label>
-        <label style={{ width: 130 }}>
-          Horas trabajadas <span className="muted small">(opcional)</span>
-          <input type="number" step="0.5" min="0.1" value={horas} onChange={(e) => setHoras(e.target.value)} placeholder={turno === "vespertino" ? "7.5" : "8"} />
-        </label>
       </div>
-      <label>
-        Notas
-        <input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="opcional" />
-      </label>
+      <button className="btn primary block" disabled={cargandoGrid}>
+        {cargandoGrid ? "Cargando…" : "Comenzar"}
+      </button>
+      {editandoId && (
+        <button type="button" className="btn ghost block" onClick={limpiarForm}>
+          Cancelar edición
+        </button>
+      )}
+    </form>
+  );
 
-      <h5 style={{ marginBottom: 4 }}>Producción del turno</h5>
-      <label>
-        Buscar producto o variante…
-        <input value={busqVar} onChange={(e) => setBusqVar(e.target.value)} placeholder="ej. pincel, cerda, vástago…" />
-      </label>
-      {resultados.length > 0 && (
-        <div className="card" style={{ padding: 8, margin: "4px 0 12px" }}>
-          {resultados.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              className="row"
-              style={{ width: "100%", textAlign: "left", marginBottom: 2, background: "#fff", border: "1px solid #eee", borderRadius: 8, padding: "8px 12px" }}
-              onClick={() => agregarLinea(r)}
-            >
-              <span>
-                <strong>{r.producto}</strong> — {r.nombre}
-                <span className="muted small"> ({r.sku}) · uom {r.uom}</span>
-              </span>
+  const capturaForm = (
+    <div className="card">
+      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap" }}>
+        <h4 style={{ margin: 0 }}>
+          {editandoId ? `Editando ${editandoNumero} (pendiente)` : "Paso 1 · Producción de cepillos de Nylon"}
+        </h4>
+        <span className="muted small">
+          {turno === "matutino" ? "Matutino" : "Vespertino"} · {new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX")} ·{" "}
+          {personas} pers.
+        </span>
+      </div>
+
+      {maquina === null ? (
+        <>
+          <h5 style={{ marginBottom: 4 }}>Elige la máquina</h5>
+          <div className="row">
+            {MAQUINAS.map((m) => (
+              <button key={m.value} type="button" className="btn" onClick={() => setMaquina(m.value)}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : formaId === null ? (
+        <>
+          <h5 style={{ marginBottom: 4 }}>
+            {MAQUINAS.find((m) => m.value === maquina)?.label} · Forma del cepillo
+          </h5>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            {shapeEje?.valores.map((f) => (
+              <button key={f.id} type="button" className="btn" onClick={() => setFormaId(f.id)}>
+                {f.valor}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn ghost" style={{ flex: 0, marginTop: 8 }} onClick={() => setMaquina(null)}>
+            Atrás
+          </button>
+        </>
+      ) : colorId === null ? (
+        <>
+          <h5 style={{ marginBottom: 4 }}>
+            {MAQUINAS.find((m) => m.value === maquina)?.label} · {shapeEje?.valores.find((v) => v.id === formaId)?.valor} · Color
+          </h5>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            {coloresDeForma(formaId).map((c) => (
+              <button key={c.id} type="button" className="btn" onClick={() => setColorId(c.id)}>
+                {c.valor}
+              </button>
+            ))}
+          </div>
+          {coloresDeForma(formaId).length === 0 && <p className="muted small">Sin colores disponibles para esa forma.</p>}
+          <button type="button" className="btn ghost" style={{ flex: 0, marginTop: 8 }} onClick={() => setFormaId(null)}>
+            Atrás
+          </button>
+        </>
+      ) : (
+        <>
+          <h5 style={{ marginBottom: 4 }}>
+            {MAQUINAS.find((m) => m.value === maquina)?.label} · {shapeEje?.valores.find((v) => v.id === formaId)?.valor} ·{" "}
+            {colorEje?.valores.find((v) => v.id === colorId)?.valor}
+          </h5>
+          <label style={{ maxWidth: 220 }}>
+            Cantidad
+            <input type="number" min="1" step="1" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
+          </label>
+          <div className="row" style={{ marginTop: 8 }}>
+            <button type="button" className="btn primary" style={{ flex: 0 }} onClick={agregarCepillo}>
+              Agregar
             </button>
-          ))}
-        </div>
+            <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setColorId(null)}>
+              Atrás
+            </button>
+          </div>
+        </>
       )}
 
-      {lines.map((l) => (
-        <div
-          key={l.key}
-          className="row"
-          style={{ background: "#fafafa", padding: "8px 12px", borderRadius: 8, marginBottom: 6, flexWrap: "wrap", alignItems: "end" }}
-        >
-          <span style={{ flex: 2 }}>
-            <strong>{l.producto}</strong> — {l.nombre} <span className="muted small">({l.sku})</span>
-          </span>
-          <label style={{ flex: 1.1 }}>
-            Sección
-            <select value={l.seccion} onChange={(e) => cambiarLinea(l.key, "seccion", e.target.value as SeccionReporte)}>
-              {SECCIONES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div style={{ width: 110 }}>
-            <span className="muted small">Tipo</span>
-            <div className="row" style={{ gap: 4 }}>
-              <button
-                type="button"
-                className="btn"
-                style={l.tipo === "final" ? { background: "#1a3a8a", color: "#fff", borderColor: "#1a3a8a", padding: "4px 8px", fontSize: "0.85rem" } : { padding: "4px 8px", fontSize: "0.85rem" }}
-                onClick={() => cambiarLinea(l.key, "tipo", "final")}
-              >
-                Final
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={l.tipo === "consumo" ? { background: "#8a1a1a", color: "#fff", borderColor: "#8a1a1a", padding: "4px 8px", fontSize: "0.85rem" } : { padding: "4px 8px", fontSize: "0.85rem" }}
-                onClick={() => cambiarLinea(l.key, "tipo", "consumo")}
-              >
-                Consumo
-              </button>
-            </div>
-          </div>
-          <label style={{ width: 90 }}>
-            Cantidad
-            <input type="number" step="0.001" min="0.001" value={l.cantidad} onChange={(e) => cambiarLinea(l.key, "cantidad", e.target.value)} />
-          </label>
-          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>
-            Quitar
+      <h5 style={{ marginTop: 16, marginBottom: 4 }}>Capturados ({lines.length})</h5>
+      {lines.length === 0 ? (
+        <p className="muted small">Aún no agregas cepillos.</p>
+      ) : (
+        <ul className="step-list">
+          {lines.map((l) => (
+            <li key={l.key}>
+              <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                <span>
+                  <span className="badge normal">{MAQUINAS.find((m) => m.value === l.seccion)?.label ?? l.seccion}</span>{" "}
+                  <strong>{l.producto}</strong> · {l.forma} · {l.color}
+                  <div className="small muted">
+                    {l.sku}
+                    {l.tipo === "consumo" ? " · consumo" : ""}
+                  </div>
+                </span>
+                <span className="row" style={{ flex: 0, gap: 8, alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={l.cantidad}
+                    onChange={(e) => cambiarCantidad(l.key, e.target.value)}
+                    style={{ width: 90 }}
+                  />
+                  <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>
+                    Quitar
+                  </button>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form onSubmit={guardar}>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button className="btn primary block" disabled={guardando}>
+            {guardando ? "Guardando…" : editandoId ? "Guardar cambios" : "Finalizar reporte"}
+          </button>
+          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
+            Reiniciar
           </button>
         </div>
-      ))}
-      {lines.length === 0 && <p className="muted">Busca y agrega las variantes fabricadas o consumidas.</p>}
-
-      <div className="row" style={{ alignItems: "end" }}>
-        <button className="btn primary block" disabled={guardando}>
-          {guardando ? "Guardando…" : editandoId ? "Guardar cambios" : "Guardar reporte"}
-        </button>
-        <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
-          Empezar en blanco
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 
   const contentBandeja = (
@@ -656,7 +728,7 @@ export default function ReportesPage() {
     <AppShell>
       <PageHeader
         title="Reportes de producción"
-        subtitle="Captura de reportes por turno y sección; al aplicar se descuenta consumo y se cierran las órdenes de fabricación."
+        subtitle="Captura de reportes por turno; al aplicar, los productos terminados entran a inventario."
       />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
@@ -683,7 +755,7 @@ export default function ReportesPage() {
         )}
       </div>
 
-      {tab === "reporte" && submitForm}
+      {tab === "reporte" && (fase === "setup" ? setupForm : capturaForm)}
       {tab === "bandeja" && esGestion && contentBandeja}
       {tab === "ubicar" && esGestion && contentUbicar}
       {tab === "stats" && esGestion && (

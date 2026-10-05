@@ -3,6 +3,7 @@ import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { MonitorService } from "../monitor/monitor.service";
+import { gridProducto } from "../productos/productos.grid";
 import { exportarReportes } from "./reportes.export";
 import { estadisticas } from "./reportes.stats";
 import { HORAS_TURNO, SECCIONES, TURNOS, Seccion, Turno } from "./reportes.constants";
@@ -46,6 +47,17 @@ export class ReportesService {
     const d = new Date(f);
     d.setHours(0, 0, 0, 0);
     return d;
+  }
+
+  // --------------------------------------------- Datos de cepillos de nylon
+  async cepillosNylon() {
+    const p = await this.prisma.product.findFirst({
+      where: { skuBase: "CNI" },
+      select: { id: true, nombre: true },
+    });
+    if (!p) throw new NotFoundException("No se encontró el producto Cepillo Nylon (CNI)");
+    const grid = await gridProducto(this.prisma, p.id);
+    return { productId: p.id, nombre: p.nombre, ...grid };
   }
 
   // ---------------------------------------------------------------- Lista

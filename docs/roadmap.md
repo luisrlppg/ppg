@@ -5,7 +5,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 ## Pendientes activos
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos:
-   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (693),
+   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (wizard),
    `ventas/page.tsx` (516), `fabricacion/page.tsx` (254). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, crosswalk con
@@ -30,6 +30,17 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 - `common/util.ts`: helpers mezclados, candidato a separar.
 
 ## Trabajo reciente (contexto)
+
+- **Captura del reporte diario por pasos — wizard de cepillos de Nylon (2026-10-06):** se reescribió el
+  formulario de `app/reportes/page.tsx` en dos fases. **Setup**: toggle **Matutino/Vespertino**
+  (se retiró Nocturno de la UI), selector de fecha, input de personas y un único botón **Comenzar**;
+  las **horas trabajadas** se derivan del turno (8 / 7.5) y ya no se piden, y se **eliminó el prefill**
+  (`GET /reportes/ultimo`). **Captura**: paso *Producción de cepillos de Nylon* que encadena
+  **máquina (`maquina1/2/3`) → forma → color → cantidad**, repetible, con lista de "Capturados".
+  Nuevo `GET /reportes/cepillos-nylon` (producto `CNI` + `grid` de ejes/variantes vía `productos.grid`)
+  para resolver la variante; se usa el producto y las combinaciones ya materializadas. Al **Finalizar**
+  se crea el reporte **pendiente** con `horasTrabajadas` derivado; "Modificar" reconstruye las entradas
+  desde las líneas (variante → forma/color) y preserva las no mapeables. Sin migración.
 
 - **Desglose de venta según lo pendiente + retiro de Pendientes de compra en la venta (2026-10-05):**
   `GET /ventas/:id/desglose` y `fabricacion.necesidadesPorVentas` ahora calculan la explosión neta sobre

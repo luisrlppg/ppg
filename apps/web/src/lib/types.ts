@@ -92,6 +92,11 @@ export interface Grid {
   existentes: GridVarianteExistente[];
 }
 
+export interface CepillosNylonGrid extends Grid {
+  productId: number;
+  nombre: string;
+}
+
 export interface ProductoDetalle {
   id: number;
   nombre: string;
@@ -341,8 +346,10 @@ export interface NecesidadFabricacion {
   variantId: number;
   sku: string;
   nombre: string;
+  productoId: number;
   producto: string;
   uom: string;
+  valoracion: { attribute: string; valor: string }[];
   stockActual: number;
   stockMin: number;
   stockMax: number;
