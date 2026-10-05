@@ -21,6 +21,7 @@ export type Op =
   | { op: "variant.copy"; from: string; sku: string; overrides?: Record<string, string> }
   | { op: "variant.deriveFrom"; target: string; source: string; on: string[]; inherit: string[] }
   | { op: "variant.delete"; sku: string; allowStock?: boolean }
+  | { op: "product.delete"; sku: string; allowStock?: boolean }
   | { op: "step.repoint"; product: string; fromAttribute: string; toAttribute: string }
   | { op: "category.ensure"; nombre: string }
   | { op: "location.ensure"; nombre: string; tipo?: "almacen" | "temporal" }
@@ -83,6 +84,7 @@ const REQUIRED: Record<string, string[]> = {
   "variant.copy": ["from", "sku"],
   "variant.deriveFrom": ["target", "source", "on", "inherit"],
   "variant.delete": ["sku"],
+  "product.delete": ["sku"],
   "step.repoint": ["product", "fromAttribute", "toAttribute"],
   "category.ensure": ["nombre"],
   "location.ensure": ["nombre"],

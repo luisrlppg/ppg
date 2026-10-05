@@ -272,7 +272,6 @@ export class VentasService {
       });
       if (!order) throw new NotFoundException("Venta no encontrada");
       if (order.estado !== "abierta") throw new BadRequestException("Solo se confirma una venta abierta");
-      if (order.confirmadaAt) throw new BadRequestException("Esta venta ya fue confirmada");
 
       // 1) Neteo + plan de fabricación/compra (lógica compartida).
       const plan = await this.planificacion.planificar(

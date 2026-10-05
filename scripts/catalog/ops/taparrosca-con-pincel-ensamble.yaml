@@ -1,0 +1,80 @@
+# Taparrosca con Pincel — consolidación P0019 (Odoo) + BOM/wizard (Modelo B)
+#
+# Objetivo: dejar UN solo producto "Taparrosca con Pincel" (la fila P0019, con sus 19
+# variantes y stock) y retirar el prototipo nativo (skuBase TP).
+# - Remapea los ejes legado de P0019 al modelo de componentes:
+#     Tipo de Tapa con Pincel + Altura de Taparrosca -> Forma de Taparrosca
+#     Color de Tapa con Pincel -> Color de Taparrosca
+#     Medida pincel -> Altura de Mango (35 plano -> 35mm + Agujero Plano; resto Normal)
+# - Agrega BOM (Taparrosca + Pincel) y pasos del wizard.
+# - Borra el producto TP y los atributos que quedan huérfanos.
+# Idempotente: borra TP y renombra P0019 al inicio, luego todo referencia el nombre final.
+# Ver docs/plan-taparrosca.md.
+version: 1
+name: taparrosca-con-pincel-ensamble
+description: "Consolida Tapa con Pincel (P0019) como Taparrosca con Pincel con BOM/wizard y retira el prototipo TP"
+ops:
+  - { op: value.add, attribute: "Forma de Taparrosca", value: Gg }
+  - { op: value.add, attribute: "Color de Taparrosca", value: Gris }
+
+  # --- Variantes de Taparrosca que faltan para cubrir las 19 combinaciones ---
+  - { op: variant.define, sku: TPR-15mm-25mm-gris, product: Taparrosca, attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "25mm", "Color de Taparrosca": "Gris" } }
+  - { op: variant.define, sku: TPR-13mm-gg-negro, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Gg", "Color de Taparrosca": "Negro" } }
+  - { op: variant.define, sku: TPR-13mm-gg-blanco, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Gg", "Color de Taparrosca": "Blanco" } }
+  - { op: variant.define, sku: TPR-13mm-rebeca-rosa-ultra, product: Taparrosca, attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Rosa ultra" } }
+
+  # --- Retirar el prototipo TP y renombrar P0019 a "Taparrosca con Pincel" ---
+  - { op: product.delete, sku: TP }
+  - { op: product.define, nombre: "Taparrosca con Pincel", sku: P0019 }
+
+  # --- Ejes finales del ensamble ---
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Tamaño rosca", sortOrder: 1 }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Forma de Taparrosca", sortOrder: 2 }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Color de Taparrosca", sortOrder: 3 }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Altura de Mango", sortOrder: 4 }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Agujero de Mango", sortOrder: 5 }
+  - { op: attr.assignAxis, product: "Taparrosca con Pincel", attribute: "Color de Cerda de Pincel", sortOrder: 6 }
+  - { op: attr.unassignAxis, product: "Taparrosca con Pincel", attribute: "Altura de Vastago" }
+
+  # --- Remapeo de las 19 variantes de P0019 (mantiene id/sku/stock) ---
+  - { op: variant.define, sku: P0019-0001, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "44mm", "Color de Taparrosca": "Blanco", "Altura de Mango": "24mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0002, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Hexagonal", "Color de Taparrosca": "Blanco", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0003, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "44mm", "Color de Taparrosca": "Blanco", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0004, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "25mm", "Color de Taparrosca": "Gris", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0005, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Hexagonal", "Color de Taparrosca": "Negro", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0006, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Gg", "Color de Taparrosca": "Negro", "Altura de Mango": "24mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0007, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Gg", "Color de Taparrosca": "Blanco", "Altura de Mango": "24mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0008, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Rosa glither", "Altura de Mango": "35mm", "Agujero de Mango": "Plano", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0009, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Negro", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0010, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "38mm", "Color de Taparrosca": "Blanco", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0011, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Negro", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0012, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Blanco", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0013, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "30mm", "Color de Taparrosca": "Negro", "Altura de Mango": "24mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0014, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Rosa ultra", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0015, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Negro", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0016, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "15mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Transparente", "Altura de Mango": "35mm", "Agujero de Mango": "Plano", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0017, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Yadis", "Color de Taparrosca": "Negro", "Altura de Mango": "33mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0018, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Negro", "Altura de Mango": "35mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+  - { op: variant.define, sku: P0019-0019, product: "Taparrosca con Pincel", nombre: "Taparrosca con Pincel", attrs: { "Tamaño rosca": "13mm", "Forma de Taparrosca": "Rebeca", "Color de Taparrosca": "Blanco", "Altura de Mango": "35mm", "Agujero de Mango": "Normal", "Color de Cerda de Pincel": "Negro" } }
+
+  # --- Atributos legado que quedan sin uso tras el remapeo ---
+  - { op: attr.delete, name: "Medida pincel" }
+  - { op: attr.delete, name: "Color de Tapa con Pincel" }
+  - { op: attr.delete, name: "Tipo de Tapa con Pincel" }
+  - { op: attr.delete, name: "Altura de Taparrosca" }
+
+  # --- BOM + wizard del ensamble ---
+  - op: bom.set
+    product: "Taparrosca con Pincel"
+    components:
+      - { component: Taparrosca, cantidad: 1, tipo: exacto }
+      - { component: Pincel, cantidad: 1, tipo: exacto }
+  - op: step.set
+    product: "Taparrosca con Pincel"
+    steps:
+      - { sortOrder: 1, pregunta: "Selecciona la rosca", attribute: "Tamaño rosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 2, pregunta: "Selecciona la tapa", attribute: "Forma de Taparrosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 3, pregunta: "Selecciona el color de la taparrosca", attribute: "Color de Taparrosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 4, pregunta: "Selecciona una altura de mango", attribute: "Altura de Mango", variantProduct: "Pincel" }
+      - { sortOrder: 5, pregunta: "Selecciona el agujero", attribute: "Agujero de Mango", variantProduct: "Pincel" }
+      - { sortOrder: 6, pregunta: "Selecciona el color de cerda", attribute: "Color de Cerda de Pincel", variantProduct: "Pincel" }

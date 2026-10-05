@@ -10,8 +10,8 @@ Para datos/migración Odoo, ver la sección al final.
   ver [`catalog-ops.md`](./catalog-ops.md)): configura estructura BOM + `ProductAttributeLine` + `ProductPasso`.
 - `seed-demo.ts` — siembra variantes reales + stock + OF de demostración para probar el flujo E3
   (reportes/producción); idempotente.
-- `seed-demo-ventas.ts` — variantes únicas + combo taparrosca SIN stock para probar ventas →
-  confirmación → neteo → cascada de OFs (E2); idempotente.
+- `seed-demo-ventas.ts` — variantes únicas + toma una variante de "Taparrosca con Pincel" (`P0019`)
+  para probar ventas → confirmación → neteo → OFs (E2); idempotente.
 - `seed-cepillos-notas.ts` — carga medidas/grosor de cepillos como nota interna (`ProductVariant.notas`);
   idempotente. `--dry`/`--apply`.
 - `reset-variants.ts` — limpia variantes y atributos/valores.

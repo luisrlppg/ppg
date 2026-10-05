@@ -166,13 +166,6 @@ ops:
     category: Taparroscas
     hasVariants: true
   - op: product.define
-    nombre: Taparrosca con Pincel
-    sku: TP
-    category: Taparroscas
-    basePrice: 40
-    hasVariants: true
-    vendible: true
-  - op: product.define
     nombre: Botella
     sku: BOT
     category: Botellas
@@ -315,6 +308,7 @@ ops:
     nombre: Opresor
     sku: P0013
     category: Otros
+    vendible: true
   - op: product.define
     nombre: Palillo Sin Cepillo
     sku: P0014
@@ -330,20 +324,24 @@ ops:
     nombre: Pulcera
     sku: P0016
     category: Otros
+    vendible: true
   - op: product.define
-    nombre: Tapa con Pincel
+    nombre: Taparrosca con Pincel
     sku: P0019
     category: Taparroscas
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Tapa de Carrete
     sku: P0020
     category: Taparroscas
+    vendible: true
   - op: product.define
     nombre: Tapon
     sku: P0021
     category: Tapones
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: PVC
     sku: PVC
@@ -360,11 +358,13 @@ ops:
     sku: P0033
     category: Palillos
     hasVariants: true
+    vendible: true
   - op: product.define
     nombre: Palillo Citologico con Cepillo
     sku: P0034
     category: Palillos
     hasVariants: true
+    vendible: true
   - op: attr.ensure
     name: Agujero de Escurridor
     values:
@@ -402,19 +402,6 @@ ops:
     values:
       - 40mm
       - 44mm
-  - op: attr.ensure
-    name: Altura de Taparrosca
-    values:
-      - 30mm
-      - 38mm
-      - 44mm
-      - 25mm
-      - Desconocido
-      - 18mm
-      - 37mm
-      - 23mm
-      - 35mm
-      - 26mm
   - op: attr.ensure
     name: Altura de Vastago
     values:
@@ -531,15 +518,6 @@ ops:
       - Violeta
       - Azul nacar
   - op: attr.ensure
-    name: Color de Tapa con Pincel
-    values:
-      - Blanco
-      - Gris
-      - Negro
-      - Rosa glither
-      - Rosa ultra
-      - Transparente
-  - op: attr.ensure
     name: Color de Taparrosca
     values:
       - Amatista
@@ -564,6 +542,7 @@ ops:
       - Watermelon
       - Rosa erika rubio
       - Rosa ultra
+      - Gris
   - op: attr.ensure
     name: Color de Tapon
     values:
@@ -641,6 +620,7 @@ ops:
       - 37mm
       - 38mm
       - 44mm
+      - Gg
   - op: attr.ensure
     name: Grosor cerda
     values:
@@ -657,13 +637,6 @@ ops:
     name: Logo
     values:
       - Sin logo
-  - op: attr.ensure
-    name: Medida pincel
-    values:
-      - "24"
-      - "33"
-      - "35"
-      - 35 plano
   - op: attr.ensure
     name: Punta
     values:
@@ -707,14 +680,6 @@ ops:
       - Punta lip gloss grande
       - Punta lip gloss tipo hoja
       - Tratamiento nocturno
-  - op: attr.ensure
-    name: Tipo de Tapa con Pincel
-    values:
-      - Gg
-      - Hexagonal
-      - Normal
-      - Rebeca
-      - Yadis
   - op: attr.ensure
     name: Tipo de Vastago
     values:
@@ -781,30 +746,6 @@ ops:
     product: Taparrosca
     attribute: Tamaño rosca
     sortOrder: 3
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Tamaño rosca
-    sortOrder: 1
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Altura de Vastago
-    sortOrder: 2
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Agujero de Mango
-    sortOrder: 3
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Color de Taparrosca
-    sortOrder: 3
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Forma de Taparrosca
-    sortOrder: 4
-  - op: attr.assignAxis
-    product: Taparrosca con Pincel
-    attribute: Color de Tapa con Pincel
-    sortOrder: 5
   - op: attr.assignAxis
     product: Botella
     attribute: Altura de Botella
@@ -1144,29 +1085,29 @@ ops:
     attribute: Densidad
     sortOrder: 0
   - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Altura de Taparrosca
-    sortOrder: 0
-  - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Color de Tapa con Pincel
+    product: Taparrosca con Pincel
+    attribute: Tamaño rosca
     sortOrder: 1
   - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Color de Cerda de Pincel
+    product: Taparrosca con Pincel
+    attribute: Forma de Taparrosca
     sortOrder: 2
   - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Medida pincel
+    product: Taparrosca con Pincel
+    attribute: Color de Taparrosca
     sortOrder: 3
   - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Tamaño rosca
+    product: Taparrosca con Pincel
+    attribute: Altura de Mango
     sortOrder: 4
   - op: attr.assignAxis
-    product: Tapa con Pincel
-    attribute: Tipo de Tapa con Pincel
+    product: Taparrosca con Pincel
+    attribute: Agujero de Mango
     sortOrder: 5
+  - op: attr.assignAxis
+    product: Taparrosca con Pincel
+    attribute: Color de Cerda de Pincel
+    sortOrder: 6
   - op: attr.assignAxis
     product: Tapon
     attribute: Color de Tapon
@@ -1203,48 +1144,6 @@ ops:
     product: Palillo Citologico con Cepillo
     attribute: Forma de cepillo nylon
     sortOrder: 2
-  - op: bom.set
-    product: Taparrosca con Pincel
-    components:
-      - component: Pincel
-        cantidad: 1
-        tipo: exacto
-      - component: Taparrosca
-        cantidad: 1
-        tipo: exacto
-  - op: step.set
-    product: Taparrosca con Pincel
-    steps:
-      - sortOrder: 1
-        panel: 1
-        pregunta: Selecciona la rosca
-        attribute: Tamaño rosca
-        variantProduct: Taparrosca
-      - sortOrder: 2
-        panel: 2
-        pregunta: Selecciona la tapa
-        attribute: Forma de Taparrosca
-        variantProduct: Taparrosca
-      - sortOrder: 3
-        panel: 3
-        pregunta: Selecciona el color de la taparrosca
-        attribute: Color de Taparrosca
-        variantProduct: Taparrosca
-      - sortOrder: 4
-        panel: 4
-        pregunta: Selecciona una altura de mango
-        attribute: Altura de Mango
-        variantProduct: Pincel
-      - sortOrder: 5
-        panel: 5
-        pregunta: Selecciona el agujero
-        attribute: Agujero de Mango
-        variantProduct: Pincel
-      - sortOrder: 6
-        panel: 6
-        pregunta: Selecciona el color de cerda
-        attribute: Color de Cerda de Pincel
-        variantProduct: Pincel
   - op: bom.set
     product: Rimel Silicon
     components:
@@ -1550,6 +1449,48 @@ ops:
         pregunta: Selecciona un escurridor
         attribute: Color de Escurridor
         variantProduct: Escurridor
+  - op: bom.set
+    product: Taparrosca con Pincel
+    components:
+      - component: Taparrosca
+        cantidad: 1
+        tipo: exacto
+      - component: Pincel
+        cantidad: 1
+        tipo: exacto
+  - op: step.set
+    product: Taparrosca con Pincel
+    steps:
+      - sortOrder: 1
+        panel: 0
+        pregunta: Selecciona la rosca
+        attribute: Tamaño rosca
+        variantProduct: Taparrosca
+      - sortOrder: 2
+        panel: 0
+        pregunta: Selecciona la tapa
+        attribute: Forma de Taparrosca
+        variantProduct: Taparrosca
+      - sortOrder: 3
+        panel: 0
+        pregunta: Selecciona el color de la taparrosca
+        attribute: Color de Taparrosca
+        variantProduct: Taparrosca
+      - sortOrder: 4
+        panel: 0
+        pregunta: Selecciona una altura de mango
+        attribute: Altura de Mango
+        variantProduct: Pincel
+      - sortOrder: 5
+        panel: 0
+        pregunta: Selecciona el agujero
+        attribute: Agujero de Mango
+        variantProduct: Pincel
+      - sortOrder: 6
+        panel: 0
+        pregunta: Selecciona el color de cerda
+        attribute: Color de Cerda de Pincel
+        variantProduct: Pincel
   - op: bom.set
     product: Palillo con Cepillo
     components:
@@ -2364,6 +2305,20 @@ ops:
     min: 15000
     max: 30000
   - op: variant.define
+    sku: TPR-13mm-gg-blanco
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: Gg
+      Color de Taparrosca: Blanco
+  - op: variant.define
+    sku: TPR-13mm-gg-negro
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: Gg
+      Color de Taparrosca: Negro
+  - op: variant.define
     sku: TPR-13mm-rebeca-rosa-erika-rubio
     product: Taparrosca
     attrs:
@@ -2373,6 +2328,20 @@ ops:
     min: 120000
     max: 360000
   - op: variant.define
+    sku: TPR-13mm-rebeca-rosa-ultra
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 13mm
+      Forma de Taparrosca: Rebeca
+      Color de Taparrosca: Rosa ultra
+  - op: variant.define
+    sku: TPR-15mm-25mm-gris
+    product: Taparrosca
+    attrs:
+      Tamaño rosca: 15mm
+      Forma de Taparrosca: 25mm
+      Color de Taparrosca: Gris
+  - op: variant.define
     sku: TPR-rebeca-15mm-rosa-ultra
     product: Taparrosca
     attrs:
@@ -2381,16 +2350,6 @@ ops:
       Color de Taparrosca: Rosa ultra
     min: 12000
     max: 15000
-  - op: variant.define
-    sku: TP-10mm-10mm-plano-hexagonal-negro
-    product: Taparrosca con Pincel
-    nombre: 10mm 10mm Plano Hexagonal Negro
-    attrs:
-      Tamaño rosca: 10mm
-      Forma de Taparrosca: Hexagonal
-      Agujero de Mango: Plano
-      Altura de Vastago: 10mm
-      Color de Taparrosca: Negro
   - op: variant.define
     sku: BOT-0001
     product: Botella
@@ -3797,194 +3756,194 @@ ops:
     attrs: {}
   - op: variant.define
     sku: P0019-0001
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 44mm
       Tamaño rosca: 13mm
-      Medida pincel: "24"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 44mm
+      Color de Taparrosca: Blanco
+      Altura de Mango: 24mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0002
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Tamaño rosca: 15mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Hexagonal
+      Forma de Taparrosca: Hexagonal
+      Color de Taparrosca: Blanco
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0003
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 44mm
       Tamaño rosca: 13mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 44mm
+      Color de Taparrosca: Blanco
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0004
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 25mm
       Tamaño rosca: 15mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Gris
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 25mm
+      Color de Taparrosca: Gris
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0005
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Tamaño rosca: 15mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Hexagonal
+      Forma de Taparrosca: Hexagonal
+      Color de Taparrosca: Negro
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0006
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Tamaño rosca: 13mm
-      Medida pincel: "24"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Gg
+      Forma de Taparrosca: Gg
+      Color de Taparrosca: Negro
+      Altura de Mango: 24mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0007
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Tamaño rosca: 13mm
-      Medida pincel: "24"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Gg
+      Forma de Taparrosca: Gg
+      Color de Taparrosca: Blanco
+      Altura de Mango: 24mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0008
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Tamaño rosca: 15mm
-      Medida pincel: 35 plano
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Rosa glither
-      Tipo de Tapa con Pincel: Yadis
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Rosa glither
+      Altura de Mango: 35mm
+      Agujero de Mango: Plano
   - op: variant.define
     sku: P0019-0009
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Tamaño rosca: 15mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 38mm
+      Color de Taparrosca: Negro
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0010
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Tamaño rosca: 15mm
-      Medida pincel: "33"
       Color de Cerda de Pincel: Negro
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 38mm
+      Color de Taparrosca: Blanco
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0011
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "33"
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 30mm
+      Color de Taparrosca: Negro
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0012
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "33"
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 30mm
+      Color de Taparrosca: Blanco
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0013
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "24"
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Normal
+      Forma de Taparrosca: 30mm
+      Color de Taparrosca: Negro
+      Altura de Mango: 24mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0014
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "33"
-      Altura de Taparrosca: Desconocido
-      Color de Tapa con Pincel: Rosa ultra
-      Tipo de Tapa con Pincel: Rebeca
+      Forma de Taparrosca: Rebeca
+      Color de Taparrosca: Rosa ultra
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0015
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 15mm
-      Medida pincel: "33"
-      Altura de Taparrosca: Desconocido
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Rebeca
+      Forma de Taparrosca: Rebeca
+      Color de Taparrosca: Negro
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0016
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 38mm
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 15mm
-      Medida pincel: 35 plano
-      Color de Tapa con Pincel: Transparente
-      Tipo de Tapa con Pincel: Yadis
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Transparente
+      Altura de Mango: 35mm
+      Agujero de Mango: Plano
   - op: variant.define
     sku: P0019-0017
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
-      Altura de Taparrosca: 30mm
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "33"
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Yadis
+      Forma de Taparrosca: Yadis
+      Color de Taparrosca: Negro
+      Altura de Mango: 33mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0018
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "35"
-      Altura de Taparrosca: Desconocido
-      Color de Tapa con Pincel: Negro
-      Tipo de Tapa con Pincel: Rebeca
+      Forma de Taparrosca: Rebeca
+      Color de Taparrosca: Negro
+      Altura de Mango: 35mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0019-0019
-    product: Tapa con Pincel
+    product: Taparrosca con Pincel
     attrs:
       Color de Cerda de Pincel: Negro
       Tamaño rosca: 13mm
-      Medida pincel: "35"
-      Altura de Taparrosca: Desconocido
-      Color de Tapa con Pincel: Blanco
-      Tipo de Tapa con Pincel: Rebeca
+      Forma de Taparrosca: Rebeca
+      Color de Taparrosca: Blanco
+      Altura de Mango: 35mm
+      Agujero de Mango: Normal
   - op: variant.define
     sku: P0021-0001
     product: Tapon

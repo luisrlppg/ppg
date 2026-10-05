@@ -2,6 +2,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/**
+ * LEGACY / DESALINEADO: usa nombres de atributo viejos y el seed vigente del catálogo es
+ * `pnpm cat:seed` (scripts/catalog/seed/catalog.yaml). Se conserva como referencia.
+ */
 async function setupProducts() {
   console.log("=== Configurando estructura de productos (sin variantes) ===\n");
 
@@ -10,7 +14,7 @@ async function setupProducts() {
   // ------------------------------------------------------------------
   const vastago = await prisma.product.findUnique({ where: { skuBase: "VAST" } });
   const pincel = await prisma.product.findUnique({ where: { skuBase: "PIN" } });
-  const taparroscaConPincel = await prisma.product.findUnique({ where: { skuBase: "TP" } });
+  const taparroscaConPincel = await prisma.product.findUnique({ where: { skuBase: "P0019" } });
   const taparrosca = await prisma.product.findUnique({ where: { skuBase: "TPR" } });
   const cerda = await prisma.product.findUnique({ where: { skuBase: "CERD" } });
 

@@ -630,7 +630,8 @@ export class ProductosService {
   // --------------------------------------------------- Resolver BOM (E1)
   /**
    * Para netear/resolver un combo: encuentra qué variante del producto componente
-   * consumir, igualando los valores de atributo que comparten ambos.
+   * consumir, igualando los ejes que comparten ambas. El componente puede tener ejes
+   * extra que no vienen en el combo (p. ej. `Ceja` en Pincel), que se ignoran.
    */
   async resolveComponentVariant(componentProductId: number, combo: { productId: number; variantAttributes: { attributeId: number; valueId: number }[] }): Promise<{ id: number; sku: string; nombre: string } | null> {
     const axes = await this.prisma.productAttributeLine.findMany({
@@ -653,14 +654,17 @@ export class ProductosService {
       where: { productId: componentProductId, activo: true },
       include: { variantAttributes: true },
     });
-    for (const c of candidates) {
-      const cAttrs = c.variantAttributes.filter((v) => axisIds.has(v.attributeId));
-      if (cAttrs.length !== comboValues.length) continue;
-      const match = comboValues.every((cv) =>
-        cAttrs.some((ca) => ca.attributeId === cv.attributeId && ca.valueId === cv.valueId),
-      );
-      if (match) return { id: c.id, sku: c.sku, nombre: c.nombre };
-    }
-    return null;
+    const shared = candidates.map((c) => ({
+      c,
+      cAttrs: c.variantAttributes.filter((v) => axisIds.has(v.attributeId)),
+    }));
+    // El combo debe cubrir los ejes compartidos; el componente puede tener ejes extra.
+    const matches = shared.filter(({ cAttrs }) =>
+      comboValues.every((cv) => cAttrs.some((ca) => ca.attributeId === cv.attributeId && ca.valueId === cv.valueId)),
+    );
+    // Preferimos el candidato sin ejes extra; si hay ambigüedad, no resolvemos.
+    const exact = matches.filter(({ cAttrs }) => cAttrs.length === comboValues.length);
+    const pick = exact.length === 1 ? exact[0] : matches.length === 1 ? matches[0] : null;
+    return pick ? { id: pick.c.id, sku: pick.c.sku, nombre: pick.c.nombre } : null;
   }
 }

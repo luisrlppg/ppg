@@ -1,46 +1,44 @@
 # Plan Taparrosca — wizard desde componentes (Modelo B)
 
-> Estado: **aplicado** (2026-10-04). Ops: `scripts/catalog/ops/taparrosca-wizard.yaml`.
+> Estado: **consolidado** (2026-10-04). Ops: `scripts/catalog/ops/taparrosca-con-pincel-ensamble.yaml`.
+> El plan original está en el historial de git; esta versión refleja el resultado final.
 
 ## 1. Contexto
 
-"Taparrosca con Pincel" (`TP`) es el ensamble vendible de **Taparrosca** + **Pincel**.
-Antes el wizard usaba `Mango`/`Pincel` y el atributo `Color de Tapa con Pincel`; se
-re-alineó al Modelo B (opciones desde las variantes activas del **componente**).
+Hubo **dos** productos parecidos:
 
-## 2. Fusión Forma/Altura de tapa (DECISIÓN CLAVE)
+- **Taparrosca con Pincel** (`TP`, id 5) — prototipo nativo PPG: ensamble con BOM
+  `Taparrosca + Pincel` y wizard Modelo B, pero **sin variantes reales ni stock**.
+- **Tapa con Pincel** (`P0019`, id 49) — **importado de Odoo** (`ln`): 19 variantes
+  materializadas con stock real (209k u) y esquema de atributos plano (sin BOM ni wizard).
 
-La **altura de taparrosca** se fusionó dentro de **`Forma de Taparrosca`**: el valor
-de la forma pasa a ser el número de altura (con sufijo `mm`), o el nombre cuando no hay
-altura. Se elimina `Altura de Taparrosca` como eje de Taparrosca (su valor queda en
-`ProductVariant.notas`).
+**Decisión:** quedarse con **una sola fila**, la de Odoo (por su stock e historial),
+**renombrada a `Taparrosca con Pincel`**, y llevarle el BOM + wizard. Se eliminó el prototipo
+nativo `TP` (sin historial). No se migró stock: se remapearon los ejes sobre la propia `P0019`.
 
-Mapeo (rosca → formas):
+## 2. Remapeo de ejes (P0019)
 
-| Rosca | Formas |
+| Eje legado (Odoo) | Eje final |
 |---|---|
-| 10mm | `18mm`, `37mm` |
-| 13mm | `23mm`, `30mm`, `44mm`, `Bala`, `Rebeca`, `Triangular`, `Yadis` |
-| 15mm | `25mm`, `26mm`, `38mm`, `Hexagonal`, `Rebeca`, `Yadis` |
-| 18mm | `38mm` |
+| `Tipo de Tapa con Pincel` + `Altura de Taparrosca` | `Forma de Taparrosca` |
+| `Color de Tapa con Pincel` | `Color de Taparrosca` |
+| `Medida pincel` (`24`,`33`,`35`,`35 plano`) | `Altura de Mango` (`24mm`,`33mm`,`35mm`) |
 
 Reglas:
-- `Normal + altura` → el número (`18mm`, `30mm`, …). Nunca queda "Normal".
-- `Bala` conserva **`Bala`**; su altura (`35mm`) va a **notas**.
-- `Yadis 30mm` (13) y `Yadis 38mm` (15) → **`Yadis`**; `Triangular 44mm` → **`Triangular`**;
-  `Hexagonal 38mm` → **`Hexagonal`**.
-- `Rebeca` (sin altura) → **`Rebeca`**.
-- Se **eliminó** la variante errónea `TPR-0016` (13mm Yadis 38mm).
+- `Normal + altura` → el número (`30mm`, `38mm`, `44mm`, `25mm`); `Hexagonal`/`Yadis`/`Rebeca`/`Gg`
+  conservan su nombre.
+- `35 plano` → `Altura de Mango = 35mm` **y** `Agujero de Mango = Plano`; el resto `Normal`.
+- `Gris` se agregó a `Color de Taparrosca`; `Gg` se agregó a `Forma de Taparrosca`.
+- Se agregaron 4 variantes de **Taparrosca** para cubrir las 19 combinaciones:
+  `15mm/25mm/Gris`, `13mm/Gg/{Negro,Blanco}`, `13mm/Rebeca/Rosa ultra`.
 
-Todas las variantes guardan `notas: "Altura original: NNmm"`.
+Ejes finales del ensamble: `Tamaño rosca`, `Forma de Taparrosca`, `Color de Taparrosca`,
+`Altura de Mango`, `Agujero de Mango`, `Color de Cerda de Pincel`.
 
-## 3. Atributos conservados por otro producto
+Se **borraron** los atributos legado `Altura de Taparrosca`, `Color de Tapa con Pincel`,
+`Tipo de Tapa con Pincel` y `Medida pincel`.
 
-`Altura de Taparrosca` y `Color de Tapa con Pincel` **no se borran**: los usa el producto
-**"Tapa con Pincel"**. En "Taparrosca"/"Taparrosca con Pincel" solo se retiran como ejes/
-pasos. El color del ensamble se migró a **`Color de Taparrosca`**.
-
-## 4. Pasos del wizard (un `panel` por paso)
+## 3. Pasos del wizard (un `panel` por paso)
 
 1. "Selecciona la rosca" → `Tamaño rosca` (componente **Taparrosca**)
 2. "Selecciona la tapa" → `Forma de Taparrosca` (Taparrosca)
@@ -49,12 +47,16 @@ pasos. El color del ensamble se migró a **`Color de Taparrosca`**.
 5. "Selecciona el agujero" → `Agujero de Mango` (**Pincel**)
 6. "Selecciona el color de cerda" → `Color de Cerda de Pincel` (**Pincel**)
 
-> **Bloque aplicador (pasos 4-6) todo desde Pincel.** Mango y Pincel no comparten
-> todo el set de `(rosca, altura, agujero)`; al elegir altura/agujero desde Pincel, el
-> paso de color de cerda no queda vacío. La cascada funciona por ejes compartidos.
+## 4. Resolución de componentes
 
-## 5. Pendiente de verificación runtime
+`resolveComponentVariant` ahora casa por **intersección** de ejes: el componente puede tener ejes
+extra que no vienen del ensamble (p. ej. **`Ceja`** en Pincel, que se hereda de Mango). Elige el
+candidato único; si hay ambigüedad, `null`. Verificado: las **19/19** variantes de P0019 resuelven
+su Taparrosca y Pincel.
 
-La cascada final (rosca→tapa→color→altura→agujero→**cerda**) quedó **por confirmar en
-runtime** (el color de cerda no debe salir vacío). Verificación sugerida: `getPasos`
-con selección acumulada, o manual en tienda/modal.
+## 5. Verificación
+
+- Ops idempotentes (segunda corrida: 0 cambios efectivos).
+- `cat:seed` (dry-run) sobre la BD consolidada: 0 cambios; el seed ya no contiene `TP` ni los
+  atributos legado.
+- Las 19 variantes de P0019 resuelven Taparrosca + Pincel por el BOM.

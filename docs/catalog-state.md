@@ -9,10 +9,16 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
   retirado). Están marcados los 6 con pasos: TP, BTVPE-D/LG/N/S/TN. Se exporta a `catalog.yaml`
   (`product.define` con `vendible: true`).
 - **Taparrosca (2026-10-04):** `Altura de Taparrosca` se fusionó dentro de `Forma de
-  Taparrosca` (el número es la forma; `Bala`/`Rebeca` conservan nombre; su altura va a
-  `notas`). Se eliminó la variante errónea `TPR-0016`. El color del ensamble usa
-  `Color de Taparrosca`. `Altura de Taparrosca` y `Color de Tapa con Pincel` se conservan
-  porque los usa "Tapa con Pincel". Ops: `scripts/catalog/ops/taparrosca-wizard.yaml`.
+  Taparrosca` (el número es la forma; `Bala`/`Rebeca`/`Gg` conservan nombre; su altura va a
+  `notas`). Se eliminó la variante errónea `TPR-0016`. Ops: `scripts/catalog/ops/taparrosca-wizard.yaml`.
+- **Taparrosca con Pincel consolidado (2026-10-04):** hay **un solo** producto. Se conservó la fila
+  de Odoo (`P0019`, 19 variantes con stock), renombrada a **`Taparrosca con Pincel`**, y se retiró el
+  prototipo nativo `TP` (id 5). Se remapearon sus ejes legado
+  (`Tipo de Tapa con Pincel`+`Altura de Taparrosca`→`Forma de Taparrosca`,
+  `Color de Tapa con Pincel`→`Color de Taparrosca`, `Medida pincel`→`Altura de Mango`) y se agregó
+  el BOM + wizard. Se **borraron** `Altura de Taparrosca`, `Color de Tapa con Pincel`,
+  `Tipo de Tapa con Pincel` y `Medida pincel`. `Gg` y `Gris` se agregaron a `Forma de Taparrosca`
+  y `Color de Taparrosca`. Ops: `scripts/catalog/ops/taparrosca-con-pincel-ensamble.yaml`.
   Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
 - **BTVPE (2026-10-04):** eje `Tamaño de Botella` en Botella (`Mini`/`Alta`/`Chica`/`Grande`);
   se retiró `Capacidad de Botella` (mL → `notas`); `Color de Cepillo Silicon` (Blanco/Negro) eje de
@@ -30,7 +36,7 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 
 | Atributo | Valores |
 |---|---|
-| `Forma de Taparrosca` | Normal, Bala, Hexagonal, Triangular, Rebeca, Yadis |
+| `Forma de Taparrosca` | Normal, Bala, Hexagonal, Triangular, Rebeca, Yadis, Gg |
 | `Tipo de Vastago` | Normal, Mod-prosa |
 | `Ceja` | Delgada, Gruesa, Pelikan |
 

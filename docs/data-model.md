@@ -43,8 +43,10 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 - **Cerda** (id 2, `CERD`) — uom `kg`, consumible.
 - **Pincel** (id 3, `PIN`) — pincel (ejes `Ceja`, `Altura de Mango`, `Agujero de Mango`,
   `Tamaño rosca`, `Color de Cerda de Pincel`); hereda `Ceja`/`Agujero` de Mango.
-- **Taparrosca** (id 4, `TPR`) — tapa (ejes `Altura/Color/Forma de Taparrosca` + `Tamaño rosca`).
-- **Taparrosca con Pincel** (id 5, `TP`) — ensamble: Pincel + Taparrosca.
+- **Taparrosca** (id 4, `TPR`) — tapa (ejes `Forma de Taparrosca` + `Color de Taparrosca` + `Tamaño rosca`).
+- **Taparrosca con Pincel** (id 49, `P0019`) — ensamble: Taparrosca + Pincel. **Consolidado 2026-10-04**:
+  es la fila que vino de Odoo (`Tapa con Pincel`, 19 variantes con stock); se le remapearon los ejes
+  al modelo de componentes y se le agregó el BOM/wizard. Se retiró el prototipo nativo (`TP`, id 5).
 - **Vastago** (id 7, `VST`) — vástago; sin BOM.
 - **Sobretapa** (id 8, `STP`) · **Escurridor** (id 9, `ESC`) · **Cepillo Silicon** (id 10, `CSI`) ·
   **Cepillo Nylon** (id 11, `CNI`).
@@ -58,9 +60,12 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
   nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`). Los BTVPE usan
   `Forma de Sobretapa` (no `Forma de Taparrosca`, que sigue para otros productos).
 - **Taparrosca (2026-10-04):** `Altura de Taparrosca` se fusionó en `Forma de Taparrosca` (el
-  valor es el número de altura, p. ej. `38mm`, o el nombre `Bala`/`Rebeca`); la altura original
+  valor es el número de altura, p. ej. `38mm`, o el nombre `Bala`/`Rebeca`/`Gg`); la altura original
   queda en `notas`. El ensamble **Taparrosca con Pincel** usa `Color de Taparrosca` para el color
-  y toma la altura/agujero/color de cerda del componente **Pincel**. Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
+  y toma `Altura de Mango`/`Agujero de Mango`/`Color de Cerda de Pincel` del componente **Pincel**.
+  Consolidación: se borraron `Altura de Taparrosca`, `Color de Tapa con Pincel`, `Tipo de Tapa con
+  Pincel` y `Medida pincel`; se agregaron los valores `Gg` (`Forma de Taparrosca`) y `Gris`
+  (`Color de Taparrosca`). Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
 - **Palillos** (reorg `scripts/reorg-palillos.ts`):
   - **Palillo Sin Cepillo** (id 42, `P0014`) — componente; eje `Color de Palillo`.
   - **Palillo Citologico Sin Cepillo** (`P0032`) — componente; eje `Color de Palillo Citologico` (sólo `Blanco`).
@@ -75,18 +80,21 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 Globales, asignados por producto. **Convención "un atributo por producto"**
 (`<Propiedad> de <Producto>`):
 
-`Altura de Mango`, `Altura de Vastago`, `Altura de Taparrosca`, `Altura de Botella`,
+`Altura de Mango`, `Altura de Vastago`, `Altura de Botella`,
 `Altura de Escurridor`, `Altura de Sobretapa`, `Color de Botella`, `Color de Vastago`,
 `Color de Sobretapa`, `Color de Escurridor`, `Color de Taparrosca`, `Color de Tapon`,
-`Color de Tapa con Pincel`, `Color de Palillo`, `Color de Cepillo Nylon`,
+`Color de Palillo`, `Color de Cepillo Nylon`,
 `Color de Cepillo Silicon`, `Color de Cerda de Pincel`, `Color de Cerda de Cepillo`,
 `Color de PVC`, `Tipo de Vastago`, `Tipo de Botella`,
-`Tipo de Tapa con Pincel`, `Tipo de Sobretapa`, `Tipo de Punta`, `Forma de Taparrosca`,
+`Tipo de Sobretapa`, `Tipo de Punta`, `Forma de Taparrosca`,
 `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
 `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`, `Capacidad de Botella`.
 
-**Compartidos legítimos:** `Tamaño rosca`, `Ceja`, `Punta`, `Grosor cerda`, `Medida pincel`,
+**Compartidos legítimos:** `Tamaño rosca`, `Ceja`, `Punta`, `Grosor cerda`,
 `Logo`, `Versión del vástago`, `Densidad`.
+
+> **Retirados en la consolidación 2026-10-04:** `Altura de Taparrosca`, `Color de Tapa con Pincel`,
+> `Tipo de Tapa con Pincel` y `Medida pincel` (sólo los usaba el producto Odoo `P0019`).
 
 - Estilo de valores: **primera letra mayúscula**, sin duplicados dentro del mismo atributo.
 - **PVC** (uom kg) usa `Color de PVC` (`Violeta`, `Transparente`).
@@ -113,8 +121,9 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 - `getPasos(productId, seleccion)` acepta la selección para filtrar por compatibilidad (ej. rosca).
   `resolverConfiguracion` une la selección + ejes derivados y materializa/reutiliza la variante
   vendible. La agrupación se calcula por `panel`; los pasos sin `attributeId` no se emiten.
-- **Taparrosca con Pincel** aún usa el patrón antiguo (pasos 1-3 → Vástago, paso 4 → Pincel,
-  pasos 5-6 → Taparrosca); migrar a panel es opcional.
+- **Taparrosca con Pincel** (consolidado 2026-10-04) usa Modelo B con 6 pasos: rosca → forma →
+  color de taparrosca (componente **Taparrosca**) → altura de mango → agujero → color de cerda
+  (componente **Pincel**).
 - Los **5 BTVPE** (Rimel Silicon/Nylon, Delineador, Tratamiento de Noche, Lip Gloss) usan Modelo B:
   primer paso = `Tamaño de Botella` (componente Botella), que deriva `Tamaño rosca` y altura.
 - **Regla BTVPE:** la altura del vástago ≤ altura de la botella + 2mm (hardcoded para SKU `BTVPE-*`

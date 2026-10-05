@@ -8,8 +8,8 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
    `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (718),
    `ventas/page.tsx` (469), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
-3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (Taparrosca sin `Forma`,
-   `PIN-0011`, crosswalk con SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
+3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, crosswalk con
+   SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
 4. **Órdenes de compra (OC):** no existe entidad persistente. Hoy lo "comprable" va al listado
    `resumen.comprar` / Pendientes de compra (sin documento). Falta un módulo `PurchaseOrder`
    (modelo + API + UI) que consuma `Product.comprable`. Fase siguiente tras E3.
@@ -72,11 +72,19 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   los productos sin pasos eligiendo una variante activa directo, y mantiene el wizard para los que
   tienen `ProductPasso`. Migración backfillea `vendible=true` en los 6 productos con pasos.
 - **Wizard de Taparrosca (2026-10-04):** "Taparrosca con Pincel" pasó a Modelo B. Se fusionó
-  `Altura de Taparrosca` dentro de `Forma de Taparrosca` (el número es la forma; `Bala`/`Rebeca`
-  conservan nombre, altura a `notas`); se eliminó la variante errónea `TPR-0016`; el color del
-  ensamble usa `Color de Taparrosca`. Pasos: rosca → tapa → color → altura de mango → agujero →
-  color de cerda (bloque aplicador desde **Pincel**). Ops `scripts/catalog/ops/taparrosca-wizard.yaml`.
-  Ver [`plan-taparrosca.md`](./plan-taparrosca.md). Pendiente: verificar en runtime el color de cerda.
+  `Altura de Taparrosca` dentro de `Forma de Taparrosca` (el número es la forma; `Bala`/`Rebeca`/`Gg`
+  conservan nombre, altura a `notas`); se eliminó la variante errónea `TPR-0016`. Pasos: rosca → tapa →
+  color → altura de mango → agujero → color de cerda (bloque aplicador desde **Pincel**). Ops
+  `scripts/catalog/ops/taparrosca-wizard.yaml`. Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
+- **Consolidación Taparrosca con Pincel (2026-10-04):** había dos productos (prototipo nativo `TP`
+  id 5 sin stock y el importado de Odoo `P0019` con 19 variantes y stock). Se conservó **`P0019`
+  renombrado a "Taparrosca con Pincel"** y se retiró `TP`. Se remapearon los ejes legado de `P0019`
+  (`Tipo de Tapa con Pincel`+`Altura de Taparrosca`→`Forma de Taparrosca`,
+  `Color de Tapa con Pincel`→`Color de Taparrosca`, `Medida pincel`→`Altura de Mango`) y se le agregó
+  BOM + wizard; se borraron esos 4 atributos legado. `resolveComponentVariant` ahora casa por
+  intersección de ejes (ignora `Ceja` de Pincel); las 19/19 variantes resuelven Taparrosca + Pincel.
+  Op nueva `product.delete` en el toolkit. Ops:
+  `scripts/catalog/ops/taparrosca-con-pincel-ensamble.yaml`. Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
 - **Alta de venta en modal con wizard (2026-10-04):** la vista "Nueva venta" (`/ventas`) ahora abre un
   `Modal` con wizard de 3 pasos (Cliente → Producto → Revisión) y stepper; el stepper y las acciones
   quedan fijos y solo la lista hace scroll interno. Permite **crear el cliente sin salir** desde

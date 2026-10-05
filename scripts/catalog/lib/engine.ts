@@ -464,6 +464,37 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       log(`variant.delete: ${o.sku}`);
       return;
     }
+    case "product.delete": {
+      const p = await tx.product.findUnique({ where: { skuBase: o.sku } });
+      if (!p) { log(`product.delete ya aplicado: ${o.sku}`); return; }
+      const usado = await tx.productComponent.count({ where: { componentId: p.id } });
+      if (usado > 0) throw new Error(`product.delete: "${p.nombre}" se usa como componente en ${usado} BOM(s)`);
+      const vids = (await tx.productVariant.findMany({ where: { productId: p.id }, select: { id: true } })).map((v) => v.id);
+      let stock = 0;
+      let movs = 0;
+      for (const vid of vids) {
+        const b = await bloqueos(tx, vid);
+        const historial = b.precios + b.ventas + b.ofs + b.ofLineas + b.reportes;
+        if (historial > 0) throw new Error(`product.delete: "${p.nombre}" variante ${vid} tiene historial ${JSON.stringify(b)}`);
+        stock += b.stock;
+        movs += b.movs;
+      }
+      if (stock + movs > 0 && !o.allowStock) throw new Error(`product.delete: "${p.nombre}" tiene stock/movimientos; usa allowStock:true`);
+      if (vids.length > 0) {
+        await tx.stockMove.deleteMany({ where: { variantId: { in: vids } } });
+        await tx.stockLevel.deleteMany({ where: { variantId: { in: vids } } });
+        await tx.variantPackaging.deleteMany({ where: { variantId: { in: vids } } });
+        await tx.variantAttribute.deleteMany({ where: { variantId: { in: vids } } });
+        await tx.productVariant.deleteMany({ where: { id: { in: vids } } });
+      }
+      await tx.productAttributeValue.deleteMany({ where: { productId: p.id } });
+      await tx.productAttributeLine.deleteMany({ where: { productId: p.id } });
+      await tx.productPasso.deleteMany({ where: { productId: p.id } });
+      await tx.productComponent.deleteMany({ where: { productId: p.id } });
+      await tx.product.delete({ where: { id: p.id } });
+      log(`product.delete: ${o.sku} (${p.nombre})${vids.length ? ` (${vids.length} variantes)` : ""}`);
+      return;
+    }
     case "step.repoint": {
       const p = await productByName(tx, o.product);
       const from = await attrBy(tx, o.fromAttribute);

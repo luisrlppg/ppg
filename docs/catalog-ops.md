@@ -68,6 +68,7 @@ ops:
 | `variant.copy` | `from`, `sku`, `overrides?` | Clona una variante cambiando valores. |
 | `variant.deriveFrom` | `target`, `source`, `on`, `inherit` | Hereda valores del producto fuente por combinación de `on` (solo si es único). |
 | `variant.delete` | `sku`, `allowStock?` | Borra la variante (aborta con historial; `allowStock` borra stock/movimientos). |
+| `product.delete` | `sku`, `allowStock?` | Borra el producto por `skuBase` y sus variantes (aborta si se usa como componente o si hay historial; `allowStock` borra stock/movimientos). |
 | `step.repoint` | `product`, `fromAttribute`, `toAttribute` | Re-apunta `ProductPasso` de un atributo a otro. |
 | `category.ensure` | `nombre` | Crea la categoría si no existe. |
 | `location.ensure` | `nombre`, `tipo?` | Crea la ubicación si no existe. |
