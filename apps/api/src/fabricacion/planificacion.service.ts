@@ -28,6 +28,29 @@ export interface OFCreada {
   tipo: "fabricacion" | "ensamble";
 }
 
+export interface DesgloseLinea {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  requerido: number;
+  stockActual: number;
+  faltante: number;
+  suficiente: boolean;
+  fabricable: boolean;
+  comprable: boolean;
+  tipo?: "fabricacion" | "ensamble";
+  raiz: boolean;
+  salesOrderLineId: number | null;
+}
+
+export interface Desglose {
+  lineas: DesgloseLinea[];
+  fabricar: PlanItem[];
+  comprar: PlanItem[];
+}
+
 interface VarianteCtx {
   id: number;
   productId: number;
@@ -38,6 +61,7 @@ interface VarianteCtx {
   product: {
     id: number;
     nombre: string;
+    uom: string;
     fabricable: boolean;
     comprable: boolean;
     components: { componentId: number; cantidad: unknown; tipo: string; component: { id: number; nombre: string } }[];
@@ -132,6 +156,142 @@ export class PlanificacionService {
       comprar.push({ variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad });
     }
     return { fabricar, comprar };
+  }
+
+  /**
+   * Explosión neta multi-nivel para mostrar al vendedor (no escribe). A diferencia
+   * de `planificar`, lleva un pool compartido de stock que se consume al asignar
+   * demanda, de modo que `requerido = cubierto + faltante` por variante.
+   */
+  async desglosar(
+    tx: Prisma.TransactionClient,
+    demandas: { variantId: number; cantidad: number; salesOrderLineId?: number | null }[],
+  ): Promise<Desglose> {
+    const cache = new Map<number, VarianteCtx>();
+    const requerido = new Map<number, number>();
+    const faltante = new Map<number, number>();
+    const raiz = new Set<number>();
+    const lineaOrigen = new Map<number, number | null>();
+    const disponible = new Map<number, number>();
+
+    const stockDisponible = (v: VarianteCtx) => {
+      if (!disponible.has(v.id)) {
+        disponible.set(v.id, v.stockLevels.reduce((a, l) => a + dec(l.qty), 0));
+      }
+      return disponible.get(v.id)!;
+    };
+
+    const explotar = async (
+      variantId: number,
+      cantidad: number,
+      path: number[],
+      salesOrderLineId: number | null,
+      esRaiz: boolean,
+    ): Promise<void> => {
+      if (path.includes(variantId)) throw new BadRequestException("BOM con dependencia circular");
+      const v = await this.load(tx, variantId, cache);
+      requerido.set(variantId, (requerido.get(variantId) ?? 0) + cantidad);
+      if (esRaiz) raiz.add(variantId);
+      if (salesOrderLineId != null && (esRaiz || !lineaOrigen.has(variantId))) {
+        lineaOrigen.set(variantId, salesOrderLineId);
+      }
+
+      const disp = stockDisponible(v);
+      const cubierto = Math.min(disp, cantidad);
+      disponible.set(variantId, disp - cubierto);
+      const falta = cantidad - cubierto;
+      if (falta <= 0) return;
+      faltante.set(variantId, (faltante.get(variantId) ?? 0) + falta);
+      if (!v.product.fabricable || v.product.components.length === 0) return;
+      for (const c of v.product.components) {
+        const compVariant = await this.productos.resolveComponentVariant(c.component.id, {
+          productId: v.productId,
+          variantAttributes: v.variantAttributes,
+        });
+        if (!compVariant) {
+          throw new BadRequestException(`No hay variante de "${c.component.nombre}" compatible con "${v.nombre}"`);
+        }
+        await explotar(compVariant.id, falta * dec(c.cantidad), [...path, variantId], salesOrderLineId, false);
+      }
+    };
+
+    for (const d of demandas) {
+      await explotar(d.variantId, d.cantidad, [], d.salesOrderLineId ?? null, true);
+    }
+
+    const lineas: DesgloseLinea[] = [];
+    const fabricar: PlanItem[] = [];
+    const comprar: PlanItem[] = [];
+    for (const variantId of [...requerido.keys()].sort((a, b) => a - b)) {
+      const v = await this.load(tx, variantId, cache);
+      const req = requerido.get(variantId) ?? 0;
+      const stockActual = v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
+      const falt = faltante.get(variantId) ?? 0;
+      const tipo = v.product.fabricable
+        ? v.product.components.length > 1
+          ? "ensamble"
+          : "fabricacion"
+        : undefined;
+      lineas.push({
+        variantId,
+        sku: v.sku,
+        nombre: v.nombre,
+        producto: v.product.nombre,
+        uom: v.product.uom,
+        requerido: req,
+        stockActual,
+        faltante: falt,
+        suficiente: falt <= 0,
+        fabricable: v.product.fabricable,
+        comprable: v.product.comprable,
+        tipo,
+        raiz: raiz.has(variantId),
+        salesOrderLineId: lineaOrigen.get(variantId) ?? null,
+      });
+      if (falt <= 0) continue;
+      const item: PlanItem = { variantId, sku: v.sku, nombre: v.nombre, producto: v.product.nombre, cantidad: falt, tipo };
+      if (v.product.fabricable) fabricar.push(item);
+      else comprar.push(item);
+    }
+    lineas.sort(
+      (a, b) =>
+        Number(b.raiz) - Number(a.raiz) ||
+        a.producto.localeCompare(b.producto) ||
+        a.nombre.localeCompare(b.nombre),
+    );
+    return { lineas, fabricar, comprar };
+  }
+
+  /** Crea una sola OF (con sus líneas de componentes exactos) sin cascada a hijos. */
+  async crearOFUnica(
+    tx: Prisma.TransactionClient,
+    item: PlanItem,
+    opts: {
+      origen: OrigenOF;
+      generatedFrom?: string | null;
+      userId?: number | null;
+      notas?: string | null;
+      configuracion?: unknown;
+      salesOrderLineId?: number | null;
+    },
+  ): Promise<OFCreada> {
+    const configuracionPorVariant = new Map<number, unknown>();
+    if (opts.configuracion !== undefined) configuracionPorVariant.set(item.variantId, opts.configuracion);
+    const salesOrderLineIdPorVariant = new Map<number, number>();
+    if (opts.salesOrderLineId != null) salesOrderLineIdPorVariant.set(item.variantId, opts.salesOrderLineId);
+    const [creada] = await this.crearOFs(
+      tx,
+      { fabricar: [item], comprar: [] },
+      {
+        origen: opts.origen,
+        generatedFrom: opts.generatedFrom ?? null,
+        userId: opts.userId ?? null,
+        notas: opts.notas ?? null,
+        configuracionPorVariant,
+        salesOrderLineIdPorVariant,
+      },
+    );
+    return creada;
   }
 
   /** Crea las OFs (tipo + líneas de componentes exactos) del plan. */

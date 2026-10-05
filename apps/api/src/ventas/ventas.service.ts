@@ -4,9 +4,9 @@ import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { MonitorService } from "../monitor/monitor.service";
 import { PlanificacionService } from "../fabricacion/planificacion.service";
-import { ConfiguracionLinea, ResumenNeteo } from "./ventas.types";
+import { ConfiguracionLinea, Desglose, ResumenNeteo } from "./ventas.types";
 
-export type { ResumenItem, ResumenNeteo, ConfiguracionLinea } from "./ventas.types";
+export type { ResumenItem, ResumenNeteo, ConfiguracionLinea, Desglose, DesgloseLinea } from "./ventas.types";
 
 function placeholderNumero(): string {
   return `PEND-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -276,50 +276,84 @@ export class VentasService {
     });
   }
 
-  // ------------------------------------------------- Confirmar (neteo/cascada)
+  // ------------------------------------------------- Confirmar (desglose)
   /**
-   * Desglosa cada línea por su BOM (solo `exacto`, multi-nivel), netea contra
-   * el stock y genera órdenes de fabricación/ensamble en cascada. Los faltantes
-   * sin BOM quedan como pendientes de compra. El resultado se guarda en `resumen`.
+   * Calcula el desglose neto multi-nivel y lo guarda en `resumen`. Ya **no**
+   * genera órdenes de fabricación: el vendedor las crea por componente desde
+   * el desglose (`crearOFDesdeDesglose`).
    */
   async confirmar(id: number, userId?: number): Promise<{ resumen: ResumenNeteo; modelo: { numero: string; estado: string } }> {
+    void userId;
     return this.prisma.$transaction(async (tx) => {
-      const order = await tx.salesOrder.findUnique({
-        where: { id },
-        include: { lines: true },
-      });
+      const order = await tx.salesOrder.findUnique({ where: { id }, include: { lines: true } });
       if (!order) throw new NotFoundException("Venta no encontrada");
       if (order.estado !== "abierta") throw new BadRequestException("Solo se confirma una venta abierta");
 
-      // 1) Neteo + plan de fabricación/compra (lógica compartida).
-      const plan = await this.planificacion.planificar(
+      const desglose = await this.planificacion.desglosar(
         tx,
-        order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad) })),
-        { netearRaiz: true },
+        order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
       );
-
-      // 2) Se crean las OFs del plan (con configuracion + línea de venta).
-      const configuracionPorVariant = new Map<number, unknown>();
-      const salesOrderLineIdPorVariant = new Map<number, number>();
-      for (const l of order.lines) {
-        if (l.configuracion) configuracionPorVariant.set(l.variantId, l.configuracion);
-        if (!salesOrderLineIdPorVariant.has(l.variantId)) salesOrderLineIdPorVariant.set(l.variantId, l.id);
-      }
-      await this.planificacion.crearOFs(tx, plan, {
-        origen: "venta",
-        generatedFrom: order.numero,
-        userId: userId ?? null,
-        configuracionPorVariant,
-        salesOrderLineIdPorVariant,
-      });
-
-      const resumen: ResumenNeteo = { fabricar: plan.fabricar, comprar: plan.comprar };
+      const resumen: ResumenNeteo = { fabricar: desglose.fabricar, comprar: desglose.comprar };
       await tx.salesOrder.update({
         where: { id },
         data: { confirmadaAt: new Date(), resumen: resumen as unknown as Prisma.InputJsonValue },
       });
-
       return { resumen, modelo: { numero: order.numero, estado: order.estado } };
+    });
+  }
+
+  // -------------------------------------------------- Desglose (vendedor)
+  /** Explosión neta multi-nivel con stock/faltante y las OFs ya creadas de la venta. */
+  async desglose(id: number): Promise<Desglose & { ofs: { variantId: number; numero: string; estado: string }[] }> {
+    const order = await this.prisma.salesOrder.findUnique({ where: { id }, include: { lines: true } });
+    if (!order) throw new NotFoundException("Venta no encontrada");
+    const desglose = await this.planificacion.desglosar(
+      this.prisma,
+      order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
+    );
+    const ofs = await this.prisma.manufacturingOrder.findMany({
+      where: { generatedFrom: order.numero, estado: { not: "cancelada" } },
+      select: { variantId: true, numero: true, estado: true },
+      orderBy: { id: "asc" },
+    });
+    return { ...desglose, ofs };
+  }
+
+  /** Crea (o reutiliza) una OF para un componente del desglose por su faltante actual. */
+  async crearOFDesdeDesglose(id: number, variantId: number, userId?: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.salesOrder.findUnique({ where: { id }, include: { lines: true } });
+      if (!order) throw new NotFoundException("Venta no encontrada");
+      if (order.estado !== "abierta") throw new BadRequestException("Solo se crea una OF en una venta abierta");
+
+      const desglose = await this.planificacion.desglosar(
+        tx,
+        order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
+      );
+      const linea = desglose.lineas.find((l) => l.variantId === variantId);
+      if (!linea) throw new NotFoundException("La variante no forma parte del desglose de esta venta");
+      if (!linea.fabricable) throw new BadRequestException(`"${linea.producto}" no es fabricable (es de compra).`);
+      if (linea.faltante <= 0) throw new BadRequestException(`No falta stock de "${linea.nombre}"; no hay nada que fabricar.`);
+
+      const existente = await tx.manufacturingOrder.findFirst({
+        where: { generatedFrom: order.numero, variantId, estado: { not: "cancelada" } },
+        orderBy: { id: "desc" },
+      });
+      if (existente) return { creada: false, of: { id: existente.id, numero: existente.numero, estado: existente.estado } };
+
+      const configuracion = order.lines.find((l) => l.id === linea.salesOrderLineId)?.configuracion ?? undefined;
+      const of = await this.planificacion.crearOFUnica(
+        tx,
+        { variantId, sku: linea.sku, nombre: linea.nombre, producto: linea.producto, cantidad: linea.faltante, tipo: linea.tipo },
+        {
+          origen: "venta",
+          generatedFrom: order.numero,
+          userId: userId ?? null,
+          salesOrderLineId: linea.salesOrderLineId,
+          configuracion,
+        },
+      );
+      return { creada: true, of };
     });
   }
 

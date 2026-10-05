@@ -11,7 +11,7 @@ import NuevaVenta from "@/components/ventas/nueva-venta";
 import DocumentoVenta from "@/components/ventas/documento-venta";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
-import type { Venta } from "@/lib/types";
+import type { Desglose, Venta } from "@/lib/types";
 
 interface VentaLista {
   id: number;
@@ -33,6 +33,7 @@ export default function VentasPage() {
   const [vista, setVista] = useState<"lista" | "detalle">("lista");
   const [nuevaOpen, setNuevaOpen] = useState(false);
   const [detalle, setDetalle] = useState<Venta | null>(null);
+  const [desglose, setDesglose] = useState<Desglose | null>(null);
   const [imprimirVenta, setImprimirVenta] = useState<Venta | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -56,6 +57,11 @@ export default function VentasPage() {
     setVista("detalle");
     setError("");
     setMsg("");
+    try {
+      setDesglose(await api<Desglose>(`/ventas/${id}/desglose`));
+    } catch {
+      setDesglose(null);
+    }
     return d;
   }
 
@@ -73,10 +79,28 @@ export default function VentasPage() {
       await api(`/ventas/${id}/confirmar`, { method: "POST", body: "{}" });
       setConfirmarOpen(false);
       await abrirDetalle(id);
-      setMsg("Venta confirmada: se generaron las órdenes de fabricación necesarias.");
+      setMsg("Venta confirmada. Revisa el desglose y crea las OFs de los componentes que falten.");
     } catch (e) {
       setError((e as Error).message);
       setConfirmarOpen(false);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  async function crearOF(variantId: number) {
+    if (!detalle) return;
+    setCargando(true);
+    setError("");
+    try {
+      const r = await api<{ creada: boolean; of: { numero: string; estado: string } }>(
+        `/ventas/${detalle.id}/desglose/of`,
+        { method: "POST", body: JSON.stringify({ variantId }) },
+      );
+      await abrirDetalle(detalle.id);
+      setMsg(r.creada ? `Orden de fabricación ${r.of.numero} creada.` : `Ya existía la OF ${r.of.numero}.`);
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       setCargando(false);
     }
@@ -172,7 +196,7 @@ export default function VentasPage() {
             <span className="num">2</span> Confirmada (desglose + neteo)
           </div>
           <div className={`step ${etapa > 2 ? "done" : etapa === 2 && d.confirmadaAt ? "current" : ""}`}>
-            <span className="num">3</span> OFs generadas
+            <span className="num">3</span> OFs creadas
           </div>
           <div className={`step ${etapaFinal ? "done" : etapa === 3 ? "current" : ""}`}>
             <span className="num">4</span> Despachada
@@ -187,10 +211,10 @@ export default function VentasPage() {
             {!d.confirmadaAt ? (
               <>
                 <button className="btn primary" disabled={cargando} onClick={() => setConfirmarOpen(true)}>
-                  Confirmar venta (desglose + neteo)
+                  Confirmar venta (desglose)
                 </button>
                 <span className="muted small" style={{ flex: 1 }}>
-                  Al confirmar se genera el desglose, el neteo (fabricar vs comprar) y las OFs necesarias.
+                  Al confirmar se calcula y guarda el desglose. Las OFs se crean por componente cuando falte stock.
                 </span>
               </>
             ) : (
@@ -263,9 +287,72 @@ export default function VentasPage() {
           </div>
         </div>
 
+        {desglose && desglose.lineas.length > 0 && (
+          <>
+            <h4>Desglose de componentes</h4>
+            <HelpNote>
+              Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
+              stock nivel por nivel. Crea una OF por cada componente que falte y esté marcado como fabricable.
+            </HelpNote>
+            <div className="card" style={{ padding: 0 }}>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Producto / Variante</th>
+                      <th className="num">Necesita</th>
+                      <th className="num">En stock</th>
+                      <th className="num">Falta</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {desglose.lineas.map((l) => {
+                      const of = desglose.ofs.find((o) => o.variantId === l.variantId);
+                      return (
+                        <tr key={l.variantId} style={l.raiz ? { background: "#fafafa" } : undefined}>
+                          <td>
+                            <strong>{l.producto}</strong>
+                            {l.raiz && <span className="badge info" style={{ marginLeft: 6 }}>Vendido</span>}
+                            <div className="small muted">{l.nombre} · {l.sku}</div>
+                          </td>
+                          <td className="num">{formatCantidad(l.requerido)} {l.uom}</td>
+                          <td className="num">{formatCantidad(l.stockActual)} {l.uom}</td>
+                          <td className="num">{l.faltante > 0 ? formatCantidad(l.faltante) : "—"}</td>
+                          <td>
+                            {l.suficiente ? (
+                              <span className="badge normal">Suficiente</span>
+                            ) : l.fabricable ? (
+                              <span className={`badge ${l.tipo === "ensamble" ? "bajo" : "critico"}`}>Fabricar {l.tipo}</span>
+                            ) : (
+                              <span className="badge bajo">Comprar</span>
+                            )}
+                          </td>
+                          <td>
+                            {of ? (
+                              <span className="muted small">{of.numero} · {of.estado}</span>
+                            ) : !l.suficiente && l.fabricable && d.estado === "abierta" ? (
+                              <div className="row-actions">
+                                <button className="btn ghost sm" disabled={cargando} onClick={() => crearOF(l.variantId)}>
+                                  Crear OF
+                                </button>
+                              </div>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
         {d.confirmadaAt && (
           <>
-            <h4>Resultado de confirmación (neteo)</h4>
+            <h4>Resumen guardado (al confirmar)</h4>
             <div className="grid-2">
               <div className="card">
                 <h4 style={{ marginTop: 0 }}>Fabricar / Ensamblar</h4>
@@ -306,7 +393,7 @@ export default function VentasPage() {
                   <strong> concluye</strong> su orden de ensamble desde <a href="/fabricacion">Fabricación</a>.
                 </HelpNote>
                 <div className="card" style={{ padding: 0 }}>
-                <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación generadas</h4>
+                <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación de esta venta</h4>
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
@@ -346,7 +433,7 @@ export default function VentasPage() {
         {confirmarOpen && (
           <ConfirmDialog
             title="Confirmar venta"
-            message="Se hará el desglose, el neteo (fabricar vs comprar) y se generarán las órdenes de fabricación necesarias."
+            message="Se calculará y guardará el desglose (fabricar vs comprar). No se crean órdenes de fabricación automáticamente."
             confirmLabel="Confirmar venta"
             loading={cargando}
             onConfirm={() => confirmar(d.id)}
@@ -406,7 +493,7 @@ export default function VentasPage() {
     <AppShell>
       <PageHeader
         title="Ventas"
-        subtitle="Órdenes locales y web. Confirma para generar el desglose/neteo y las OFs; luego despacha por línea."
+        subtitle="Órdenes locales y web. Revisa el desglose de componentes y crea las OFs que falten; luego despacha por línea."
         actions={
           <button className="btn primary" onClick={() => { setNuevaOpen(true); setError(""); setMsg(""); }}>
             + Nueva venta

@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -49,6 +49,10 @@ class DespacharDto {
   @IsOptional() @IsNumber() locationId?: number;
 }
 
+class CrearOFDesgloseDto {
+  @IsInt() variantId!: number;
+}
+
 @Controller("ventas")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class VentasController {
@@ -81,6 +85,22 @@ export class VentasController {
         ? dto.lines.map((l) => ({ variantId: l.variantId, cantidad: Number(l.cantidad), precioUnitario: l.precioUnitario }))
         : undefined,
     });
+  }
+
+  @Roles("admin", "supervisor", "operador")
+  @Get(":id/desglose")
+  desglose(@Param("id", ParseIntPipe) id: number) {
+    return this.ventas.desglose(id);
+  }
+
+  @Roles("admin", "supervisor")
+  @Post(":id/desglose/of")
+  crearOFDesglose(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: CrearOFDesgloseDto,
+    @Req() req: { user: { id: number } },
+  ) {
+    return this.ventas.crearOFDesdeDesglose(id, dto.variantId, req.user.id);
   }
 
   @Roles("admin", "supervisor")

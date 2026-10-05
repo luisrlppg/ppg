@@ -259,6 +259,30 @@ export interface ResumenNeteo {
   comprar: ResumenItem[];
 }
 
+export interface DesgloseLinea {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  requerido: number;
+  stockActual: number;
+  faltante: number;
+  suficiente: boolean;
+  fabricable: boolean;
+  comprable: boolean;
+  tipo?: "fabricacion" | "ensamble";
+  raiz: boolean;
+  salesOrderLineId: number | null;
+}
+
+export interface Desglose {
+  lineas: DesgloseLinea[];
+  fabricar: ResumenItem[];
+  comprar: ResumenItem[];
+  ofs: { variantId: number; numero: string; estado: string }[];
+}
+
 export interface Venta {
   id: number;
   numero: string;

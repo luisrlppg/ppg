@@ -53,15 +53,17 @@ Registrados en `app.module.ts`.
   - Valores permitidos con `valoresPermitidosLote` (`common/valores-permitidos.ts`, batcheado, sin N+1); si no hay filas → todos los valores del atributo.
   - La generación masiva (`generar`/`combinacionesCartesianas`) fue **retirada**.
 
-### 2.2 Ventas / neteo / OFs → `ventas/`
-- `ventas.controller.ts` (107) — rutas `/api/ventas...`
-- `ventas.service.ts` (402), zonas:
-  - `list` 28 · `get` (con OFs asociados; cada línea incluye `imagen = variant.imagen ?? product.imagen`) 69 · `create` 143 · `update` 206
-  - **`confirmar` = NETEO + CASCADA DE OFs** 266 (lo más crítico): `$transaction` + carga BOM `exacto` con caché → `netear` recursivo multi-nivel con detección de ciclos → genera OFs `fabricacion`/`ensamble` **inline** (con `configuracion`) → persiste `resumen` en la venta.
-  - `despacharLinea` (consume stock; **ensambles**: exige OF de ensamble `hecha` y no descuenta stock del ensamble; dispara monitor) 309 · `cancelar` 389
-- `ventas.types.ts` (18): `ResumenItem`, `ResumenNeteo`, `ConfiguracionLinea` (re-exportados desde `ventas.service`).
-- **`ventas.ofs.ts` ya no existe**: la recursión quedó inline en `confirmar` (se corrigió un doble bucle).
-- Acoplos: inyecta `productos.service` (`resolveComponentVariant`) y `monitor.service`.
+### 2.2 Ventas / desglose / OFs → `ventas/`
+- `ventas.controller.ts` — rutas `/api/ventas...`
+- `ventas.service.ts`, zonas:
+  - `list` · `get` (con OFs asociados; cada línea incluye `imagen = variant.imagen ?? product.imagen`) · `create` · `update`
+  - **`confirmar` = DESGLOSE (ya NO crea OFs)**: calcula el desglose neto vía `planificacion.desglosar` y persiste `resumen` (`fabricar`/`comprar`) + `confirmadaAt`. Las OFs las crea el vendedor por componente.
+  - **`desglose`** (`GET /ventas/:id/desglose`): explosión neta multi-nivel en vivo (requerido / stock / faltante por variante) + OFs ya creadas de la venta. Alimenta el botón "Crear OF".
+  - **`crearOFDesdeDesglose`** (`POST /ventas/:id/desglose/of {variantId}`): crea **una** OF (`origen: venta`, `generatedFrom`, `salesOrderLineId` de origen) por el faltante actual del componente; idempotente si ya existe OF activa.
+  - `despacharLinea` (consume stock; **ensambles**: exige OF de ensamble `hecha` y no descuenta stock del ensamble; dispara monitor) · `cancelar` (cancela OFs asociadas)
+- `ventas.types.ts`: `ResumenItem`, `ResumenNeteo`, `ConfiguracionLinea` + re-export de `Desglose`/`DesgloseLinea` (definidos en `fabricacion/planificacion.service.ts`).
+- **`ventas.ofs.ts` ya no existe**: el cálculo quedó en `planificacion.desglosar`.
+- Acoplos: inyecta `planificacion.service` (`desglosar`/`crearOFUnica`), `productos.service` (`resolveComponentVariant`) y `monitor.service`.
 
 ### 2.3 Reportes de producción → `reportes/`
 - `reportes.controller.ts` (127) — rutas `/api/reportes...`
@@ -87,8 +89,8 @@ Registrados en `app.module.ts`.
   - **`concluir`** (cierre manual desde Fabricación): ensamble → consume componentes (`consumo`); hoja → reporte interno `aplicado` con línea `final` a "Recibo de Producción" (para Ubicar). Ninguno produce stock del ensamble.
   - `crearManual` (alta manual OF, exactamente N, `origen: manual`) 113
   - `previewReponer` (no escribe) 161 · `reponer` (cascada hasta mín/máx) 175 · `faltantes` 192
-- `planificacion.service.ts` (201): `planificar(tx, demandas, { netearRaiz })` 84 y `crearOFs(tx, plan, { origen })` 136. Lo usan `ventas.confirmar` (`netearRaiz: true`) y fabricación manual/reposición (`false`).
-- OFs guardan `origen` (`venta | manual | reposicion_minimo | reposicion_maximo`); las de venta se ligan a `salesOrderLineId`.
+- `planificacion.service.ts`: `planificar(tx, demandas, { netearRaiz })` y `crearOFs(tx, plan, { origen })` (los usa fabricación manual/reposición con `netearRaiz: false`); `desglosar(tx, demandas)` (explosión neta multi-nivel con pool de stock, usada por `ventas.desglose`/`confirmar`) y `crearOFUnica(tx, item, opts)` (una OF sin cascada, la usa el botón "Crear OF" de la venta).
+- OFs guardan `origen` (`venta | manual | reposicion_minimo | reposicion_maximo`); las de venta se ligan a `salesOrderLineId` y `generatedFrom = numero` de la venta.
 - **Cierre**: manual con `concluir` (antes lo hacía `reportes.aplicar`, ya no). El despacho exige la OF de ensamble en `hecha`.
 
 ### 2.6 Catálogos (atributos / categorías / empaques) → `catalogos/`
@@ -200,7 +202,7 @@ Reutilízalos en vez de inventar clases nuevas:
 |---|---|
 | Nuevo atributo/variante/grid de producto | `productos.service.ts` (`grid` 430, `materializar` 434) · `productos.controller.ts` · `app/productos/[id]/page.tsx` |
 | Editar BOM / componentes | `productos.service.ts:255` · `app/productos/[id]/page.tsx` (Lista de materiales) |
-| Neteo de materiales / generar OFs | `ventas.service.ts:266` (`confirmar`, recursión inline) + `fabricacion/planificacion.service.ts` |
+| Desglose de componentes / crear OFs de venta | `ventas.service.ts` (`desglose`, `crearOFDesdeDesglose`, `confirmar`) + `fabricacion/planificacion.service.ts` (`desglosar`, `crearOFUnica`) |
 | Despachar línea / consumo de stock | `ventas.service.ts:309` |
 | Documento de venta PDF (IVA, imagen) | `components/ventas/documento-venta.tsx` (overlay/descarga) · `components/ventas/documento-venta-pdf.tsx` (layout `@react-pdf/renderer`) · `app/ventas/page.tsx` (overlay `imprimirVenta`) · `ventas.service.get` (`imagen`) |
 | Reporte de producción / aplicar | `reportes.service.ts:222` |

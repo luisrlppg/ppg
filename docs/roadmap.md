@@ -31,6 +31,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Desglose de componentes en ventas (2026-10-05):** al abrir el detalle de una venta se calcula en vivo
+  la explosión neta multi-nivel (`GET /ventas/:id/desglose`, `planificacion.desglosar`, pool compartido de
+  stock) y se muestra al vendedor, por componente: **necesita / en stock / falta**, con estado
+  *Suficiente* / *Fabricar* / *Comprar* y un botón **Crear OF** por línea (solo si fabricable y con faltante).
+  `ventas.confirmar` dejó de generar OFs: ahora solo calcula/persiste el `resumen` y marca `confirmadaAt`.
+  Nuevo `POST /ventas/:id/desglose/of {variantId}` (`crearOFDesdeDesglose` → `crearOFUnica`) crea **una** OF
+  de ese componente por su faltante (idempotente). Reutiliza `origen: venta`, `generatedFrom` y
+  `salesOrderLineId`; **sin migración**. UI en `app/ventas/page.tsx`.
+
 - **Restore aplica migraciones (2026-10-05):** tras restaurar un punto de retorno, tanto
   `ppg restore` (`scripts/ppg.sh`, llama `apply_migrations`) como el restore de la UI
   (`backups.service.restaurar`) corren `db:deploy` + `prisma generate`, para que un respaldo viejo

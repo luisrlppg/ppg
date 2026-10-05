@@ -16,3 +16,5 @@ export interface ConfiguracionLinea {
   pasos?: { pregunta: string; opciones: string[]; seleccion: string }[];
   resultado?: Record<string, { variantId: number; sku: string; nombre: string }>;
 }
+
+export type { Desglose, DesgloseLinea } from "../fabricacion/planificacion.service";
