@@ -31,6 +31,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Wizard de Taparrosca con Pincel paso a paso (2026-10-05):** los 6 pasos (`ProductPasso`) estaban
+  con `panel: 0`, así que el modal de ventas los mostraba todos juntos y la cascada no se aplicaba.
+  Se reasignó `panel: 1..6` (uno por paso) con `scripts/catalog/ops/taparrosca-paneles.yaml`: ahora
+  avanza de uno en uno como los BTVPE y, al pulsar "Siguiente", el backend (`getPasos` con selección)
+  reduce las opciones del paso siguiente. Sin cambios de código.
+
 - **Roles reducidos a `admin`/`operador` + gestión de usuarios + app protegida (2026-10-05):** se retiró
   el rol `supervisor` (migración `20261005160000_remove_supervisor_role` reasigna sus usuarios a `admin`
   y borra el rol; el seed ya sólo crea `admin`/`operador`). `JwtAuthGuard`+`RolesGuard` pasaron a

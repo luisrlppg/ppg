@@ -1,0 +1,19 @@
+# Taparrosca con Pincel — un panel (paso) por sub-pregunta.
+#
+# El wizard mostraba los 6 pasos juntos porque todos tenían panel 0.
+# Se reasigna un panel por paso para que el frontend avance de uno en uno
+# (como los BTVPE) y la cascada de opciones del backend se aplique al pulsar
+# "Siguiente". No toca variantes, ejes ni BOM: solo define los pasos de tienda.
+version: 1
+name: taparrosca-paneles
+description: "Un panel por paso del wizard de Taparrosca con Pincel (cascada de opciones)"
+ops:
+  - op: step.set
+    product: "Taparrosca con Pincel"
+    steps:
+      - { sortOrder: 1, panel: 1, pregunta: "Selecciona la rosca", attribute: "Tamaño rosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 2, panel: 2, pregunta: "Selecciona la tapa", attribute: "Forma de Taparrosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 3, panel: 3, pregunta: "Selecciona el color de la taparrosca", attribute: "Color de Taparrosca", variantProduct: "Taparrosca" }
+      - { sortOrder: 4, panel: 4, pregunta: "Selecciona una altura de mango", attribute: "Altura de Mango", variantProduct: "Pincel" }
+      - { sortOrder: 5, panel: 5, pregunta: "Selecciona el agujero", attribute: "Agujero de Mango", variantProduct: "Pincel" }
+      - { sortOrder: 6, panel: 6, pregunta: "Selecciona el color de cerda", attribute: "Color de Cerda de Pincel", variantProduct: "Pincel" }

@@ -20,6 +20,9 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
   `Tipo de Tapa con Pincel` y `Medida pincel`. `Gg` y `Gris` se agregaron a `Forma de Taparrosca`
   y `Color de Taparrosca`. Ops: `scripts/catalog/ops/taparrosca-con-pincel-ensamble.yaml`.
   Ver [`plan-taparrosca.md`](./plan-taparrosca.md).
+- **Wizard de Taparrosca con Pincel (2026-10-05):** sus 6 pasos tenían `panel: 0` (se veían todos
+  juntos); se reasignó `panel: 1..6` (un paso por pantalla, con cascada de opciones al avanzar).
+  Ops: `scripts/catalog/ops/taparrosca-paneles.yaml`.
 - **BTVPE (2026-10-04):** eje `Tamaño de Botella` en Botella (`Mini`/`Alta`/`Chica`/`Grande`);
   se retiró `Capacidad de Botella` (mL → `notas`); `Color de Cepillo Silicon` (Blanco/Negro) eje de
   Cepillo Silicon; nylon usa `Color de Cerda de Cepillo` (se retiró `Color de Cepillo Nylon`);
@@ -55,4 +58,4 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 Si editas valores de variantes en la UI, quedan en la BD pero **no** en el repo. Para no perderlos
 al recrear la base, corre **`pnpm cat:export-seed`** y commitea `scripts/catalog/seed/catalog.yaml`.
 
-*Última actualización: 2026-10-04.*
+*Última actualización: 2026-10-05.*

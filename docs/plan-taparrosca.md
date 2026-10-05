@@ -40,6 +40,11 @@ Se **borraron** los atributos legado `Altura de Taparrosca`, `Color de Tapa con 
 
 ## 3. Pasos del wizard (un `panel` por paso)
 
+> **Fix 2026-10-05:** los pasos se definieron originalmente con `panel: 0`, así que el wizard
+> mostraba las 6 selecciones juntas. Se reasignó `panel: 1..6` (uno por paso) con
+> `scripts/catalog/ops/taparrosca-paneles.yaml`; ahora avanza de uno en uno como los BTVPE y la
+> cascada del backend reduce las opciones al pulsar "Siguiente".
+
 1. "Selecciona la rosca" → `Tamaño rosca` (componente **Taparrosca**)
 2. "Selecciona la tapa" → `Forma de Taparrosca` (Taparrosca)
 3. "Selecciona el color de la taparrosca" → `Color de Taparrosca` (Taparrosca)
