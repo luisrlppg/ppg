@@ -242,6 +242,7 @@ export interface VentaLinea {
   subtotal: number;
   qtyDelivered: number;
   estadoEntrega: "pendiente" | "parcial" | "entregado";
+  valoracion?: { attribute: string; valor: string }[];
 }
 
 export interface ResumenItem {

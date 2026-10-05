@@ -1,18 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { Venta } from "@/lib/types";
-
-const PDFViewer = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFViewer), {
-  ssr: false,
-  loading: () => <div className="doc-pdf-loading">Generando documento…</div>,
-});
-
-const DocumentoPDF = dynamic(() => import("./documento-venta-pdf").then((m) => m.DocumentoPDF), {
-  ssr: false,
-});
 
 interface Props {
   venta: Venta;
@@ -64,12 +54,40 @@ export default function DocumentoVenta({ venta, onCerrar }: Props) {
   const formatCantidad = useFormatCantidad();
   const [cobrarIva, setCobrarIva] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [generando, setGenerando] = useState(true);
   const imagenes = useLineaImagenes(venta);
 
   const props = useMemo(
     () => ({ venta, cobrarIva, imagenes, formatCantidad }),
     [venta, cobrarIva, imagenes, formatCantidad],
   );
+
+  useEffect(() => {
+    let activo = true;
+    setGenerando(true);
+    (async () => {
+      const [{ pdf }, { DocumentoPDF: Doc }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./documento-venta-pdf"),
+      ]);
+      const blob = await pdf(<Doc {...props} />).toBlob();
+      if (!activo) return;
+      setPdfUrl(URL.createObjectURL(blob));
+      setGenerando(false);
+    })().catch(() => {
+      if (activo) setGenerando(false);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [props]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   async function descargar() {
     setDescargando(true);
@@ -101,16 +119,27 @@ export default function DocumentoVenta({ venta, onCerrar }: Props) {
           <button type="button" className="btn ghost" onClick={onCerrar}>
             Cerrar
           </button>
-          <button type="button" className="btn primary" disabled={descargando} onClick={descargar}>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={descargando || generando}
+            onClick={descargar}
+          >
             {descargando ? "Generando…" : "Descargar PDF"}
           </button>
         </div>
       </div>
 
       <div className="doc-pdf-frame">
-        <PDFViewer style={{ width: "100%", height: "100%" }} showToolbar={false}>
-          <DocumentoPDF {...props} />
-        </PDFViewer>
+        {pdfUrl ? (
+          <iframe
+            title={`Venta ${venta.numero}`}
+            src={pdfUrl}
+            style={{ width: "100%", height: "100%", border: 0 }}
+          />
+        ) : (
+          <div className="doc-pdf-loading">Generando documento…</div>
+        )}
       </div>
     </div>
   );

@@ -72,7 +72,18 @@ export class VentasService {
       include: {
         partner: true,
         lines: {
-          include: { variant: { include: { product: true } } },
+          include: {
+            variant: {
+              include: {
+                product: {
+                  include: {
+                    attributeLines: { include: { attribute: true }, orderBy: { sortOrder: "asc" } },
+                  },
+                },
+                variantAttributes: { include: { attribute: true, value: true } },
+              },
+            },
+          },
           orderBy: { id: "asc" },
         },
       },
@@ -101,21 +112,28 @@ export class VentasService {
         ? { id: o.partner.id, nombre: o.partner.nombre, empresa: o.partner.empresa, telefono: o.partner.telefono, direccion: o.partner.direccion, email: o.partner.email }
         : null,
       resumen: o.resumen as ResumenNeteo | null,
-      lines: o.lines.map((l) => ({
-        id: l.id,
-        variantId: l.variantId,
-        sku: l.variant.sku,
-        nombre: l.variant.nombre,
-        producto: l.variant.product.nombre,
-        uom: l.variant.product.uom,
-        imagen: l.variant.imagen ?? l.variant.product.imagen,
-        cantidad: dec(l.cantidad),
-        precioUnitario: dec(l.precioUnitario),
-        subtotal: dec(l.cantidad) * dec(l.precioUnitario),
-        qtyDelivered: dec(l.qtyDelivered),
-        estadoEntrega: l.estadoEntrega,
-        configuracion: l.configuracion as ConfiguracionLinea | null,
-      })),
+      lines: o.lines.map((l) => {
+        const orden = new Map(l.variant.product.attributeLines.map((al, i) => [al.attributeId, i]));
+        const valoracion = [...l.variant.variantAttributes]
+          .sort((a, b) => (orden.get(a.attributeId) ?? 9999) - (orden.get(b.attributeId) ?? 9999))
+          .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }));
+        return {
+          id: l.id,
+          variantId: l.variantId,
+          sku: l.variant.sku,
+          nombre: l.variant.nombre,
+          producto: l.variant.product.nombre,
+          uom: l.variant.product.uom,
+          imagen: l.variant.imagen ?? l.variant.product.imagen,
+          cantidad: dec(l.cantidad),
+          precioUnitario: dec(l.precioUnitario),
+          subtotal: dec(l.cantidad) * dec(l.precioUnitario),
+          qtyDelivered: dec(l.qtyDelivered),
+          estadoEntrega: l.estadoEntrega,
+          configuracion: l.configuracion as ConfiguracionLinea | null,
+          valoracion,
+        };
+      }),
       ordenesFabricacion: ofs.map((mo) => ({
         id: mo.id,
         numero: mo.numero,

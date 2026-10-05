@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   trowZebra: { backgroundColor: ZEBRA },
   th: { fontFamily: "Helvetica-Bold", fontSize: 7.5, textTransform: "uppercase", letterSpacing: 0.4, paddingVertical: 7, paddingHorizontal: 7 },
   td: { paddingVertical: 6, paddingHorizontal: 7, fontSize: 9 },
-  num: { textAlign: "right" },
+  num: { textAlign: "center" },
 
   colThumb: { width: 46 },
   colProducto: { flexGrow: 1, flexShrink: 1 },
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
   colSubtotal: { width: 82 },
   productoNombre: { fontFamily: "Helvetica-Bold", fontSize: 9 },
   productoSub: { fontSize: 7.5, color: MUTED, marginTop: 1 },
+  productoAtributo: { fontSize: 7.5, color: INK, marginTop: 1 },
 
   thumb: { width: 30, height: 30, borderRadius: 4, objectFit: "cover" },
   thumbPlaceholder: { width: 30, height: 30, borderRadius: 4, alignItems: "center", justifyContent: "center" },
@@ -202,9 +203,16 @@ export function DocumentoPDF({ venta, cobrarIva, imagenes, formatCantidad }: Doc
               </View>
               <View style={[styles.td, styles.colProducto]}>
                 <Text style={styles.productoNombre}>{l.producto}</Text>
-                <Text style={styles.productoSub}>
-                  {l.nombre} · {l.sku}
-                </Text>
+                {l.valoracion && l.valoracion.length > 0 ? (
+                  l.valoracion.map((a) => (
+                    <Text key={a.attribute} style={styles.productoAtributo}>
+                      {a.attribute}: {a.valor}
+                    </Text>
+                  ))
+                ) : (
+                  <Text style={styles.productoSub}>{l.nombre}</Text>
+                )}
+                <Text style={styles.productoSub}>{l.sku}</Text>
               </View>
               <Text style={[styles.td, styles.colCant, styles.num]}>
                 {formatCantidad(l.cantidad)} {l.uom}
