@@ -185,16 +185,16 @@ export default function ClientesPage() {
       ) : (
         <div className="card" style={{ padding: 0 }}>
           <div className="table-wrap">
-            <table className="table">
+            <table className="table" style={{ tableLayout: "fixed", overflowWrap: "anywhere" }}>
               <thead>
                 <tr>
-                  <th>Nombre</th>
-                  <th>Empresa</th>
-                  <th>Teléfono</th>
-                  <th>Dirección</th>
-                  <th>Email</th>
-                  <th className="num">Ventas</th>
-                  <th></th>
+                  <th style={{ width: "18%" }}>Nombre</th>
+                  <th style={{ width: "16%" }}>Empresa</th>
+                  <th style={{ width: "12%" }}>Teléfono</th>
+                  <th style={{ width: "24%" }}>Dirección</th>
+                  <th style={{ width: "18%" }}>Email</th>
+                  <th className="num" style={{ width: "6%" }}>Ventas</th>
+                  <th style={{ width: "6%" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -209,7 +209,7 @@ export default function ClientesPage() {
                     <td>{c.direccion ?? "—"}</td>
                     <td>{c.email ?? "—"}</td>
                     <td className="num">{c.ordenes ?? 0}</td>
-                    <td>
+                    <td style={{ whiteSpace: "nowrap" }}>
                       <button type="button" className="btn sm" onClick={() => abrirEditar(c)}>
                         Editar
                       </button>{" "}
