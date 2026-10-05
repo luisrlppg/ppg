@@ -135,6 +135,16 @@ Registrados en `app.module.ts`.
 - `common/util.ts` (20) — `dec`, `isNumberOrStringNumber`, `toUom`, `toTipoComponente` (candidato a modularizar).
 - `common/valores-permitidos.ts` (81) — `valoresPermitidosLote` (subconjunto de valores por eje, sin N+1).
 
+### 2.13 Costos (estándar por producto) → `costos/`
+- `costos.controller.ts` — `@Controller("costos")` (`admin`/`supervisor`): `GET /costos` (lista + desglose + precio/margen),
+  `GET /costos/:productId` (detalle + receta cruda), `PUT /costos/:productId` (upsert receta + materiales, `$transaction`),
+  `DELETE /costos/:productId` (limpia receta).
+- `costos.service.ts`: `list` · `get` · `upsert` · `remove` · `calcular` (materiales = `costoCompra` + Σ líneas;
+  M.O. = horas×tarifa; máquina = horas×tarifa; molde = costo/piezas; ensamble; empaque) y `referenciaPrecio`
+  (precio = `basePrice` o mínimo si es 0) para margen de **solo lectura**.
+- **v1 separada del ERP:** captura manual por producto, sin historial ni merma y **sin** enlazar a los precios de
+  venta todavía (ver `docs/roadmap.md`). Modelo: `ProductCost` + `ProductCostMaterial` (`docs/data-model.md`).
+
 ---
 
 ## 3. Mapa de la Web (Next.js) — `apps/web/src`
@@ -155,6 +165,7 @@ y `AppShell` (excepto tienda y login).
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
 | Reportes de producción | `app/reportes/page.tsx` | 718 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
+| Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin`/`supervisor` |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
 | Monitor stock | `app/monitor/page.tsx` | 156 | estado + acciones |
 | Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles) |
@@ -198,6 +209,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Editar los pasos guiados de un producto | `productos.service.ts` (`getPasos`/`setPasos`) · `app/productos/[id]/page.tsx` (sección "Pasos guiados") |
 | Productos públicos (lista de ventas) | `public.service.ts` (`productosPublicos` ~112, filtra `Product.vendible`) · `public.controller.ts` |
 | Precios / catálogo público | `public.service.ts` (`catalogo` 128) · `productos.service.ts` (`setVariantPrice` 378) |
+| Costo estándar por producto / desglose / margen | `apps/api/src/costos/` · `app/costos/page.tsx` |
 | Alertas stock bajo / canales | `monitor.service.ts` (`afterStockChange` 104) + `monitor.notificadores.ts` |
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
@@ -211,4 +223,4 @@ Reutilízalos en vez de inventar clases nuevas:
 ---
 
 *Mapa de líneas vivo: al refactorizar, actualiza este documento para que el agente siempre
-apunte al archivo/zona correcta. Última revisión: 2026-10-04.*
+apunte al archivo/zona correcta. Última revisión: 2026-10-05.*

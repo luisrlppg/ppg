@@ -32,6 +32,7 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
     **no** declara estos flags (ver `roadmap.md`).
 - **`ProductPasso`** — pasos del storefront (ver abajo).
 - **`ProductComponent`** — BOM; componentes `exacto` vs `consumible`.
+- **`ProductCost` / `ProductCostMaterial`** — costo estándar por producto (v1, captura manual; ver §Costos).
 - **`User.separadorMiles`** — preferencia personal de formato de cantidades (`"coma"` default o
   `"espacio"`); la edita cada usuario en **Ajustes** (`PATCH /auth/preferences`).
 
@@ -110,6 +111,23 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
   muestras prosa `Bala Prosa`/`Balita Prosa`/`Pino Prosa`.
 - Herramientas: `scripts/reorg-cepillos.ts` + `scripts/reorg-cepillos-grosor.ts`
   (quita el eje `Grosor cerda`).
+
+## Costos (v1)
+
+Costo **estándar por producto** (no por variante), capturado a mano. Arranca **separado** del
+precio de venta; el margen que muestra es solo referencia.
+
+- **`ProductCost`** (1:1 con `Product`): `costoCompra` (comprables), `horasManoObra` +
+  `tarifaManoObra`, `horasMaquina` + `tarifaMaquina`, `costoMolde` + `piezasMolde` (amortización
+  por pieza), `costoEnsamble`, `costoEmpaque`, `notas`, `updatedById`, timestamps.
+- **`ProductCostMaterial`** (hijos): `nombre`, `cantidad`, `costoUnitario`, `orden`. Materiales
+  **100% manuales** (no se recorre el BOM en v1).
+- **Cálculo:** `materiales = (costoCompra ?? 0) + Σ(cantidad × costoUnitario)`;
+  `manoObra = horasManoObra × tarifaManoObra`; `maquina = horasMaquina × tarifaMaquina`;
+  `molde = piezasMolde > 0 ? costoMolde / piezasMolde : 0`; `total = materiales + manoObra +
+  maquina + molde + ensamble + empaque`. Sin merma ni historial por ahora.
+- **Precio/margen (solo lectura):** `precio` = `Product.basePrice` (si es 0, el mínimo de las
+  variantes activas); `margen = precio − total`. Ver [`roadmap.md`](./roadmap.md).
 
 ## Pasos del storefront (`ProductPasso`)
 

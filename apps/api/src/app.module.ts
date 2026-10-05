@@ -12,6 +12,7 @@ import { VentasModule } from "./ventas/ventas.module";
 import { FabricacionModule } from "./fabricacion/fabricacion.module";
 import { PublicModule } from "./public/public.module";
 import { ReportesModule } from "./reportes/reportes.module";
+import { CostosModule } from "./costos/costos.module";
 import { BackupsModule } from "./backups/backups.module";
 
 @Module({
@@ -29,6 +30,7 @@ import { BackupsModule } from "./backups/backups.module";
     FabricacionModule,
     PublicModule,
     ReportesModule,
+    CostosModule,
     BackupsModule,
   ],
 })

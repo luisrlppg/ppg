@@ -162,6 +162,17 @@ Motivos: `produccion`, `consumo`, `ensamble`, `ubicacion`, `despacho`, `ajuste`,
 | `production_reports` | id, numero, user_id, turno, fecha, trabajadores, estado (`pendiente`\|`aplicado`), notas, timestamps | Reporte diario; **no toca inventario solo** |
 | `production_report_lines` | id, report_id, variant_id, cantidad, tipo (`final`\|`consumo`), seccion (máquina 1-3, ensamble, ensartado, pegado, perforado, etc.) | Líneas ligadas a variantes reales |
 
+#### Costos (post-E3)
+| Tabla | Campos | Notas |
+|---|---|---|
+| `product_costs` | id, product_id (único), costo_compra (nullable), horas_mano_obra, tarifa_mano_obra, horas_maquina, tarifa_maquina, costo_molde, piezas_molde, costo_ensamble, costo_empaque, notas, updated_by, timestamps | Costo **estándar por producto** (no por variante), capturado a mano. Un registro por producto |
+| `product_cost_materials` | id, product_cost_id, nombre, cantidad, costo_unitario, orden | Materiales **100% manuales** (no se recorre el BOM en v1) |
+
+**Cálculo (v1):** `materiales = (costo_compra ?? 0) + Σ(cantidad × costo_unitario)`;
+`mano_obra = horas_mano_obra × tarifa_mano_obra`; `máquina = horas_maquina × tarifa_maquina`;
+`molde = piezas_molde > 0 ? costo_molde / piezas_molde : 0`; `total = materiales + mano_obra +
+máquina + molde + ensamble + empaque`. Precio/margen son de **solo lectura** (referencia).
+
 ## 5. Reglas de negocio (producto y variantes)
 
 ### 5.1 Una variante para todo
@@ -357,6 +368,22 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 - **Pantalla "Ubicar"**: recibidos sin ubicar → asignación a compartimentos.
 - Stats, gráficas y exportación CSV portados; reporte con edición/eliminación protegida.
 
+### 8.7 Módulo Costos (v1 — post-E3)
+Página especial para administrar **cómo se obtiene el costo de cada producto**, con cálculos
+distintos según el tipo:
+
+- **Objetivo:** costo **estándar (receta)** por producto para fijar precio y ver margen.
+- **Nivel:** solo por **producto** (no por variante). Un registro vigente (sin historial).
+- **Conceptos:** materiales (**100% manuales**), mano de obra, máquina (hora-máquina),
+  molde (amortización por pieza), ensamble, empaque. **Sin merma** por ahora.
+- **Captura:** manual por producto, formulario fijo por concepto; materiales como líneas.
+- **Comprables:** se captura su `costo_compra`.
+- **Arranque separado:** no alimenta aún los precios de venta; precio y margen se muestran
+  solo como referencia. La unificación con la página de precios queda como pendiente.
+- **Acceso:** ver/editar `admin` y `supervisor`.
+- **API:** `GET /costos` · `GET /costos/:productId` · `PUT /costos/:productId` ·
+  `DELETE /costos/:productId`. **Web:** `/costos` (lista + editor en modal).
+
 ## 9. Principios de UI (usabilidad)
 
 **La usabilidad es el requisito #1 de este sistema.** Se aprende en cada entrega, desde E0.
@@ -382,6 +409,7 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática. **Flujo venta→confirmación→neteo→cascada de OFs→despacho verificado end-to-end (2026-08-31)** | ✅ entregado |
 | **Tienda (futura)** | Storefront público: `/api/public` + (futuro) `apps/storefront`. **Ya está operativa la tubería completa**: `GET /public/productos`, `getPasos` (variantes publicadas), pedido invitado (`origen=web`, precio recalculado en servidor, consulta por número), y tienda guiada integrada en `apps/web/tienda/[productId]`. Falta la app `apps/storefront` separada + pasarela de pago + **imágenes** de opciones (hoy placeholders) + **precios** en la UI (ocultos a propósito). | 🟡 tubería + tienda guiada operativas |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV. **Flujo verificado end-to-end (2026-08-31)** | ✅ entregado |
+| **Costos (post-E3)** | Módulo de costo estándar por producto (materiales manuales, M.O., máquina, molde, ensamble, empaque; precio/margen de referencia). Arranca separado de los precios de venta. Ver §8.7 | 🟡 v1 en curso |
 | **E4** | Signage: pantallas TV leyendo de nuestras ventas/fabricación/stock (ya no de Odoo) | ⏳ pendiente |
 | **E5** | Etiquetas + ventas consolidadas + facturación/IVA + pricing updater; desconexión progresiva de Odoo (queda como respaldo) | ⏳ pendiente |
 

@@ -445,3 +445,67 @@ export interface StatsReporte {
   porSeccion: StatsSeccion[];
   consumo: StatsConsumo[];
 }
+
+// ------------------------------------------------------------------ Costos
+export interface CostoMaterial {
+  nombre: string;
+  cantidad: number;
+  costoUnitario: number;
+  orden?: number;
+}
+
+export interface CostoDesglose {
+  costoCompra: number;
+  materiales: number;
+  manoObra: number;
+  maquina: number;
+  molde: number;
+  ensamble: number;
+  empaque: number;
+  total: number;
+}
+
+export interface CostoMargen {
+  precio: number;
+  precioMin: number;
+  precioMax: number;
+  margen: number | null;
+  margenPct: number | null;
+}
+
+export interface CostoFila extends CostoDesglose, CostoMargen {
+  productId: number;
+  nombre: string;
+  skuBase: string;
+  uom: string;
+  fabricable: boolean;
+  comprable: boolean;
+  tieneReceta: boolean;
+  notas: string | null;
+  variantes: number;
+}
+
+export interface CostoReceta {
+  costoCompra: number;
+  horasManoObra: number;
+  tarifaManoObra: number;
+  horasMaquina: number;
+  tarifaMaquina: number;
+  costoMolde: number;
+  piezasMolde: number;
+  costoEnsamble: number;
+  costoEmpaque: number;
+  notas: string | null;
+  materiales: CostoMaterial[];
+}
+
+export interface CostoDetalle extends CostoDesglose, CostoMargen {
+  productId: number;
+  nombre: string;
+  skuBase: string;
+  uom: string;
+  fabricable: boolean;
+  comprable: boolean;
+  tieneReceta: boolean;
+  receta: CostoReceta;
+}

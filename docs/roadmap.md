@@ -16,6 +16,11 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 5. **Seed de catálogo y flags de suministro:** `Product.fabricable`/`comprable` se editan en la UI
    pero `scripts/catalog/` (engine + `catalog.yaml`) aún **no** los declara → al re-seedear quedan en
    `false`. Pendiente extender las ops de catálogo.
+6. **Costos (v1) — integración pendiente:** el módulo de costo estándar (`/costos`, `ProductCost`)
+   arrancó **separado** del ERP: captura manual, sin historial ni merma y **sin** escribir el precio
+   de venta. Falta, cuando se decida: (a) ligar el costo a la página de precios/margen real,
+   (b) materiales automáticos desde el BOM, (c) merma, (d) historial/versionado, (e) costo por
+   variante y (f) catálogo de tarifas reutilizables. Ver §8.7 de `REQUIREMENTS.md`.
 
 ## Candidatos a refactor transversal
 
@@ -26,6 +31,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Módulo de Costos v1 (2026-10-05):** página `/costos` (menú lateral, sólo `admin`/`supervisor`) para
+  administrar el **costo estándar por producto**. Captura manual por concepto: materiales (líneas
+  `ProductCostMaterial`), costo de compra, mano de obra (horas×tarifa), máquina (horas×tarifa), molde
+  (amortización = costo/piezas), ensamble, empaque y notas. Muestra desglose, precio y margen de
+  **solo lectura**. API `costos/` (`GET /costos`, `GET|PUT|DELETE /costos/:productId`). Migración
+  `20261005120000_product_cost`. Ver pendientes 6 (arranca separado del resto del ERP).
 - **Selector de variantes por atributos en Ventas (2026-10-05):** para productos **sin pasos**
   (componentes, sin BOM), el modal de Nueva venta (`components/ventas/modal-seleccion-variante.tsx`)
   dejó de listar variantes por SKU y ahora muestra un **`<select>` por eje** cargado con

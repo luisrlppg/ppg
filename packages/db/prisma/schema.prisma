@@ -127,6 +127,7 @@ model Product {
   passos          ProductPasso[]
   components      ProductComponent[]    @relation("ComponentParent") // BOM de este producto
   componentOf     ProductComponent[]    @relation("ComponentChild") // dónde se usa este producto
+  cost            ProductCost?
 
   @@index([categoryId])
 }
@@ -264,6 +265,47 @@ model PriceChange {
   createdAt     DateTime     @default(now())
 
   @@index([variantId])
+}
+
+// ---------------------------------------------------------------------------
+// Costos (v1) — costo estándar por producto, capturado a mano (aún no enlazado
+// a los precios de venta; ver docs/data-model.md y docs/roadmap.md)
+// ---------------------------------------------------------------------------
+
+/// Costo estándar por producto (uno por producto). Materiales 100% manuales;
+/// el resto de conceptos es un formulario fijo.
+model ProductCost {
+  id             Int      @id @default(autoincrement())
+  productId      Int      @unique
+  product        Product  @relation(fields: [productId], references: [id])
+  costoCompra    Decimal? // costo de adquisición (productos comprables)
+  horasManoObra  Decimal  @default(0)
+  tarifaManoObra Decimal  @default(0)
+  horasMaquina   Decimal  @default(0)
+  tarifaMaquina  Decimal  @default(0)
+  costoMolde     Decimal  @default(0)
+  piezasMolde    Decimal  @default(0) // vida útil del molde en piezas
+  costoEnsamble  Decimal  @default(0)
+  costoEmpaque   Decimal  @default(0)
+  notas          String?
+  updatedById    Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  materiales ProductCostMaterial[]
+}
+
+/// Línea de material capturada a mano para el costo de un producto.
+model ProductCostMaterial {
+  id            Int         @id @default(autoincrement())
+  productCostId Int
+  productCost   ProductCost @relation(fields: [productCostId], references: [id], onDelete: Cascade)
+  nombre        String
+  cantidad      Decimal     @default(1)
+  costoUnitario Decimal     @default(0)
+  orden         Int         @default(0)
+
+  @@index([productCostId])
 }
 
 // ---------------------------------------------------------------------------

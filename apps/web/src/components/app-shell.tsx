@@ -6,12 +6,13 @@ import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/preferences";
 
-const LINKS: { href: string; label: string; icon: string; match?: string[] }[] = [
+const LINKS: { href: string; label: string; icon: string; match?: string[]; roles?: string[] }[] = [
   { href: "/", label: "Inicio", icon: "🏠" },
   { href: "/reportes", label: "Reportes", icon: "📋" },
   { href: "/ventas", label: "Ventas", icon: "🧾" },
   { href: "/fabricacion", label: "Fabricación", icon: "🏭" },
   { href: "/productos", label: "Productos", icon: "📦", match: ["/productos", "/catalogos"] },
+  { href: "/costos", label: "Costos", icon: "💰", roles: ["admin", "supervisor"] },
   { href: "/inventario", label: "Inventario", icon: "📊" },
   { href: "/clientes", label: "Clientes", icon: "👥" },
   { href: "/monitor", label: "Monitor", icon: "🔔" },
@@ -84,7 +85,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="sidebar-links">
-          {LINKS.map((l) => {
+          {LINKS.filter((l) => !l.roles || l.roles.includes(user.role)).map((l) => {
             const active = (l.match ?? [l.href]).some((p) =>
               p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
             );
