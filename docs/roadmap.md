@@ -26,6 +26,13 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Selector de variantes por atributos en Ventas (2026-10-05):** para productos **sin pasos**
+  (componentes, sin BOM), el modal de Nueva venta (`components/ventas/modal-seleccion-variante.tsx`)
+  dejó de listar variantes por SKU y ahora muestra un **`<select>` por eje** cargado con
+  `GET /productos/:id/grid`. Sólo oferta **valores ya materializados** (variantes activas), con
+  cascada entre ejes (se limpian selecciones sin variante) y resumen de la variante resuelta
+  (nombre, SKU, precio). Si el producto no tiene ejes, cae a la lista plana anterior. La selección
+  se guarda en la línea como `configuracion`. Los productos con BOM/pasos siguen usando el wizard.
 - **Refresco del materializador al editar atributos (2026-10-05):** en la ficha de producto
   (`productos/[id]`), las altas/bajas de atributos, ejes y valores ahora recargan también el
   `grid` (`GET /productos/:id/grid`), no solo `propios`/`heredados`. Así el bloque "Materializar
