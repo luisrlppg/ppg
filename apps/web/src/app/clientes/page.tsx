@@ -192,7 +192,6 @@ export default function ClientesPage() {
                   <th style={{ whiteSpace: "nowrap" }}>Empresa</th>
                   <th style={{ whiteSpace: "nowrap" }}>Teléfono</th>
                   <th style={{ whiteSpace: "nowrap" }}>Dirección</th>
-                  <th style={{ whiteSpace: "nowrap" }}>Email</th>
                   <th className="num" style={{ whiteSpace: "nowrap" }}>Ventas</th>
                 </tr>
               </thead>
@@ -216,15 +215,14 @@ export default function ClientesPage() {
                       {!c.activo && <span className="badge critico" style={{ marginLeft: 8 }}>inactivo</span>}
                     </td>
                     <td>{c.empresa ?? "—"}</td>
-                    <td>{c.telefono ?? "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{c.telefono ?? "—"}</td>
                     <td>{c.direccion ?? "—"}</td>
-                    <td>{c.email ?? "—"}</td>
                     <td className="num">{c.ordenes ?? 0}</td>
                   </tr>
                 ))}
                 {clientes.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="empty">Sin clientes.</td>
+                    <td colSpan={5} className="empty">Sin clientes.</td>
                   </tr>
                 )}
               </tbody>
