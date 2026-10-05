@@ -80,6 +80,7 @@ export default function FabricacionPage() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [minimoOpen, setMinimoOpen] = useState(false);
 
   const cargar = useCallback(async () => {
     setData(await api<NecesidadesResp>("/fabricacion/necesidades"));
@@ -145,31 +146,18 @@ export default function FabricacionPage() {
     <AppShell>
       <PageHeader
         title="Fabricación"
-        subtitle="Faltantes por stock mínimo y por ventas. Registra la producción conforme llegue a la ubicación que elijas."
+        subtitle="Faltantes por ventas y por stock mínimo. Registra la producción conforme llegue a la ubicación que elijas."
       />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
       <HelpNote>
-        Esta vista muestra solo lo que <strong>falta</strong>: reponer hasta el mínimo y cubrir las ventas
-        confirmadas (explosión neta del BOM). Los <strong>ensambles</strong> se arman contra pedido y sus
+        Esta vista muestra solo lo que <strong>falta</strong>: cubrir las ventas confirmadas (explosión
+        neta del BOM) y reponer hasta el mínimo. Los <strong>ensambles</strong> se arman contra pedido y sus
         componentes aparecen por separado. Al producir, el faltante se recalcula solo.
       </HelpNote>
 
-      <h4 style={{ marginBottom: 4 }}>Por mínimo ({totalMin})</h4>
-      <p className="muted small" style={{ marginTop: 0 }}>Variantes fabricables por debajo de su stock objetivo.</p>
-      <div className="card" style={{ padding: 0 }}>
-        <TablaNecesidades
-          items={data?.porMinimo ?? []}
-          conMinMax
-          onProducir={abrirIngreso}
-          cargando={cargando}
-          formatCantidad={formatCantidad}
-          vacio="Nada bajo mínimo."
-        />
-      </div>
-
-      <h4 style={{ marginBottom: 4, marginTop: 24 }}>Por ventas ({totalVen})</h4>
+      <h4 style={{ marginBottom: 4 }}>Por ventas ({totalVen})</h4>
       <p className="muted small" style={{ marginTop: 0 }}>Faltante neto de las ventas confirmadas abiertas.</p>
       <div className="card" style={{ padding: 0 }}>
         <TablaNecesidades
@@ -181,6 +169,45 @@ export default function FabricacionPage() {
           vacio="Todas las ventas confirmadas están cubiertas por stock."
         />
       </div>
+
+      <button
+        type="button"
+        onClick={() => setMinimoOpen((v) => !v)}
+        aria-expanded={minimoOpen}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          margin: "24px 0 0",
+          padding: 0,
+          border: 0,
+          background: "transparent",
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: "1.1rem",
+          color: "inherit",
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: "0.8em", color: "var(--brand)" }}>
+          {minimoOpen ? "▾" : "▸"}
+        </span>
+        Por mínimo ({totalMin})
+      </button>
+      {minimoOpen && (
+        <>
+          <p className="muted small" style={{ marginTop: 0 }}>Variantes fabricables por debajo de su stock objetivo.</p>
+          <div className="card" style={{ padding: 0 }}>
+            <TablaNecesidades
+              items={data?.porMinimo ?? []}
+              conMinMax
+              onProducir={abrirIngreso}
+              cargando={cargando}
+              formatCantidad={formatCantidad}
+              vacio="Nada bajo mínimo."
+            />
+          </div>
+        </>
+      )}
 
       <h4 style={{ marginBottom: 4, marginTop: 24 }}>Pendientes de compra ({(data?.porComprar ?? []).length})</h4>
       <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
