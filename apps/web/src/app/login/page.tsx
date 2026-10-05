@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <main className="screen card center-card">
-      <h1>PPG</h1>
+      <h1>PLASA</h1>
       <p className="muted">Inicia sesión para continuar</p>
       <form onSubmit={onSubmit}>
         <label>

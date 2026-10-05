@@ -204,7 +204,7 @@ export class MonitorService {
     const crtitico = v.longLead ? " CRÍTICO" : "";
     const canal = v.longLead ? "🚨" : "⚠️";
     const lines = [
-      `${canal} STOCK BAJO${crtitico} — PPG`,
+      `${canal} STOCK BAJO${crtitico} — PLASA`,
       `Producto: ${v.producto}`,
       `Variante: ${v.nombre} (${v.sku})`,
       `Existencia: ${formatCantidad(v.stockActual)}`,
@@ -218,8 +218,8 @@ export class MonitorService {
 
   async enviarPrueba(): Promise<string[]> {
     return this.enviar(
-      "🔔 PRUEBA — PPG notificaciones",
-      "Esto es una prueba de las notificaciones de PPG ERP.\r\nConfiguración correcta ✔",
+      "🔔 PRUEBA — PLASA notificaciones",
+      "Esto es una prueba de las notificaciones de PLASA ERP.\r\nConfiguración correcta ✔",
     );
   }
 

@@ -1,8 +1,10 @@
 :root {
   --ink: #1a1a1a;
   --paper: #ffffff;
-  --brand: #b30f2e;
-  --brand-dark: #8c0b24;
+  --brand: #0f2a5c;
+  --brand-dark: #0a1d40;
+  --danger: #b30f2e;
+  --danger-dark: #8c0b24;
   --ok: #1c7c3c;
   --warn-bg: #fff4e5;
   --warn-ink: #7a4c00;
@@ -210,7 +212,7 @@ select:focus {
 }
 
 .btn.ghost:hover {
-  background: rgba(179, 15, 46, 0.06);
+  background: rgba(15, 42, 92, 0.06);
 }
 
 .btn.sm {
@@ -321,20 +323,6 @@ select:focus {
   display: inline-flex;
   align-items: center;
   min-width: 0;
-}
-
-.sidebar .mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.85rem;
-  flex: none;
 }
 
 .app-layout.collapsed .brand-text {
@@ -560,7 +548,7 @@ select:focus {
 
 .badge.critico {
   background: #fcd7d7;
-  color: var(--brand-dark);
+  color: var(--danger-dark);
 }
 
 .badge.info {
@@ -1100,8 +1088,8 @@ select:focus {
 
 .btn.danger {
   background: transparent;
-  color: var(--brand-dark);
-  border: 2px solid var(--brand-dark);
+  color: var(--danger-dark);
+  border: 2px solid var(--danger-dark);
 }
 
 .btn.danger:hover {
@@ -1306,7 +1294,7 @@ select:focus {
 }
 
 .status-dot.critico {
-  background: var(--brand);
+  background: var(--danger);
 }
 
 /* ---- Stepper de proceso ---- */
@@ -1399,7 +1387,7 @@ select:focus {
 }
 
 .stat-card.alert .stat-value {
-  color: var(--brand);
+  color: var(--danger);
 }
 
 /* ---- Documento de venta (PDF) ---- */

@@ -147,7 +147,7 @@ export default function TiendaPage() {
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
       <div style={{ background: "white", borderBottom: "1px solid #ddd", padding: "12px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontWeight: "bold", fontSize: "1.1em" }}>PPG ERP</span>
+          <span style={{ fontWeight: "bold", fontSize: "1.1em" }}>PLASA ERP</span>
           <a href="/productos" style={{ color: "var(--brand)", textDecoration: "none" }}>Admin</a>
         </div>
       </div>

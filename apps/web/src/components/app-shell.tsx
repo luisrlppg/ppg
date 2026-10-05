@@ -57,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (!user) {
     return (
       <main className="screen card center-card">
-        <h1>PPG</h1>
+        <h1>PLASA</h1>
         <p className="muted">Inicia sesión para continuar.</p>
         <Link className="btn primary block" href="/login" style={{ marginTop: 16 }}>
           Iniciar sesión
@@ -71,8 +71,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <div className="sidebar-header">
           <span className="brand">
-            <span className="mark">P</span>
-            <span className="brand-text">PPG</span>
+            <span className="brand-text">PLASA</span>
           </span>
           <button
             type="button"

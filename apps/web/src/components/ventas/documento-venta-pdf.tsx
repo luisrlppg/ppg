@@ -12,7 +12,7 @@ export interface DocumentoPDFProps {
 }
 
 const IVA = 0.16;
-const BRAND = "#b30f2e";
+const BRAND = "#0f2a5c";
 const INK = "#1a1a1a";
 const MUTED = "#777777";
 const LINE = "#d6d6d6";
@@ -131,8 +131,8 @@ export function DocumentoPDF({ venta, cobrarIva, imagenes, formatCantidad }: Doc
       title={`Venta ${venta.numero}`}
       author="Plásticos Plasa"
       subject="Documento de venta"
-      creator="PPG ERP"
-      producer="PPG ERP"
+      creator="PLASA ERP"
+      producer="PLASA ERP"
     >
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>

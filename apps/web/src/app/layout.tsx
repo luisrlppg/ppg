@@ -3,8 +3,8 @@ import { PreferencesProvider } from "@/lib/preferences";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PPG ERP",
-  description: "ERP de producción PPG",
+  title: "PLASA ERP",
+  description: "ERP de producción PLASA",
 };
 
 export default function RootLayout({
