@@ -157,7 +157,9 @@ precio de venta; el margen que muestra es solo referencia.
 - **Panel de necesidades** (`GET /fabricacion/necesidades`): dos listas separadas.
   - `porMinimo`: fabricables con `stock < objetivo` (`objetivo = stockMax>0 ? stockMax : stockMin`).
   - `porVentas`: explosión neta multi-nivel de las ventas **abiertas confirmadas** (`planificacion.desglosar`
-    con pool compartido de stock). Incluye ensambles como ítem *Armar* y marca los pedidos que aportan.
+    con pool compartido de stock), calculada **sobre lo pendiente** (`cantidad - qtyDelivered`): las líneas
+    entregadas no aportan demanda y las parcialidades piden solo el resto. Incluye ensambles como ítem
+    *Armar* y marca los pedidos que aportan.
   - `porComprar`: no fabricables faltantes (informativo; no hay OC).
 - **Alta de producción** (`POST /fabricacion/produccion {variantId, cantidad, locationId}`): solo hojas
   fabricables (0–1 componente). Registra `StockMove` con `motivo produccion` en la ubicación elegida y

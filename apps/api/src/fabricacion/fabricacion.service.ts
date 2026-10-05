@@ -96,7 +96,11 @@ export class FabricacionService {
     for (const o of orders) {
       for (const l of o.lines) {
         numeroPorLinea.set(l.id, o.numero);
-        demandas.push({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id });
+        demandas.push({
+          variantId: l.variantId,
+          cantidad: dec(l.cantidad) - dec(l.qtyDelivered),
+          salesOrderLineId: l.id,
+        });
       }
     }
 

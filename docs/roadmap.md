@@ -31,6 +31,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Desglose de venta según lo pendiente + retiro de Pendientes de compra en la venta (2026-10-05):**
+  `GET /ventas/:id/desglose` y `fabricacion.necesidadesPorVentas` ahora calculan la explosión neta sobre
+  `cantidad - qtyDelivered` (antes usaban la cantidad total), de modo que las **parcialidades** reflejan
+  solo lo que falta y el stock ya descontado, y las líneas **entregadas** no aportan demanda. En el
+  detalle de venta, la raíz de una línea `entregado` se muestra con badge **Entregado** y sin cantidades
+  (`—`). Se **eliminó el card "Pendientes de compra"** de la venta; la vista de compras vive en
+  Fabricación/dashboard (`GET /fabricacion/faltantes`, que conserva el `resumen.comprar` persistido).
+  UI en `app/ventas/page.tsx`. Sin migración.
+
 - **Wizard de Taparrosca con Pincel paso a paso (2026-10-05):** los 6 pasos (`ProductPasso`) estaban
   con `panel: 0`, así que el modal de ventas los mostraba todos juntos y la cascada no se aplicaba.
   Se reasignó `panel: 1..6` (uno por paso) con `scripts/catalog/ops/taparrosca-paneles.yaml`: ahora

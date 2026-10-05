@@ -276,13 +276,18 @@ export class VentasService {
   }
 
   // -------------------------------------------------- Desglose (vendedor)
-  /** Explosión neta multi-nivel con stock/faltante (en vivo). */
+  /** Explosión neta multi-nivel con stock/faltante (en vivo), sobre lo pendiente
+   *  de despachar (`cantidad - qtyDelivered`); las líneas entregadas aportan 0. */
   async desglose(id: number): Promise<Desglose> {
     const order = await this.prisma.salesOrder.findUnique({ where: { id }, include: { lines: true } });
     if (!order) throw new NotFoundException("Venta no encontrada");
     return this.planificacion.desglosar(
       this.prisma,
-      order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
+      order.lines.map((l) => ({
+        variantId: l.variantId,
+        cantidad: dec(l.cantidad) - dec(l.qtyDelivered),
+        salesOrderLineId: l.id,
+      })),
     );
   }
 

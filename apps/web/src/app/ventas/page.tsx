@@ -170,6 +170,7 @@ export default function VentasPage() {
     const d = detalle;
     const pendientes = d.lines.filter((l) => l.cantidad - (l.qtyDelivered ?? 0) > 0).length;
     const etapaFinal = d.estado === "despachada";
+    const entregaPorLinea = new Map(d.lines.map((l) => [l.id, l.estadoEntrega]));
     return (
       <AppShell>
         <PageHeader
@@ -321,11 +322,12 @@ export default function VentasPage() {
                     {desglose.arbol.map((raiz) => {
                       const key = claveRaiz(raiz);
                       const colapsado = desgloseColapsados.has(key);
-                      const hijos = aplanarComponentes(raiz);
+                      const entregado = raiz.salesOrderLineId != null && entregaPorLinea.get(raiz.salesOrderLineId) === "entregado";
+                      const hijos = entregado ? [] : aplanarComponentes(raiz);
                       const tieneHijos = hijos.length > 0;
                       return (
                         <Fragment key={key}>
-                          <tr style={{ background: "#fafafa" }}>
+                          <tr style={{ background: entregado ? "#f0fdf4" : "#fafafa" }}>
                             <td>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 {tieneHijos ? (
@@ -360,10 +362,10 @@ export default function VentasPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="num">{formatCantidad(raiz.requerido)} {raiz.uom}</td>
-                            <td className="num">{formatCantidad(raiz.stockActual)} {raiz.uom}</td>
-                            <td className="num">{raiz.faltante > 0 ? formatCantidad(raiz.faltante) : "—"}</td>
-                            <td>{badgeDesglose(raiz)}</td>
+                            <td className="num">{entregado ? "—" : `${formatCantidad(raiz.requerido)} ${raiz.uom}`}</td>
+                            <td className="num">{entregado ? "—" : `${formatCantidad(raiz.stockActual)} ${raiz.uom}`}</td>
+                            <td className="num">{entregado ? "—" : raiz.faltante > 0 ? formatCantidad(raiz.faltante) : "—"}</td>
+                            <td>{entregado ? <span className="badge normal">Entregado</span> : badgeDesglose(raiz)}</td>
                           </tr>
                           {tieneHijos &&
                             !colapsado &&
@@ -385,26 +387,6 @@ export default function VentasPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </>
-        )}
-
-        {d.confirmadaAt && (
-          <>
-            <div className="card">
-              <h4 style={{ marginTop: 0 }}>Pendientes de compra</h4>
-              <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
-              {(d.resumen?.comprar ?? []).length ? (
-                <ul className="step-list">
-                  {d.resumen!.comprar.map((c) => (
-                    <li key={`C${c.variantId}`}>
-                      <strong>{c.producto}</strong> {c.nombre} ({c.sku}) × {formatCantidad(c.cantidad)}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">Sin pendientes de compra.</p>
-              )}
             </div>
           </>
         )}

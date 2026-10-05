@@ -58,7 +58,8 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     Estado y pendientes: `docs/catalog-state.md`.
 19. **Fabricación (necesidades y producción):** no hay entidad de orden de fabricación (retirada
     2026-10-05). `ventas.confirmar` solo calcula/guarda el desglose; el panel de Fabricación lista las
-    **necesidades** (`fabricacion.necesidades`: por mínimo + por ventas, con pool compartido de stock) y
+    **necesidades** (`fabricacion.necesidades`: por mínimo + por ventas —esta sobre lo pendiente
+    `cantidad - qtyDelivered`—, con pool compartido de stock) y
     registra producción como **entrada de stock** (`POST /fabricacion/produccion`, motivo `produccion`, a
     la ubicación elegida), sin crear reportes. Los **ensambles** (2+ componentes) se arman contra pedido:
     no se inventarían y `ventas.despacharLinea` **consume sus componentes** (`planificacion.consumirEnsamble`).
