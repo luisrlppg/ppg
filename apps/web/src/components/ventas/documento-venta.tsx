@@ -1,51 +1,98 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useFormatCantidad } from "@/lib/preferences";
-import { colorAvatar, iniciales } from "@/lib/avatar";
-import type { Venta, VentaLinea } from "@/lib/types";
+import type { Venta } from "@/lib/types";
+
+const PDFViewer = dynamic(() => import("@react-pdf/renderer").then((m) => m.PDFViewer), {
+  ssr: false,
+  loading: () => <div className="doc-pdf-loading">Generando documento…</div>,
+});
+
+const DocumentoPDF = dynamic(() => import("./documento-venta-pdf").then((m) => m.DocumentoPDF), {
+  ssr: false,
+});
 
 interface Props {
   venta: Venta;
   onCerrar: () => void;
 }
 
-const IVA = 0.16;
-const EMPRESA = "Plásticos Plasa";
+function useLineaImagenes(venta: Venta) {
+  const [imagenes, setImagenes] = useState<Record<number, string>>({});
 
-function LineaImagen({ linea }: { linea: VentaLinea }) {
-  const [error, setError] = useState(false);
-  const src = linea.imagen;
-  const placeholder = !src || error;
-  return (
-    <div className="doc-thumb" style={placeholder ? { background: colorAvatar(linea.variantId) } : undefined}>
-      {placeholder ? (
-        <span className="doc-thumb-iniciales">{iniciales(linea.producto)}</span>
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={linea.producto} onError={() => setError(true)} />
-      )}
-    </div>
-  );
+  useEffect(() => {
+    let activo = true;
+    async function cargar() {
+      const entradas = await Promise.all(
+        venta.lines.map(async (l) => {
+          if (!l.imagen) return [l.id, null] as const;
+          try {
+            const res = await fetch(l.imagen, { mode: "cors" });
+            if (!res.ok) return [l.id, null] as const;
+            const blob = await res.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(String(fr.result));
+              fr.onerror = () => reject(fr.error);
+              fr.readAsDataURL(blob);
+            });
+            return [l.id, dataUrl] as const;
+          } catch {
+            return [l.id, null] as const;
+          }
+        }),
+      );
+      if (!activo) return;
+      const mapa: Record<number, string> = {};
+      for (const [id, url] of entradas) {
+        if (url) mapa[id] = url;
+      }
+      setImagenes(mapa);
+    }
+    void cargar();
+    return () => {
+      activo = false;
+    };
+  }, [venta]);
+
+  return imagenes;
 }
 
 export default function DocumentoVenta({ venta, onCerrar }: Props) {
   const formatCantidad = useFormatCantidad();
   const [cobrarIva, setCobrarIva] = useState(false);
+  const [descargando, setDescargando] = useState(false);
+  const imagenes = useLineaImagenes(venta);
 
-  const subtotal = useMemo(() => venta.lines.reduce((a, l) => a + l.subtotal, 0), [venta.lines]);
-  const iva = cobrarIva ? subtotal * IVA : 0;
-  const total = subtotal + iva;
+  const props = useMemo(
+    () => ({ venta, cobrarIva, imagenes, formatCantidad }),
+    [venta, cobrarIva, imagenes, formatCantidad],
+  );
 
-  const cliente = venta.partner;
-  const nombreCliente = cliente?.nombre ?? venta.nombreEnvio ?? "Público general";
-  const telefono = cliente?.telefono ?? venta.telefonoEnvio ?? null;
-  const email = cliente?.email ?? venta.emailEnvio ?? null;
-  const numeroCliente = cliente ? String(cliente.id).padStart(4, "0") : "—";
+  async function descargar() {
+    setDescargando(true);
+    try {
+      const [{ pdf }, { DocumentoPDF: Doc }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./documento-venta-pdf"),
+      ]);
+      const blob = await pdf(<Doc {...props} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Venta-${venta.numero}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDescargando(false);
+    }
+  }
 
   return (
     <div className="doc-overlay">
-      <div className="doc-toolbar no-print">
+      <div className="doc-toolbar">
         <label className="doc-iva-toggle">
           <input type="checkbox" checked={cobrarIva} onChange={(e) => setCobrarIva(e.target.checked)} />
           Cobrar IVA (16%)
@@ -54,96 +101,16 @@ export default function DocumentoVenta({ venta, onCerrar }: Props) {
           <button type="button" className="btn ghost" onClick={onCerrar}>
             Cerrar
           </button>
-          <button type="button" className="btn primary" onClick={() => window.print()}>
-            Imprimir
+          <button type="button" className="btn primary" disabled={descargando} onClick={descargar}>
+            {descargando ? "Generando…" : "Descargar PDF"}
           </button>
         </div>
       </div>
 
-      <div className="print-doc">
-        <header className="doc-header">
-          <div>
-            <div className="doc-empresa">{EMPRESA}</div>
-            <div className="muted small">Documento de venta</div>
-          </div>
-          <div className="doc-titulo">Orden de compra</div>
-        </header>
-
-        <div className="doc-meta">
-          <div>
-            <span className="doc-meta-label">Nº de orden</span>
-            <strong>{venta.numero}</strong>
-          </div>
-          <div>
-            <span className="doc-meta-label">Fecha</span>
-            <strong>{new Date(venta.fecha).toLocaleDateString("es-MX")}</strong>
-          </div>
-          <div>
-            <span className="doc-meta-label">Nº de cliente</span>
-            <strong>{numeroCliente}</strong>
-          </div>
-        </div>
-
-        <section className="doc-cliente">
-          <h4>Cliente</h4>
-          <div className="doc-cliente-grid">
-            <div><span className="doc-meta-label">Nombre</span>{nombreCliente}</div>
-            {cliente?.empresa && <div><span className="doc-meta-label">Empresa</span>{cliente.empresa}</div>}
-            {telefono && <div><span className="doc-meta-label">Teléfono</span>{telefono}</div>}
-            {email && <div><span className="doc-meta-label">Email</span>{email}</div>}
-            {cliente?.direccion && <div className="doc-cliente-full"><span className="doc-meta-label">Dirección</span>{cliente.direccion}</div>}
-          </div>
-        </section>
-
-        <table className="doc-table">
-          <thead>
-            <tr>
-              <th style={{ width: 56 }}></th>
-              <th>Producto</th>
-              <th className="num">Cant.</th>
-              <th className="num">Precio</th>
-              <th className="num">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {venta.lines.map((l) => (
-              <tr key={l.id}>
-                <td><LineaImagen linea={l} /></td>
-                <td>
-                  <strong>{l.producto}</strong>
-                  <div className="small muted">{l.nombre} · {l.sku}</div>
-                </td>
-                <td className="num">{formatCantidad(l.cantidad)} {l.uom}</td>
-                <td className="num">${(l.precioUnitario ?? 0).toFixed(2)}</td>
-                <td className="num">${(l.subtotal ?? 0).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="doc-totales">
-          <div className="doc-total-row">
-            <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
-          </div>
-          {cobrarIva && (
-            <div className="doc-total-row">
-              <span>IVA (16%)</span>
-              <span>${iva.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="doc-total-row doc-total-final">
-            <span>Total</span>
-            <span>${total.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {venta.notas && (
-          <div className="doc-notas">
-            <span className="doc-meta-label">Notas</span>
-            {venta.notas}
-          </div>
-        )}
+      <div className="doc-pdf-frame">
+        <PDFViewer style={{ width: "100%", height: "100%" }} showToolbar={false}>
+          <DocumentoPDF {...props} />
+        </PDFViewer>
       </div>
     </div>
   );

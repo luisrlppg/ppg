@@ -1402,7 +1402,7 @@ select:focus {
   color: var(--brand);
 }
 
-/* ---- Documento de venta imprimible ---- */
+/* ---- Documento de venta (PDF) ---- */
 .doc-overlay {
   position: fixed;
   inset: 0;
@@ -1443,194 +1443,25 @@ select:focus {
   margin: 0;
 }
 
-.print-doc {
+.doc-pdf-frame {
   max-width: 820px;
   margin: 0 auto;
+  height: calc(100dvh - 150px);
+  min-height: 480px;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 32px 36px;
-  color: var(--ink);
-}
-
-.doc-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  border-bottom: 2px solid var(--brand);
-  padding-bottom: 12px;
-}
-
-.doc-empresa {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--brand);
-}
-
-.doc-titulo {
-  font-size: 1.2rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-align: right;
-}
-
-.doc-meta {
-  display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
-  margin: 18px 0;
-}
-
-.doc-meta > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.doc-meta-label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.doc-cliente {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 18px;
-}
-
-.doc-cliente h4 {
-  margin: 0 0 8px;
-}
-
-.doc-cliente-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 24px;
-}
-
-.doc-cliente-full {
-  grid-column: 1 / -1;
-}
-
-.doc-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.doc-table th {
-  text-align: left;
-  background: #eee;
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.doc-table td {
-  padding: 10px;
-  border-top: 1px solid var(--line);
-  vertical-align: middle;
-}
-
-.doc-table .num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.doc-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: var(--shadow-sm);
 }
 
-.doc-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.doc-thumb-iniciales {
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.95rem;
-}
-
-.doc-totales {
-  margin-top: 18px;
-  margin-left: auto;
-  width: 100%;
-  max-width: 320px;
-}
-
-.doc-total-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.doc-total-final {
-  border-top: 2px solid var(--line);
-  margin-top: 4px;
-  padding-top: 10px;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.doc-notas {
-  margin-top: 20px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line-soft);
-  white-space: pre-wrap;
-}
-
-@media print {
-  body {
-    background: #fff;
-  }
-
-  .doc-overlay {
-    position: static;
-    background: #fff;
-    padding: 0;
-    overflow: visible;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  .print-doc,
-  .print-doc * {
-    visibility: visible !important;
-  }
-
-  .print-doc {
-    position: static;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-
-  @page {
-    margin: 12mm;
-  }
+.doc-pdf-loading {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }

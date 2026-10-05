@@ -37,6 +37,13 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   (amortización = costo/piezas), ensamble, empaque y notas. Muestra desglose, precio y margen de
   **solo lectura**. API `costos/` (`GET /costos`, `GET|PUT|DELETE /costos/:productId`). Migración
   `20261005120000_product_cost`. Ver pendientes 6 (arranca separado del resto del ERP).
+
+- **Nota de venta en PDF real (2026-10-05):** el documento de venta dejó de ser HTML + `window.print()`
+  y ahora es un **PDF vectorial generado en el cliente** con `@react-pdf/renderer` (agregado a
+  `apps/web` y a `transpilePackages` en `next.config.mjs`). `components/ventas/documento-venta.tsx`
+  muestra el PDF en un `PDFViewer` (preview fiel) y ofrece **Descargar PDF**; el layout vive en
+  `components/ventas/documento-venta-pdf.tsx`. Las imágenes de línea se precargan a `dataURL`
+  (fallback a iniciales si fallan) y se conserva el toggle de IVA. Se eliminó el CSS de impresión.
 - **Selector de variantes por atributos en Ventas (2026-10-05):** para productos **sin pasos**
   (componentes, sin BOM), el modal de Nueva venta (`components/ventas/modal-seleccion-variante.tsx`)
   dejó de listar variantes por SKU y ahora muestra un **`<select>` por eje** cargado con
