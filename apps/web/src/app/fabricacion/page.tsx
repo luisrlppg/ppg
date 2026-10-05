@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
+import StickyBar from "@/components/ui/sticky-bar";
+import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import { api } from "@/lib/api";
+import { useFiltroAtributos } from "@/lib/filtro-atributos";
+import { refrescarPorUbicar } from "@/lib/por-ubicar";
 import { useFormatCantidad } from "@/lib/preferences";
-import type { NecesidadFabricacion, NecesidadesResp, Ubicacion } from "@/lib/types";
+import type { NecesidadFabricacion, NecesidadesResp } from "@/lib/types";
 
 function TablaNecesidades({
   items,
@@ -90,24 +94,27 @@ export default function FabricacionPage() {
     cargar().catch((e) => setError((e as Error).message));
   }, [cargar]);
 
+  // ------------------------------------------------- Filtro producto/atributos
+  const todos = useMemo(
+    () => [...(data?.porVentas ?? []), ...(data?.porMinimo ?? []), ...(data?.porComprar ?? [])],
+    [data],
+  );
+  const filtroAtributos = useFiltroAtributos(todos);
+  const { pasaFiltro, hayFiltro } = filtroAtributos;
+
+  const porVentas = (data?.porVentas ?? []).filter(pasaFiltro);
+  const porMinimo = (data?.porMinimo ?? []).filter(pasaFiltro);
+  const porComprar = (data?.porComprar ?? []).filter(pasaFiltro);
+  const sinCoincidencias = "Sin coincidencias con el filtro.";
+
   // ---------------------------------------------- Ingreso de producción
   const [ingreso, setIngreso] = useState<NecesidadFabricacion | null>(null);
-  const [paso, setPaso] = useState<1 | 2>(1);
   const [cantidad, setCantidad] = useState("");
-  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
-  const [locationId, setLocationId] = useState("");
 
-  async function abrirIngreso(item: NecesidadFabricacion) {
+  function abrirIngreso(item: NecesidadFabricacion) {
     setIngreso(item);
-    setPaso(1);
     setCantidad(String(item.necesidad));
-    setLocationId("");
     setError("");
-    try {
-      setUbicaciones(await api<Ubicacion[]>("/inventario/ubicaciones"));
-    } catch {
-      setUbicaciones([]);
-    }
   }
 
   async function registrar() {
@@ -117,21 +124,18 @@ export default function FabricacionPage() {
       setError("La cantidad debe ser mayor a 0");
       return;
     }
-    if (!locationId) {
-      setError("Selecciona una ubicación");
-      return;
-    }
     setCargando(true);
     setError("");
     try {
       await api("/fabricacion/produccion", {
         method: "POST",
-        body: JSON.stringify({ variantId: ingreso.variantId, cantidad: qty, locationId: Number(locationId) }),
+        body: JSON.stringify({ variantId: ingreso.variantId, cantidad: qty }),
       });
       const nombre = ingreso.nombre;
       setIngreso(null);
       await cargar();
-      setMsg(`Producción registrada: ${formatCantidad(qty)} de ${nombre}.`);
+      refrescarPorUbicar();
+      setMsg(`Producción registrada: ${formatCantidad(qty)} de ${nombre}. Queda pendiente de ubicar.`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -139,8 +143,9 @@ export default function FabricacionPage() {
     }
   }
 
-  const totalMin = data?.porMinimo.length ?? 0;
-  const totalVen = data?.porVentas.length ?? 0;
+  const totalMin = porMinimo.length;
+  const totalVen = porVentas.length;
+  const totalComprar = porComprar.length;
 
   return (
     <AppShell>
@@ -157,16 +162,23 @@ export default function FabricacionPage() {
         componentes aparecen por separado. Al producir, el faltante se recalcula solo.
       </HelpNote>
 
+      <StickyBar>
+        <div className="toolbar">
+          <div className="grow" />
+          <BuscadorAtributos filtro={filtroAtributos} />
+        </div>
+      </StickyBar>
+
       <h4 style={{ marginBottom: 4 }}>Por ventas ({totalVen})</h4>
       <p className="muted small" style={{ marginTop: 0 }}>Faltante neto de las ventas confirmadas abiertas.</p>
       <div className="card" style={{ padding: 0 }}>
         <TablaNecesidades
-          items={data?.porVentas ?? []}
+          items={porVentas}
           conPedidos
           onProducir={abrirIngreso}
           cargando={cargando}
           formatCantidad={formatCantidad}
-          vacio="Todas las ventas confirmadas están cubiertas por stock."
+          vacio={hayFiltro ? sinCoincidencias : "Todas las ventas confirmadas están cubiertas por stock."}
         />
       </div>
 
@@ -198,27 +210,27 @@ export default function FabricacionPage() {
           <p className="muted small" style={{ marginTop: 0 }}>Variantes fabricables por debajo de su stock objetivo.</p>
           <div className="card" style={{ padding: 0 }}>
             <TablaNecesidades
-              items={data?.porMinimo ?? []}
+              items={porMinimo}
               conMinMax
               onProducir={abrirIngreso}
               cargando={cargando}
               formatCantidad={formatCantidad}
-              vacio="Nada bajo mínimo."
+              vacio={hayFiltro ? sinCoincidencias : "Nada bajo mínimo."}
             />
           </div>
         </>
       )}
 
-      <h4 style={{ marginBottom: 4, marginTop: 24 }}>Pendientes de compra ({(data?.porComprar ?? []).length})</h4>
+      <h4 style={{ marginBottom: 4, marginTop: 24 }}>Pendientes de compra ({totalComprar})</h4>
       <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
       <div className="card" style={{ padding: 0 }}>
         <TablaNecesidades
-          items={data?.porComprar ?? []}
+          items={porComprar}
           conPedidos
           onProducir={abrirIngreso}
           cargando={cargando}
           formatCantidad={formatCantidad}
-          vacio="Sin pendientes de compra."
+          vacio={hayFiltro ? sinCoincidencias : "Sin pendientes de compra."}
         />
       </div>
 
@@ -276,6 +288,8 @@ export default function FabricacionPage() {
           </div>
         </Modal>
       )}
+
+      <FiltroAtributosModal filtro={filtroAtributos} />
     </AppShell>
   );
 }

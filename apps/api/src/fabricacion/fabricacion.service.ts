@@ -11,8 +11,10 @@ export interface NecesidadItem {
   variantId: number;
   sku: string;
   nombre: string;
+  productoId: number;
   producto: string;
   uom: string;
+  valoracion: { attribute: string; valor: string }[];
   stockActual: number;
   stockMin: number;
   stockMax: number;
@@ -55,7 +57,11 @@ export class FabricacionService {
   private async necesidadesPorMinimo(): Promise<NecesidadItem[]> {
     const variants = await this.prisma.productVariant.findMany({
       where: { activo: true, product: { activo: true, fabricable: true }, stockMin: { gt: 0 } },
-      include: { product: { include: { components: { where: { tipo: "exacto" }, select: { id: true } } } }, stockLevels: true },
+      include: {
+        product: { include: { components: { where: { tipo: "exacto" }, select: { id: true } } } },
+        stockLevels: true,
+        variantAttributes: { include: { attribute: true, value: true } },
+      },
     });
     const out: NecesidadItem[] = [];
     for (const v of variants) {
@@ -69,8 +75,12 @@ export class FabricacionService {
         variantId: v.id,
         sku: v.sku,
         nombre: v.nombre,
+        productoId: v.productId,
         producto: v.product.nombre,
         uom: v.product.uom,
+        valoracion: v.variantAttributes
+          .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+          .sort((a, b) => a.attribute.localeCompare(b.attribute)),
         stockActual: actual,
         stockMin: min,
         stockMax: max,
@@ -105,17 +115,42 @@ export class FabricacionService {
     }
 
     const desglose = await this.planificacion.desglosar(this.prisma, demandas);
+    const variantIds = [...new Set(desglose.lineas.map((l) => l.variantId))];
+    const variantesInfo = variantIds.length
+      ? await this.prisma.productVariant.findMany({
+          where: { id: { in: variantIds } },
+          select: {
+            id: true,
+            productId: true,
+            variantAttributes: { include: { attribute: true, value: true } },
+          },
+        })
+      : [];
+    const infoPorVariante = new Map(
+      variantesInfo.map((v) => [
+        v.id,
+        {
+          productoId: v.productId,
+          valoracion: v.variantAttributes
+            .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+            .sort((a, b) => a.attribute.localeCompare(b.attribute)),
+        },
+      ]),
+    );
     const porVentas: NecesidadItem[] = [];
     const porComprar: NecesidadItem[] = [];
     for (const l of desglose.lineas) {
       if (l.faltante <= 0) continue;
       const pedido = l.salesOrderLineId != null ? numeroPorLinea.get(l.salesOrderLineId) : undefined;
+      const info = infoPorVariante.get(l.variantId);
       const item: NecesidadItem = {
         variantId: l.variantId,
         sku: l.sku,
         nombre: l.nombre,
+        productoId: info?.productoId ?? 0,
         producto: l.producto,
         uom: l.uom,
+        valoracion: info?.valoracion ?? [],
         stockActual: l.stockActual,
         stockMin: 0,
         stockMax: 0,
