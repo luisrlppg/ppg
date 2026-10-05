@@ -6,12 +6,23 @@ import type { Partner } from "@/lib/types";
 interface Props {
   cliente: Partner;
   onEditar: (c: Partner) => void;
-  onEliminar: (c: Partner) => void;
 }
 
-export default function ClienteCard({ cliente, onEditar, onEliminar }: Props) {
+export default function ClienteCard({ cliente, onEditar }: Props) {
   return (
-    <div className="cliente-card">
+    <div
+      className="cliente-card"
+      role="button"
+      tabIndex={0}
+      style={{ cursor: "pointer" }}
+      onClick={() => onEditar(cliente)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEditar(cliente);
+        }
+      }}
+    >
       <div className="cliente-card-head">
         <span className="cliente-avatar" style={{ background: colorAvatar(cliente.id) }}>
           {iniciales(cliente.nombre)}
@@ -31,14 +42,6 @@ export default function ClienteCard({ cliente, onEditar, onEliminar }: Props) {
 
       <div className="cliente-card-foot">
         <span className="kbd-chip">{cliente.ordenes ?? 0} venta(s)</span>
-        <div className="cliente-card-actions">
-          <button type="button" className="btn ghost sm" onClick={() => onEditar(cliente)}>
-            Editar
-          </button>
-          <button type="button" className="btn ghost sm" onClick={() => onEliminar(cliente)}>
-            Eliminar
-          </button>
-        </div>
       </div>
     </div>
   );

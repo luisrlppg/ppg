@@ -1076,11 +1076,6 @@ select:focus {
   margin-top: auto;
 }
 
-.cliente-card-actions {
-  display: flex;
-  gap: 4px;
-}
-
 /* ---- Navegación de secciones (anclas) ---- */
 .section-nav {
   display: flex;

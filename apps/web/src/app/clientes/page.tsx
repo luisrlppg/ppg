@@ -178,28 +178,39 @@ export default function ClientesPage() {
         ) : (
           <div className="cards-grid">
             {clientes.map((c) => (
-              <ClienteCard key={c.id} cliente={c} onEditar={abrirEditar} onEliminar={setPorEliminar} />
+              <ClienteCard key={c.id} cliente={c} onEditar={abrirEditar} />
             ))}
           </div>
         )
       ) : (
         <div className="card" style={{ padding: 0 }}>
           <div className="table-wrap">
-            <table className="table" style={{ tableLayout: "fixed", overflowWrap: "anywhere" }}>
+            <table className="table" style={{ overflowWrap: "anywhere" }}>
               <thead>
                 <tr>
-                  <th style={{ width: "18%" }}>Nombre</th>
-                  <th style={{ width: "16%" }}>Empresa</th>
-                  <th style={{ width: "12%" }}>Teléfono</th>
-                  <th style={{ width: "24%" }}>Dirección</th>
-                  <th style={{ width: "18%" }}>Email</th>
-                  <th className="num" style={{ width: "6%" }}>Ventas</th>
-                  <th style={{ width: "6%" }}></th>
+                  <th style={{ whiteSpace: "nowrap" }}>Nombre</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Empresa</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Teléfono</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Dirección</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Email</th>
+                  <th className="num" style={{ whiteSpace: "nowrap" }}>Ventas</th>
                 </tr>
               </thead>
               <tbody>
                 {clientes.map((c) => (
-                  <tr key={c.id}>
+                  <tr
+                    key={c.id}
+                    role="button"
+                    tabIndex={0}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => abrirEditar(c)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        abrirEditar(c);
+                      }
+                    }}
+                  >
                     <td>
                       <strong>{c.nombre}</strong>
                       {!c.activo && <span className="badge critico" style={{ marginLeft: 8 }}>inactivo</span>}
@@ -209,19 +220,11 @@ export default function ClientesPage() {
                     <td>{c.direccion ?? "—"}</td>
                     <td>{c.email ?? "—"}</td>
                     <td className="num">{c.ordenes ?? 0}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <button type="button" className="btn sm" onClick={() => abrirEditar(c)}>
-                        Editar
-                      </button>{" "}
-                      <button type="button" className="btn ghost sm" onClick={() => setPorEliminar(c)}>
-                        Eliminar
-                      </button>
-                    </td>
                   </tr>
                 ))}
                 {clientes.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="empty">Sin clientes.</td>
+                    <td colSpan={6} className="empty">Sin clientes.</td>
                   </tr>
                 )}
               </tbody>
@@ -234,6 +237,7 @@ export default function ClientesPage() {
         <ClienteFormModal
           cliente={editando}
           onGuardado={() => guardado(editando === null)}
+          onEliminar={(c) => { cerrarModal(); setPorEliminar(c); }}
           onCerrar={cerrarModal}
         />
       )}

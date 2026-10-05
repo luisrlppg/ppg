@@ -18,6 +18,7 @@ export const clienteFormVacio: ClienteForm = { nombre: "", empresa: "", telefono
 interface Props {
   cliente?: Partner | null;
   onGuardado: (partner: Partner) => void;
+  onEliminar?: (cliente: Partner) => void;
   onCerrar: () => void;
 }
 
@@ -32,7 +33,7 @@ function aForm(c: Partner | null | undefined): ClienteForm {
   };
 }
 
-export default function ClienteFormModal({ cliente, onGuardado, onCerrar }: Props) {
+export default function ClienteFormModal({ cliente, onGuardado, onEliminar, onCerrar }: Props) {
   const editId = cliente?.id ?? null;
   const [form, setForm] = useState<ClienteForm>(() => aForm(cliente));
   const [error, setError] = useState("");
@@ -93,13 +94,22 @@ export default function ClienteFormModal({ cliente, onGuardado, onCerrar }: Prop
           Email
           <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="opcional" />
         </label>
-        <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
-          <button type="button" className="btn ghost" onClick={onCerrar}>
-            Cancelar
-          </button>
-          <button className="btn primary" disabled={guardando}>
-            {guardando ? "Guardando…" : editId === null ? "Agregar cliente" : "Guardar cambios"}
-          </button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 12 }}>
+          {editId !== null && cliente && onEliminar ? (
+            <button type="button" className="btn danger" onClick={() => onEliminar(cliente)}>
+              Eliminar
+            </button>
+          ) : (
+            <span />
+          )}
+          <span style={{ display: "flex", gap: 12 }}>
+            <button type="button" className="btn ghost" onClick={onCerrar}>
+              Cancelar
+            </button>
+            <button className="btn primary" disabled={guardando}>
+              {guardando ? "Guardando…" : editId === null ? "Agregar cliente" : "Guardar cambios"}
+            </button>
+          </span>
         </div>
       </form>
     </Modal>
