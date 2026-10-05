@@ -427,7 +427,10 @@ do_restore() {
     psql "$url" -v ON_ERROR_STOP=1 -f "$file"
   fi
 
-  echo "Restauración completa. Levanta servicios con: $0 start"
+  # Deja la BD al día con el esquema del repo (evita quedar desactualizada).
+  apply_migrations
+
+  echo "Restauración completa y migraciones aplicadas. Levanta servicios con: $0 start"
 }
 
 # --- Main ---

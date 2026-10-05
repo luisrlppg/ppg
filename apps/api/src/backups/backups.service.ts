@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { execFile } from "node:child_process";
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -21,8 +21,7 @@ export class BackupsService {
   private readonly dir: string;
 
   constructor(private readonly config: ConfigService) {
-    const root = resolve(__dirname, "../../../../..");
-    this.dir = join(root, "docs", "backups");
+    this.dir = join(this.repoRoot(), "docs", "backups");
   }
 
   private get url(): string {
@@ -72,6 +71,25 @@ export class BackupsService {
     return join(this.dir, basename(nombre));
   }
 
+  /** Raíz del monorepo (busca `pnpm-workspace.yaml` hacia arriba). */
+  private repoRoot(): string {
+    let dir = __dirname;
+    for (let i = 0; i < 8; i++) {
+      if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    return resolve(__dirname, "../../../..");
+  }
+
+  /** Aplica migraciones pendientes y regenera el cliente tras restaurar. */
+  private async migrar(): Promise<void> {
+    const root = this.repoRoot();
+    await execFileAsync("pnpm", ["db:deploy"], { cwd: root });
+    await execFileAsync("pnpm", ["--filter", "@ppg/db", "generate"], { cwd: root });
+  }
+
   async restaurar(nombre: string): Promise<{ ok: true; archivo: string; formato: "custom" | "sql" }> {
     const target = this.resolveFile(nombre);
     try {
@@ -103,6 +121,11 @@ export class BackupsService {
       ]);
       await execFileAsync("psql", [this.url, "-v", "ON_ERROR_STOP=1", "-f", target]);
     }
+
+    // Deja la BD al día con el esquema del repo (evita quedar desactualizada).
+    this.logger.log("Aplicando migraciones pendientes…");
+    await this.migrar();
+
     return { ok: true, archivo: nombre, formato: esCustom ? "custom" : "sql" };
   }
 

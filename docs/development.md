@@ -42,8 +42,10 @@ ppg restore docs/backups/ppg-<fecha>-pre-prueba.dump --yes
 ```
 
 - `backup` vuelca la BD con `pg_dump -Fc` en `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
-- `restore` detiene api+web, **sobrescribe** los datos (`pg_restore --clean --if-exists`) y avisa
-  cuándo volver a levantar (`ppg start`). Acepta `.dump` (custom) o `.sql` (texto plano).
+- `restore` detiene api+web, **sobrescribe** los datos (`pg_restore --clean --if-exists`), **aplica
+  las migraciones pendientes** (`db:deploy` + `prisma generate`) y avisa cuándo volver a levantar
+  (`ppg start`). Acepta `.dump` (custom) o `.sql` (texto plano). Así un respaldo viejo no deja la BD
+  desactualizada.
 - Los comandos usan la URL sin `?schema=public` (pg_dump/pg_restore/psql no aceptan ese query param).
 
 ### Gestor de servidores `scripts/ppg.sh`

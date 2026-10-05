@@ -31,6 +31,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Restore aplica migraciones (2026-10-05):** tras restaurar un punto de retorno, tanto
+  `ppg restore` (`scripts/ppg.sh`, llama `apply_migrations`) como el restore de la UI
+  (`backups.service.restaurar`) corren `db:deploy` + `prisma generate`, para que un respaldo viejo
+  no deje la BD desactualizada. El servicio resuelve la raíz del monorepo buscando
+  `pnpm-workspace.yaml` hacia arriba.
+
 - **Cierre de OFs desde Fabricación (2026-10-05):** las OFs ya no se cierran con reportes de
   producción. Nuevo `POST /fabricacion/:id/concluir`: un **ensamble** valida y descuenta sus
   componentes (`motivo consumo`) sin producir stock del ensamble; una **hoja** genera un

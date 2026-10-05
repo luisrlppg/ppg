@@ -58,7 +58,7 @@ export default function BackupsPage() {
     setMsg("");
     try {
       await api(`/backups/${encodeURIComponent(aRestaurar.nombre)}/restaurar`, { method: "POST" });
-      setMsg(`Base de datos restaurada desde ${aRestaurar.nombre}.`);
+      setMsg(`Base de datos restaurada desde ${aRestaurar.nombre}. Migraciones aplicadas.`);
       setARestaurar(null);
     } catch (e) {
       setError((e as Error).message);
@@ -214,7 +214,8 @@ export default function BackupsPage() {
           message={
             <>
               Se reemplazarán <strong>todos los datos actuales</strong> por los del respaldo{" "}
-              <strong>{aRestaurar.nombre}</strong>. Esta acción no se puede deshacer.
+              <strong>{aRestaurar.nombre}</strong>. Esta acción no se puede deshacer. Al terminar se
+              aplican las migraciones pendientes.
             </>
           }
           onConfirm={restaurar}

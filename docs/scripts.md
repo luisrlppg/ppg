@@ -23,10 +23,12 @@ Punto de retorno rápido de la BD (datos reales). Ver [`development.md`](./devel
 - `ppg backup [nombre]` → `pg_dump -Fc` a `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
 - `ppg restore [archivo] [--yes]` → detiene api+web y restaura con `pg_restore --clean --if-exists`
   (sin archivo, usa el `.dump` más reciente; acepta `.sql` plano recreando el schema `public`).
+  Al terminar **aplica las migraciones pendientes** (`db:deploy`) y regenera el cliente Prisma.
 - Alias: `pnpm db:backup` · `pnpm db:restore`.
 - `docs/backups/` está en `.gitignore`.
 - **UI:** `apps/web/src/app/backups/page.tsx` + `apps/api/src/backups/` (módulo NestJS, sólo `admin`)
-  hacen lo mismo desde el navegador (crear/descargar/subir/restaurar/eliminar).
+  hacen lo mismo desde el navegador (crear/descargar/subir/restaurar/eliminar); el restore de la UI
+  también corre `db:deploy` + `prisma generate` al terminar.
 
 ## Reorganizaciones one-off (histórico)
 
