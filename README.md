@@ -70,11 +70,22 @@ La web escucha en `http://localhost:3000` y reenvía `/api/*` a la API (misma or
 
 ## Despliegue completo (perfil full)
 
+Requisitos: Docker con el plugin **buildx** (en Arch/CachyOS: `sudo pacman -S docker-buildx`)
+y acceso al daemon (grupo `docker` o `sudo`).
+
 ```bash
-docker compose --profile full up --build
+# Si tu PostgreSQL nativo ya usa el 5432, publica el de compose en otro puerto:
+POSTGRES_PORT=5433 docker compose --profile full up --build -d
+
+# Primera vez: siembra usuarios/catálogo (migra + puebla). No arranca con "full".
+docker compose --profile tools run --rm seed
 ```
 
-`caddy` en el puerto 80 expone `/api/*` → api y el resto → web.
+`caddy` en el puerto **80** expone `/api/*` → api y el resto → web.
+
+- La API **aplica las migraciones automáticamente** al arrancar (`infra/api-entrypoint.sh`).
+- Entra en `http://localhost` con `admin` / `admin123` (tras el seed).
+- Revisa estado/logs con `docker compose --profile full ps` y `docker compose --profile full logs -f`.
 
 ## Scripts útiles
 

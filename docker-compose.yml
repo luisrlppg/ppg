@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: ppg
       POSTGRES_DB: ppg
     ports:
-      - "5432:5432"
+      # Configurable para no chocar con un PostgreSQL nativo (ej. POSTGRES_PORT=5433).
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -31,6 +32,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
 
   web:
     build:
@@ -39,6 +41,7 @@ services:
     profiles: ["full"]
     depends_on:
       - api
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -50,6 +53,28 @@ services:
     depends_on:
       - api
       - web
+    restart: unless-stopped
+
+  # Perfil "tools": siembra inicial manual (migra + puebla usuarios/catálogo).
+  # No arranca con "full". Uso: docker compose --profile tools run --rm seed
+  seed:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+    command:
+      - sh
+      - -lc
+      - cd packages/db && node node_modules/prisma/build/index.js migrate deploy && node node_modules/tsx/dist/cli.mjs prisma/seed.ts
+    environment:
+      DATABASE_URL: postgresql://ppg:ppg@postgres:5432/ppg?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NOMBRE: ${ADMIN_NOMBRE:-Administrador}
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:

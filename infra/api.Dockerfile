@@ -19,5 +19,6 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/apps/api ./apps/api
+COPY infra/api-entrypoint.sh ./entrypoint.sh
 EXPOSE 3001
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["sh", "entrypoint.sh"]

@@ -1,0 +1,17 @@
+# Contexto de build de Docker: excluir todo lo que no se necesita en las imágenes.
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+.git
+.gitignore
+.github
+docs
+.env
+.env.*
+!.env.example
+*.dump
+*.sql
+docker-compose*.yml
+README.md
