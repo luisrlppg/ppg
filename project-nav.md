@@ -46,7 +46,7 @@ Registrados en `app.module.ts`.
   - `setVariantAttribute` 349 · `removeVariantAttribute` 370 · `setVariantPrice` 378 · `setPackagings` 401
   - `grid` 430 · `materializar` (crea UNA variante puntual, idempotente) 434
   - `eliminarVariante` (chequea historial; 409 con motivos) 493 · `eliminarProducto` (hard delete sin historial) 513
-  - `resolveComponentVariant` (resuelve variante de componente BOM; lo usan ventas/inventario) 563
+  - `resolveComponentVariant` (resuelve variante de componente BOM; lo usan ventas/inventario) 649 — desempate determinista: `PREFERENCIAS_RESOLUCION` (`Versión del vástago = Nuevo`) → mayor stock → menor id
 - `productos.grid.ts` (111): `slugify`, tipos `GridEje`/`GridVarianteExistente`/`Grid`.
   - `ejesProducto` (atributo + valores permitidos, sin producto cartesiano) y `variantesExistentes` (`valueIds` alineados al orden de ejes).
   - `gridProducto = { ejes, existentes }`; **no** devuelve el cartesiano (antes producto 15 → 489k combos/160 MB/7.5 s).
@@ -58,7 +58,7 @@ Registrados en `app.module.ts`.
 - `ventas.service.ts` (402), zonas:
   - `list` 28 · `get` (con OFs asociados; cada línea incluye `imagen = variant.imagen ?? product.imagen`) 69 · `create` 143 · `update` 206
   - **`confirmar` = NETEO + CASCADA DE OFs** 266 (lo más crítico): `$transaction` + carga BOM `exacto` con caché → `netear` recursivo multi-nivel con detección de ciclos → genera OFs `fabricacion`/`ensamble` **inline** (con `configuracion`) → persiste `resumen` en la venta.
-  - `despacharLinea` (consume stock, dispara monitor) 309 · `cancelar` 389
+  - `despacharLinea` (consume stock; **ensambles**: exige OF de ensamble `hecha` y no descuenta stock del ensamble; dispara monitor) 309 · `cancelar` 389
 - `ventas.types.ts` (18): `ResumenItem`, `ResumenNeteo`, `ConfiguracionLinea` (re-exportados desde `ventas.service`).
 - **`ventas.ofs.ts` ya no existe**: la recursión quedó inline en `confirmar` (se corrigió un doble bucle).
 - Acoplos: inyecta `productos.service` (`resolveComponentVariant`) y `monitor.service`.
@@ -66,9 +66,9 @@ Registrados en `app.module.ts`.
 ### 2.3 Reportes de producción → `reportes/`
 - `reportes.controller.ts` (127) — rutas `/api/reportes...`
 - `reportes.service.ts` (414), zonas:
-  - `list` 53 · `ultimo` (prefill) 104 · `get` 139 · `crear` 171 · `editar` 197
-  - **`aplicar`** (mueve stock final/consumo, cierra la OF) 222 · `cancelar` 297 · `lotes` 307 · `ubicar` 333
-  - `stats` 394 y `exportar` 399 delegan en módulos externos
+  - `list` 53 · `ultimo` (prefill) 104 · `get` 139 · `crear` 171 · `editar` 197 (`list`/`ultimo` excluyen reportes `interno`)
+  - **`aplicar`** (mueve stock final/consumo; **ya no cierra la OF**) 222 · `cancelar` 297 · `lotes` 307 (incluye reportes internos) · `ubicar` 333
+  - `stats` 394 y `exportar` 399 delegan en módulos externos (excluyen reportes `interno`)
 - `reportes.constants.ts` (11): `TURNOS`, `SECCIONES`, `HORAS_TURNO`.
 - `reportes.stats.ts` (72): métricas de productividad. `reportes.export.ts` (55): CSV.
 
@@ -84,11 +84,12 @@ Registrados en `app.module.ts`.
 ### 2.5 Órdenes de fabricación → `fabricacion/`
 - `fabricacion.controller.ts` (74) · `fabricacion.service.ts` (217):
   - `list` (estado/tipo/**origen**/search) 17 · `get` 62 · `iniciar` 90 · `cancelar` 102
+  - **`concluir`** (cierre manual desde Fabricación): ensamble → consume componentes (`consumo`); hoja → reporte interno `aplicado` con línea `final` a "Recibo de Producción" (para Ubicar). Ninguno produce stock del ensamble.
   - `crearManual` (alta manual OF, exactamente N, `origen: manual`) 113
   - `previewReponer` (no escribe) 161 · `reponer` (cascada hasta mín/máx) 175 · `faltantes` 192
 - `planificacion.service.ts` (201): `planificar(tx, demandas, { netearRaiz })` 84 y `crearOFs(tx, plan, { origen })` 136. Lo usan `ventas.confirmar` (`netearRaiz: true`) y fabricación manual/reposición (`false`).
 - OFs guardan `origen` (`venta | manual | reposicion_minimo | reposicion_maximo`); las de venta se ligan a `salesOrderLineId`.
-- **Cierre a "hecha"** ocurre desde `reportes.service.aplicar`, no aquí.
+- **Cierre**: manual con `concluir` (antes lo hacía `reportes.aplicar`, ya no). El despacho exige la OF de ensamble en `hecha`.
 
 ### 2.6 Catálogos (atributos / categorías / empaques) → `catalogos/`
 - `catalogos.controller.ts` (296) — `@Controller("catalogos")` **público, sin guards**, usa `PrismaService` directo (sin service).

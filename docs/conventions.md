@@ -15,6 +15,10 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
    **detectar ciclos** (patrón presente en `ventas`, `inventario`, `productos.resolveComponentVariant`
    y `catalogos.atributos-producto`). La recursión BOM hoy está duplicada en varios sitios; si la tocas,
    considera extraerla a un helper/módulo común.
+   **Resolución de componente (`resolveComponentVariant`):** casa por intersección de ejes y, si hay
+   varios candidatos, desempata de forma determinista con `PREFERENCIAS_RESOLUCION` (hoy
+   `Versión del vástago = Nuevo`) → mayor stock → menor id. No devolver `null` por ambigüedad; se
+   agregan preferencias ahí cuando el negocio pida otro criterio.
 7. **Monitor tras stock:** cada mutación de stock que deba alertar llama a `monitor.afterStockChange`.
    Mantén ese contrato.
 8. **Migraciones:** nunca ejecutes `prisma migrate dev` directo en shell no-TTY; genera con
@@ -49,3 +53,8 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     no crees scripts one-off. Valida con `pnpm cat:snapshot` + dry-run (`cat:apply --file …`).
     Tras editar valores de variantes en la UI, corre `pnpm cat:export-seed` para volcarlos al seed.
     Estado y pendientes: `docs/catalog-state.md`.
+19. **Órdenes de fabricación (cierre):** el cierre es manual (`fabricacion.concluir`), no por reportes.
+    Un **ensamble** consume componentes y **no** produce stock del ensamble; una **hoja** produce vía un
+    `ProductionReport` **`interno` aplicado** (línea `final` a "Recibo de Producción"). Los reportes
+    `interno` se excluyen de métricas. Al cambiar `SeccionProduccion`/`ProductionReport`, genera la
+    migración (`--create-only`) y aplica con `pnpm db:deploy`.

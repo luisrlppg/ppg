@@ -540,6 +540,7 @@ enum SeccionProduccion {
   ensartado
   pegado
   perforado
+  fabricacion // líneas internas de reportes generados al concluir una OF hoja
 }
 
 enum TipoLineaReporte {
@@ -563,6 +564,7 @@ model ProductionReport {
   notas               String?
   estado              EstadoReporte        @default(pendiente)
   aplicadoAt          DateTime?
+  interno             Boolean              @default(false) // reporte automático generado al concluir una OF hoja (alimenta Recibo/Ubicar; no cuenta en métricas)
   userId              Int?
   manufacturingOrderId Int?                // OF en ejecución (§8.5); al aplicar pasa a hecha
   manufacturingOrder  ManufacturingOrder?  @relation(fields: [manufacturingOrderId], references: [id])

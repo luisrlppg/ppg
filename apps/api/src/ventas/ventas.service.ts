@@ -347,37 +347,49 @@ export class VentasService {
         throw new BadRequestException(`Solo faltan ${pendiente} por despachar de esta línea`);
       }
 
-      let levels = await tx.stockLevel.findMany({ where: { variantId: line.variantId } });
-      const preferido =
-        params.locationId ??
-        ((await tx.location.findFirst({ where: { nombre: "Almacén principal" } }))?.id ?? null);
-      levels.sort((a, b) => Number(a.locationId === preferido ? 0 : 1) - Number(b.locationId === preferido ? 0 : 1));
-      const total = levels.reduce((a, l) => a + dec(l.qty), 0);
-      if (total < cantidad) {
-        throw new BadRequestException(`Stock insuficiente de la variante: hay ${total} y se quieren despachar ${cantidad}`);
+      // Los ensambles se arman contra pedido: su OF de ensamble debe estar concluida y
+      // no manejan stock propio (los componentes ya se consumieron al concluir).
+      const ofEnsamble = await tx.manufacturingOrder.findFirst({
+        where: { generatedFrom: line.order.numero, variantId: line.variantId, tipo: "ensamble" },
+        orderBy: { id: "desc" },
+      });
+      if (ofEnsamble && ofEnsamble.estado !== "hecha") {
+        throw new BadRequestException(`Concluye primero la orden de ensamble ${ofEnsamble.numero}`);
       }
 
-      let restante = cantidad;
-      for (const level of levels) {
-        if (restante <= 0) break;
-        const usar = Math.min(restante, dec(level.qty));
-        await tx.stockLevel.update({
-          where: { variantId_locationId: { variantId: line.variantId, locationId: level.locationId } },
-          data: { qty: { decrement: usar } },
-        });
-        await tx.stockMove.create({
-          data: {
-            variantId: line.variantId,
-            locationId: level.locationId,
-            qty: -usar,
-            motivo: "despacho",
-            ref: line.order.numero,
-            userId: params.userId ?? null,
-          },
-        });
-        restante -= usar;
+      if (!ofEnsamble) {
+        let levels = await tx.stockLevel.findMany({ where: { variantId: line.variantId } });
+        const preferido =
+          params.locationId ??
+          ((await tx.location.findFirst({ where: { nombre: "Almacén principal" } }))?.id ?? null);
+        levels.sort((a, b) => Number(a.locationId === preferido ? 0 : 1) - Number(b.locationId === preferido ? 0 : 1));
+        const total = levels.reduce((a, l) => a + dec(l.qty), 0);
+        if (total < cantidad) {
+          throw new BadRequestException(`Stock insuficiente de la variante: hay ${total} y se quieren despachar ${cantidad}`);
+        }
+
+        let restante = cantidad;
+        for (const level of levels) {
+          if (restante <= 0) break;
+          const usar = Math.min(restante, dec(level.qty));
+          await tx.stockLevel.update({
+            where: { variantId_locationId: { variantId: line.variantId, locationId: level.locationId } },
+            data: { qty: { decrement: usar } },
+          });
+          await tx.stockMove.create({
+            data: {
+              variantId: line.variantId,
+              locationId: level.locationId,
+              qty: -usar,
+              motivo: "despacho",
+              ref: line.order.numero,
+              userId: params.userId ?? null,
+            },
+          });
+          restante -= usar;
+        }
+        notificar.push(line.variantId);
       }
-      notificar.push(line.variantId);
 
       const nuevo = dec(line.qtyDelivered) + cantidad;
       const estadoEntrega: "pendiente" | "parcial" | "entregado" = nuevo >= dec(line.cantidad) ? "entregado" : "parcial";

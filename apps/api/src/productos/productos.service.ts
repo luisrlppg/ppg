@@ -13,6 +13,15 @@ import {
 
 export type { Grid } from "./productos.grid";
 
+/**
+ * Preferencias de desempate al resolver la variante de un componente del BOM:
+ * cuando los ejes compartidos no alcanzan para distinguir una sola variante, se
+ * prefiere la que tenga `(atributo, valor)` listados aquí, en orden.
+ */
+const PREFERENCIAS_RESOLUCION: { atributo: string; valor: string }[] = [
+  { atributo: "Versión del vástago", valor: "Nuevo" },
+];
+
 @Injectable()
 export class ProductosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -632,6 +641,10 @@ export class ProductosService {
    * Para netear/resolver un combo: encuentra qué variante del producto componente
    * consumir, igualando los ejes que comparten ambas. El componente puede tener ejes
    * extra que no vienen en el combo (p. ej. `Ceja` en Pincel), que se ignoran.
+   *
+   * Cuando varios candidatos son compatibles, se desempata de forma determinista:
+   * primero por `PREFERENCIAS_RESOLUCION` (p. ej. `Versión del vástago = Nuevo`),
+   * luego por mayor stock y finalmente por menor id.
    */
   async resolveComponentVariant(componentProductId: number, combo: { productId: number; variantAttributes: { attributeId: number; valueId: number }[] }): Promise<{ id: number; sku: string; nombre: string } | null> {
     const axes = await this.prisma.productAttributeLine.findMany({
@@ -640,20 +653,39 @@ export class ProductosService {
     });
     const axisIds = new Set(axes.map((a) => a.attributeId));
 
-    const comboValues = combo.variantAttributes.filter((v) => axisIds.has(v.attributeId));
-    if (comboValues.length === 0) {
-      // Sin ejes en común: se busca la variante única del componente.
-      const unique = await this.prisma.productVariant.findFirst({
-        where: { productId: componentProductId, activo: true },
-        select: { id: true, sku: true, nombre: true },
-      });
-      return unique;
-    }
-
     const candidates = await this.prisma.productVariant.findMany({
       where: { productId: componentProductId, activo: true },
-      include: { variantAttributes: true },
+      include: { variantAttributes: true, stockLevels: true },
     });
+    if (candidates.length === 0) return null;
+
+    const preferencias: { attributeId: number; valueId: number }[] = [];
+    for (const pref of PREFERENCIAS_RESOLUCION) {
+      const found = await this.prisma.attributeValue.findFirst({
+        where: { valor: pref.valor, attribute: { nombre: pref.atributo } },
+        select: { id: true, attributeId: true },
+      });
+      if (found) preferencias.push({ attributeId: found.attributeId, valueId: found.id });
+    }
+    const stockOf = (v: (typeof candidates)[number]) => v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
+    const pickMejor = (pool: (typeof candidates)[number][]) => {
+      let filtered = pool;
+      for (const pref of preferencias) {
+        const conPref = filtered.filter((v) =>
+          v.variantAttributes.some((va) => va.attributeId === pref.attributeId && va.valueId === pref.valueId),
+        );
+        if (conPref.length > 0) filtered = conPref;
+      }
+      return [...filtered].sort((a, b) => stockOf(b) - stockOf(a) || a.id - b.id)[0] ?? null;
+    };
+
+    const comboValues = combo.variantAttributes.filter((v) => axisIds.has(v.attributeId));
+    if (comboValues.length === 0) {
+      // Sin ejes en común: se toma la mejor variante activa del componente.
+      const unique = pickMejor(candidates);
+      return unique ? { id: unique.id, sku: unique.sku, nombre: unique.nombre } : null;
+    }
+
     const shared = candidates.map((c) => ({
       c,
       cAttrs: c.variantAttributes.filter((v) => axisIds.has(v.attributeId)),
@@ -662,9 +694,9 @@ export class ProductosService {
     const matches = shared.filter(({ cAttrs }) =>
       comboValues.every((cv) => cAttrs.some((ca) => ca.attributeId === cv.attributeId && ca.valueId === cv.valueId)),
     );
-    // Preferimos el candidato sin ejes extra; si hay ambigüedad, no resolvemos.
+    // Preferimos el candidato sin ejes extra; el desempate decide el resto.
     const exact = matches.filter(({ cAttrs }) => cAttrs.length === comboValues.length);
-    const pick = exact.length === 1 ? exact[0] : matches.length === 1 ? matches[0] : null;
-    return pick ? { id: pick.c.id, sku: pick.c.sku, nombre: pick.c.nombre } : null;
+    const pick = pickMejor((exact.length > 0 ? exact : matches).map((m) => m.c));
+    return pick ? { id: pick.id, sku: pick.sku, nombre: pick.nombre } : null;
   }
 }

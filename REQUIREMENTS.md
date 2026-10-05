@@ -359,6 +359,12 @@ Reglas:
 Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `final`** (la que entrega/almacena) incrementa inventario; el resto de secciones quedan como métrica operativa (persona/hora).
 
 ### 8.5 Ejecución de órdenes de fabricación (E2 → E3)
+> **Actualización 2026-10-05:** el cierre de una OF es **manual desde Fabricación**
+> (`POST /fabricacion/:id/concluir`), no por reportes. Un **ensamble** consume sus componentes y no
+> produce stock del ensamble (se arma contra pedido); una **hoja** da entrada a "Recibo de Producción"
+> mediante un reporte **interno** aplicado. Los reportes de producción dejan de marcar la OF como
+> `hecha`. El despacho de un ensamble exige su OF en `hecha`.
+
 - Las órdenes de E2 `confirmadas` se ejecutan desde la línea: al cerrar la jornada, el reporte correspondiente aplica (con la confirmación de §8.2) el producto terminado y el consumo de componentes vinculados → la orden pasa a `hecha`.
 - Las secciones de producción se asocian a la orden en ejecución cuando aplique (trazabilidad).
 

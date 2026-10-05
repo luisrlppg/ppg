@@ -49,10 +49,11 @@ Se **borraron** los atributos legado `Altura de Taparrosca`, `Color de Tapa con 
 
 ## 4. Resolución de componentes
 
-`resolveComponentVariant` ahora casa por **intersección** de ejes: el componente puede tener ejes
-extra que no vienen del ensamble (p. ej. **`Ceja`** en Pincel, que se hereda de Mango). Elige el
-candidato único; si hay ambigüedad, `null`. Verificado: las **19/19** variantes de P0019 resuelven
-su Taparrosca y Pincel.
+`resolveComponentVariant` casa por **intersección** de ejes: el componente puede tener ejes
+extra que no vienen del ensamble (p. ej. **`Ceja`** en Pincel, que se hereda de Mango). Si hay varios
+candidatos, desempata de forma determinista (`PREFERENCIAS_RESOLUCION` → mayor stock → menor id;
+ver `conventions.md` §6), ya no devuelve `null` por ambigüedad. Verificado: las **19/19** variantes de
+P0019 resuelven su Taparrosca y Pincel.
 
 ## 5. Verificación
 

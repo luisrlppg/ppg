@@ -41,6 +41,7 @@ export default function FabricacionPage() {
   const [msg, setMsg] = useState("");
   const [cargando, setCargando] = useState(false);
   const [cancelId, setCancelId] = useState<number | null>(null);
+  const [concluirId, setConcluirId] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     const [o, f] = await Promise.all([
@@ -103,6 +104,22 @@ export default function FabricacionPage() {
     } catch (e) {
       setError((e as Error).message);
       setCancelId(null);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  async function concluir(id: number) {
+    setCargando(true);
+    setError("");
+    try {
+      await api(`/fabricacion/${id}/concluir`, { method: "POST", body: "{}" });
+      setMsg("Orden concluida.");
+      setConcluirId(null);
+      cargar();
+    } catch (e) {
+      setError((e as Error).message);
+      setConcluirId(null);
     } finally {
       setCargando(false);
     }
@@ -241,8 +258,8 @@ export default function FabricacionPage() {
       {msg && <div className="msg-ok">{msg}</div>}
 
       <HelpNote>
-        Estados: <strong>confirmada</strong> (lista para iniciar) → <strong>en progreso</strong> →{" "}
-        <strong>hecha</strong> (se cierra al confirmar reportes de producción, E3). El tipo (<strong>fabricación</strong> vs{" "}
+        Estados: <strong>confirmada</strong> (lista) → <strong>en progreso</strong> →{" "}
+        <strong>hecha</strong> (se cierra al pulsar <strong>Concluir</strong> desde aquí). El tipo (<strong>fabricación</strong> vs{" "}
         <strong>ensamble</strong>) depende del BOM: 1 componente = fabricación, 2+ = ensamble. Puedes crear OFs manualmente o
         reponer hasta el mínimo/máximo.
       </HelpNote>
@@ -277,12 +294,20 @@ export default function FabricacionPage() {
                     Iniciar
                   </button>
                 )}
+                {(detalle.estado === "confirmada" || detalle.estado === "en_progreso") && (
+                  <button className="btn primary" disabled={cargando} onClick={() => setConcluirId(detalle.id)}>
+                    Concluir
+                  </button>
+                )}
                 {(detalle.estado === "borrador" || detalle.estado === "confirmada" || detalle.estado === "en_progreso") && (
                   <button className="btn ghost" style={{ flex: 0 }} disabled={cargando} onClick={() => setCancelId(detalle.id)}>
                     Cancelar
                   </button>
                 )}
-                <span className="muted small">El cierre a <em>hecha</em> se registra al confirmar los reportes de producción (E3).</span>
+                <span className="muted small">
+                  Al concluir: un <strong>ensamble</strong> consume sus componentes; una <strong>fabricación</strong> (hoja)
+                  da entrada a "Recibo de Producción" para ubicar.
+                </span>
               </div>
             </div>
           )}
@@ -426,6 +451,17 @@ export default function FabricacionPage() {
           loading={cargando}
           onConfirm={() => cancelar(cancelId)}
           onClose={() => setCancelId(null)}
+        />
+      )}
+
+      {concluirId !== null && (
+        <ConfirmDialog
+          title="Concluir orden"
+          message="Un ensamble consume sus componentes; una fabricación da entrada a 'Recibo de Producción'. La orden quedará como hecha."
+          confirmLabel="Concluir"
+          loading={cargando}
+          onConfirm={() => concluir(concluirId)}
+          onClose={() => setConcluirId(null)}
         />
       )}
     </AppShell>

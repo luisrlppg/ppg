@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { OrigenOF, Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
+import { MonitorService } from "../monitor/monitor.service";
 import { PlanificacionService } from "./planificacion.service";
 import type { ResumenItem } from "../ventas/ventas.service";
 
@@ -12,6 +13,7 @@ export class FabricacionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly planificacion: PlanificacionService,
+    private readonly monitor: MonitorService,
   ) {}
 
   async list(query: { estado?: string; tipo?: string; origen?: string; search?: string }) {
@@ -106,6 +108,119 @@ export class FabricacionService {
       throw new BadRequestException(`Una orden "${mo.estado}" no se puede cancelar`);
     }
     return this.prisma.manufacturingOrder.update({ where: { id }, data: { estado: "cancelada" } });
+  }
+
+  // --------------------------------------------------------- Concluir OF
+  private turnoActual(): "matutino" | "vespertino" | "nocturno" {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 14) return "matutino";
+    if (h >= 14 && h < 22) return "vespertino";
+    return "nocturno";
+  }
+
+  /** Descuenta una variante de sus ubicaciones (prefiere "Almacén principal"). */
+  private async consumir(
+    tx: Prisma.TransactionClient,
+    variantId: number,
+    cantidad: number,
+    ref: string,
+    userId?: number,
+  ) {
+    const levels = await tx.stockLevel.findMany({ where: { variantId } });
+    const preferido = await tx.location.findFirst({ where: { nombre: "Almacén principal" } });
+    levels.sort(
+      (a, b) =>
+        Number(a.locationId === (preferido?.id ?? null) ? 0 : 1) -
+        Number(b.locationId === (preferido?.id ?? null) ? 0 : 1),
+    );
+    const total = levels.reduce((a, l) => a + dec(l.qty), 0);
+    if (total < cantidad) {
+      throw new BadRequestException(`Stock insuficiente de un componente (hay ${total} y se consumen ${cantidad})`);
+    }
+    let restante = cantidad;
+    for (const level of levels) {
+      if (restante <= 0) break;
+      const usar = Math.min(restante, dec(level.qty));
+      await tx.stockLevel.update({ where: { id: level.id }, data: { qty: { decrement: usar } } });
+      await tx.stockMove.create({
+        data: { variantId, locationId: level.locationId, qty: -usar, motivo: "consumo", ref, userId },
+      });
+      restante -= usar;
+    }
+  }
+
+  /**
+   * Concluye una OF (desde Fabricación), sin depender de reportes de producción.
+   * - `fabricacion` (hoja): genera un reporte **interno aplicado** con una línea `final`
+   *   → entrada a "Recibo de Producción" (motivo `produccion`) para el flujo Ubicar.
+   * - `ensamble`: valida y **descuenta los componentes** exactos (motivo `consumo`).
+   *   No da entrada al ensamble (siempre se arma contra pedido).
+   */
+  async concluir(id: number, userId?: number) {
+    const notificar: number[] = [];
+    await this.prisma.$transaction(async (tx) => {
+      const mo = await tx.manufacturingOrder.findUnique({
+        where: { id },
+        include: { lines: true, variant: { include: { product: true } } },
+      });
+      if (!mo) throw new NotFoundException("Orden de fabricación no encontrada");
+      if (!["confirmada", "en_progreso"].includes(mo.estado)) {
+        throw new BadRequestException(`No se puede concluir una orden en estado "${mo.estado}"`);
+      }
+
+      if (mo.tipo === "ensamble") {
+        for (const line of mo.lines) {
+          const ok = dec(line.cantidadRequerida);
+          if (ok <= 0) continue;
+          await this.consumir(tx, line.componentVariantId, ok, mo.numero, userId);
+          notificar.push(line.componentVariantId);
+        }
+      } else {
+        const recibo = await tx.location.findFirst({ where: { nombre: "Recibo de Producción" } });
+        if (!recibo) throw new BadRequestException("Falta la ubicación 'Recibo de Producción'");
+        const cantidad = dec(mo.cantidad);
+        const report = await tx.productionReport.create({
+          data: {
+            numero: `PEND-${Date.now()}-${mo.id}`,
+            turno: this.turnoActual(),
+            interno: true,
+            estado: "aplicado",
+            aplicadoAt: new Date(),
+            manufacturingOrderId: mo.id,
+            notas: `Concluida desde ${mo.numero}`,
+            userId: userId ?? null,
+          },
+        });
+        await tx.productionReport.update({ where: { id: report.id }, data: { numero: `RPT-${String(report.id).padStart(4, "0")}` } });
+        await tx.productionReportLine.create({
+          data: { reportId: report.id, variantId: mo.variantId, seccion: "fabricacion", tipo: "final", ok: cantidad, qtyAplicada: cantidad },
+        });
+        const level = await tx.stockLevel.findUnique({
+          where: { variantId_locationId: { variantId: mo.variantId, locationId: recibo.id } },
+        });
+        if (level) {
+          await tx.stockLevel.update({ where: { id: level.id }, data: { qty: { increment: cantidad } } });
+        } else {
+          await tx.stockLevel.create({ data: { variantId: mo.variantId, locationId: recibo.id, qty: cantidad } });
+        }
+        await tx.stockMove.create({
+          data: { variantId: mo.variantId, locationId: recibo.id, qty: cantidad, motivo: "produccion", ref: mo.numero, userId },
+        });
+        notificar.push(mo.variantId);
+      }
+
+      await tx.manufacturingOrder.update({
+        where: { id },
+        data: { estado: "hecha", finalizadoAt: new Date() },
+      });
+    });
+
+    const canales: string[] = [];
+    for (const vid of [...new Set(notificar)]) {
+      const res = await this.monitor.afterStockChange(vid);
+      if (res.notificado) canales.push(...res.canales);
+    }
+    return { ok: true, canales: [...new Set(canales)] };
   }
 
   // --------------------------------------------------- Alta manual de OF

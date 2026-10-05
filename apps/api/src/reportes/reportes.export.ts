@@ -8,7 +8,7 @@ export async function exportarReportes(
   const desde = query.desde ? new Date(`${query.desde}T00:00:00`) : new Date(0);
   const hasta = query.hasta ? new Date(`${query.hasta}T23:59:59`) : new Date();
   const reports = await prisma.productionReport.findMany({
-    where: { fecha: { gte: desde, lte: hasta } },
+    where: { interno: false, fecha: { gte: desde, lte: hasta } },
     orderBy: { fecha: "asc" },
     include: {
       manufacturingOrder: { select: { numero: true } },

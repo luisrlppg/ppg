@@ -284,6 +284,7 @@ export default function VentasPage() {
               </div>
               <div className="card">
                 <h4 style={{ marginTop: 0 }}>Pendientes de compra</h4>
+                <p className="muted small" style={{ marginTop: 0 }}>Solo informativo: no genera órdenes de compra.</p>
                 {(d.resumen?.comprar ?? []).length ? (
                   <ul className="step-list">
                     {d.resumen!.comprar.map((c) => (
@@ -299,7 +300,12 @@ export default function VentasPage() {
             </div>
 
             {(d.ordenesFabricacion ?? []).length > 0 && (
-              <div className="card" style={{ padding: 0 }}>
+              <>
+                <HelpNote>
+                  Los ensambles (2+ componentes) se arman contra pedido: para despacharlos, primero
+                  <strong> concluye</strong> su orden de ensamble desde <a href="/fabricacion">Fabricación</a>.
+                </HelpNote>
+                <div className="card" style={{ padding: 0 }}>
                 <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación generadas</h4>
                 <div className="table-wrap">
                   <table className="table">
@@ -332,6 +338,7 @@ export default function VentasPage() {
                   </table>
                 </div>
               </div>
+              </>
             )}
           </>
         )}

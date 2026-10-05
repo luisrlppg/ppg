@@ -150,6 +150,23 @@ precio de venta; el margen que muestra es solo referencia.
   seleccionar), pidiendo las opciones del paso con la selección de los pasos **anteriores**. "Atrás"
   reofrece el paso conservando la elección previa y limpia en silencio los posteriores inválidos.
 
+## Órdenes de fabricación y cierre (2026-10-05)
+
+- El neteo (ventas/manual/reposición) recorre el BOM recursivamente y crea **1 OF de ensamble**
+  por producto con BOM + **1 OF de fabricación** por componente fabricable faltante. Los comprables
+  faltantes solo se **avisan** en la UI ("Pendientes de compra", informativo; no hay OC).
+- El cierre es **manual** desde Fabricación (`POST /fabricacion/:id/concluir`), no por reportes:
+  - **Ensamble**: valida y **descuenta los componentes exactos** (`motivo consumo`). **No** da entrada
+    al ensamble (los ensambles se arman contra pedido y no acumulan stock).
+  - **Fabricación (hoja)**: crea un `ProductionReport` **`interno` aplicado** con una línea `final`
+    (sección `fabricacion`) → entrada a "Recibo de Producción" (`motivo produccion`) para el flujo
+    **Ubicar**. Los reportes `interno` no cuentan en métricas (`list`/`stats`/`export` los excluyen).
+- **Despacho de un ensamble**: si la línea tiene OF de ensamble y no está `hecha`, se bloquea; si está
+  `hecha`, no descuenta stock del ensamble (ya se consumieron los componentes). Sin OF, comportamiento
+  normal (valida/descuenta stock).
+- `SeccionProduccion.fabricacion` y `ProductionReport.interno` viven en
+  `20261005130000_reporte_interno_of`.
+
 ## Reglas de negocio relevantes
 
 En [`../REQUIREMENTS.md`](../REQUIREMENTS.md) §5: una variante para todo, variante real vs perezosa

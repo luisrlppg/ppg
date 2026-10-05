@@ -68,6 +68,12 @@ export class FabricacionController {
   }
 
   @Roles("admin", "supervisor")
+  @Post(":id/concluir")
+  concluir(@Param("id", ParseIntPipe) id: number, @Req() req: { user: { id: number } }) {
+    return this.fabricacion.concluir(id, req.user.id);
+  }
+
+  @Roles("admin", "supervisor")
   @Post(":id/cancelar")
   cancelar(@Param("id", ParseIntPipe) id: number) {
     return this.fabricacion.cancelar(id);

@@ -31,6 +31,23 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Cierre de OFs desde Fabricación (2026-10-05):** las OFs ya no se cierran con reportes de
+  producción. Nuevo `POST /fabricacion/:id/concluir`: un **ensamble** valida y descuenta sus
+  componentes (`motivo consumo`) sin producir stock del ensamble; una **hoja** genera un
+  `ProductionReport` **`interno` aplicado** con línea `final` (sección `fabricacion`) → entrada a
+  "Recibo de Producción" para Ubicar. Los reportes internos no cuentan en métricas
+  (`list`/`stats`/`export` los excluyen). `ventas.despacharLinea` ahora **exige la OF de ensamble
+  en `hecha`** y, si existe, no descuenta stock del ensamble (siempre contra pedido). Migración
+  `20261005130000_reporte_interno_of` (`ProductionReport.interno`, `SeccionProduccion.fabricacion`).
+  Comprables faltantes: solo aviso informativo ("Pendientes de compra"), sin OC.
+
+- **Resolución determinista de componentes BOM (2026-10-05):** `resolveComponentVariant`
+  (`productos.service.ts`) dejó de devolver `null` cuando varios componentes son compatibles por
+  ejes compartidos. Ahora desempata con `PREFERENCIAS_RESOLUCION` (hoy `Versión del vástago = Nuevo`,
+  que solo tiene el **Escurridor**), luego por mayor stock y finalmente por menor id. Desbloquea la
+  creación de OFs y el neteo de ventas de los **BTVPE** (p. ej. Delineador), que fallaban con
+  "No hay variante de Escurridor compatible". Sin migración. Ver `conventions.md` §6.
+
 - **Módulo de Costos v1 (2026-10-05):** página `/costos` (menú lateral, sólo `admin`/`supervisor`) para
   administrar el **costo estándar por producto**. Captura manual por concepto: materiales (líneas
   `ProductCostMaterial`), costo de compra, mano de obra (horas×tarifa), máquina (horas×tarifa), molde

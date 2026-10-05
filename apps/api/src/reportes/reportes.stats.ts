@@ -19,7 +19,7 @@ export async function estadisticas(
   const desde = query.desde ? new Date(`${query.desde}T00:00:00`) : new Date(0);
   const hasta = query.hasta ? new Date(`${query.hasta}T23:59:59`) : new Date();
   const reports = await prisma.productionReport.findMany({
-    where: { estado: "aplicado", fecha: { gte: desde, lte: hasta } },
+    where: { estado: "aplicado", interno: false, fecha: { gte: desde, lte: hasta } },
     include: {
       lines: {
         include: { variant: { include: { product: { select: { nombre: true } } } } },

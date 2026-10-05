@@ -59,6 +59,7 @@ export class ReportesService {
     fin.setDate(fin.getDate() + 1);
 
     const where: Prisma.ProductionReportWhereInput = {
+      interno: false,
       ...(estadoOk ? { estado: query.estado as Prisma.ProductionReportWhereInput["estado"] } : {}),
       ...(turnoOk ? { turno: query.turno as Prisma.ProductionReportWhereInput["turno"] } : {}),
       ...(query.fecha ? { fecha: { gte: ini, lt: fin } } : {}),
@@ -104,7 +105,7 @@ export class ReportesService {
   async ultimo(turno?: string) {
     const turnoOk = turno && (TURNOS as readonly string[]).includes(turno);
     const r = await this.prisma.productionReport.findFirst({
-      where: turnoOk ? { turno: turno as Turno, estado: { not: "cancelado" } } : undefined,
+      where: turnoOk ? { turno: turno as Turno, interno: false, estado: { not: "cancelado" } } : { interno: false },
       orderBy: { fecha: "desc" },
       include: {
         lines: {
@@ -276,12 +277,6 @@ export class ReportesService {
         notificar.push(line.variantId);
       }
 
-      if (r.manufacturingOrderId) {
-        await tx.manufacturingOrder.update({
-          where: { id: r.manufacturingOrderId },
-          data: { estado: "hecha", finalizadoAt: new Date() },
-        });
-      }
       await tx.productionReport.update({ where: { id }, data: { estado: "aplicado", aplicadoAt: new Date() } });
     });
 
