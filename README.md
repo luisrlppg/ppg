@@ -71,7 +71,8 @@ La web escucha en `http://localhost:3000` y reenvía `/api/*` a la API (misma or
 ## Despliegue completo (perfil full)
 
 Requisitos: Docker con el plugin **buildx** (en Arch/CachyOS: `sudo pacman -S docker-buildx`)
-y acceso al daemon (grupo `docker` o `sudo`).
+y acceso al daemon (grupo `docker` o `sudo`). Postgres del stack = **`postgres:18-alpine`**
+(igual que el motor nativo; el volumen va en `/var/lib/postgresql`).
 
 ```bash
 # Si tu PostgreSQL nativo ya usa el 5432, publica el de compose en otro puerto:
@@ -85,7 +86,27 @@ docker compose --profile tools run --rm seed
 
 - La API **aplica las migraciones automáticamente** al arrancar (`infra/api-entrypoint.sh`).
 - Entra en `http://localhost` con `admin` / `admin123` (tras el seed).
+- **Respaldos** funcionan dentro del stack (la UI `docs/backups` se monta en el contenedor y la
+  imagen incluye el cliente PostgreSQL 18).
 - Revisa estado/logs con `docker compose --profile full ps` y `docker compose --profile full logs -f`.
+
+### Cargar los datos del Postgres local en el stack
+
+```bash
+# 1) Volumen del stack desde cero (solo borra los datos de Docker, no el nativo)
+docker compose --profile full down -v
+
+# 2) Dump fresco del nativo (5432)
+pg_dump -h localhost -p 5432 -U ppg -d ppg -Fc -f docs/backups/ppg-pre-docker.dump
+
+# 3) Levantar solo postgres (18) y restaurar
+docker compose up -d postgres
+pg_restore --clean --if-exists --no-owner --no-privileges \
+  -h localhost -p 5433 -U ppg -d ppg docs/backups/ppg-pre-docker.dump
+
+# 4) Levantar el resto (la API no tiene migraciones pendientes)
+docker compose --profile full up -d
+```
 
 ## Scripts útiles
 

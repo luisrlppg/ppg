@@ -122,9 +122,10 @@ Registrados en `app.module.ts`.
   - `GET backups` (listar) · `POST backups` (crear, body `{nombre?}`)
   - `POST backups/:nombre/restaurar` · `POST backups/subir` (multipart campo `archivo`)
   - `GET backups/:nombre/descargar` (stream) · `DELETE backups/:nombre`
-- `backups.service.ts`: opera `docs/backups/`; `pg_dump -Fc` al crear; al restaurar usa
-  `pg_restore --clean --if-exists` (`.dump`) o recrea `public` + `psql -f` (`.sql`), y **luego
-  aplica `db:deploy` + `prisma generate`** para no quedar desactualizado. Sanitiza
+- `backups.service.ts`: opera `docs/backups/` (en el stack se monta en el contenedor api); `pg_dump -Fc`
+  al crear; al restaurar usa `pg_restore --clean --if-exists` (`.dump`) o recrea `public` + `psql -f`
+  (`.sql`), y **luego aplica `prisma migrate deploy`** (sin pnpm) para no quedar desactualizado.
+  La imagen api incluye el cliente PostgreSQL 18. Sanitiza
   nombres (evita path traversal) y usa la URL sin `?schema=public`.
 - `backups.module.ts` importa `AuthModule`.
 - CLI equivalente (mismo directorio): `ppg backup|restore` / `pnpm db:backup|db:restore`.

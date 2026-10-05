@@ -16,6 +16,8 @@ RUN pnpm --filter @ppg/shared build && pnpm --filter @ppg/db build && pnpm --fil
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# Cliente PostgreSQL 18 para la UI de Respaldos (pg_dump/pg_restore/psql).
+RUN apk add --no-cache postgresql18-client
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/apps/api ./apps/api

@@ -58,7 +58,8 @@ Alias `ppg` (en `~/.bashrc`). Único gestor de api+web: `start|stop|restart|relo
 ### Motor de PostgreSQL
 
 - `native`: usa `localhost:5432` (cluster Linux).
-- `docker`: levanta `docker compose` (pública en `localhost:5432`).
+- `docker`: levanta `docker compose` con **`postgres:18-alpine`** (el host lo publica según
+  `POSTGRES_PORT` de `.env`, default 5432).
 - Elige con `ppg db <native|docker>`; queda en `.env`.
 
 ## Flujo estándar de cambio

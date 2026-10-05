@@ -83,11 +83,20 @@ export class BackupsService {
     return resolve(__dirname, "../../../..");
   }
 
-  /** Aplica migraciones pendientes y regenera el cliente tras restaurar. */
+  /** Aplica migraciones pendientes tras restaurar (sin depender de pnpm). */
   private async migrar(): Promise<void> {
     const root = this.repoRoot();
-    await execFileAsync("pnpm", ["db:deploy"], { cwd: root });
-    await execFileAsync("pnpm", ["--filter", "@ppg/db", "generate"], { cwd: root });
+    await execFileAsync(
+      "node",
+      [
+        "packages/db/node_modules/prisma/build/index.js",
+        "migrate",
+        "deploy",
+        "--schema",
+        "packages/db/prisma/schema.prisma",
+      ],
+      { cwd: root },
+    );
   }
 
   async restaurar(nombre: string): Promise<{ ok: true; archivo: string; formato: "custom" | "sql" }> {
