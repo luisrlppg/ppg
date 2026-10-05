@@ -16,19 +16,19 @@ class ProduccionDto {
 export class FabricacionController {
   constructor(private readonly fabricacion: FabricacionService) {}
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("necesidades")
   necesidades() {
     return this.fabricacion.necesidades();
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("faltantes")
   faltantes() {
     return this.fabricacion.faltantes();
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post("produccion")
   registrarProduccion(@Body() dto: ProduccionDto, @Req() req: { user: { id: number } }) {
     return this.fabricacion.registrarProduccion(

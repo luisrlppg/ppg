@@ -7,6 +7,7 @@ import StickyBar from "@/components/ui/sticky-bar";
 import Modal from "@/components/ui/modal";
 import HelpNote from "@/components/ui/help-note";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/preferences";
 import type { CostoDetalle, CostoFila, CostoMaterial } from "@/lib/types";
 
 const money = (n: number | null | undefined) => `$${Number(n ?? 0).toFixed(2)}`;
@@ -30,6 +31,7 @@ interface MaterialForm {
 }
 
 export default function CostosPage() {
+  const { user } = useAuth();
   const [filas, setFilas] = useState<CostoFila[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [error, setError] = useState("");
@@ -175,6 +177,14 @@ export default function CostosPage() {
 
   function setMaterial(i: number, campo: keyof MaterialForm, valor: string) {
     setMateriales((prev) => prev.map((m, j) => (j === i ? { ...m, [campo]: valor } : m)));
+  }
+
+  if (user && user.role !== "admin") {
+    return (
+      <AppShell>
+        <div className="card empty">No tienes permiso para ver esta sección.</div>
+      </AppShell>
+    );
   }
 
   return (

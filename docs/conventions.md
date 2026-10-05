@@ -6,8 +6,11 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
 
 1. **Cada dominio es un módulo** (`x.controller.ts`, `x.service.ts`, `x.module.ts`). Usa los guards
    existentes (`JwtAuthGuard` + `RolesGuard`) y el decorator `@Roles()`. No dupliques guards.
-2. **Roles:** `admin` puede todo; `supervisor` hace confirmar/despachar/aplicar; `operador` lee y reporta.
-   Sólo `auth`, `catalogos` y `public` son públicos.
+2. **Roles:** `admin` puede todo (configuración, seguridad y gestión de usuarios); `operador` ejecuta la
+   operación (ventas, inventario, producción, clientes) y lee el resto. La app está **protegida por
+   defecto**: `JwtAuthGuard` + `RolesGuard` son guards globales (`APP_GUARD` en `auth.module.ts`) y sólo
+   lo marcado con `@Public()` (login/logout, `health`, `/public/*`) queda sin sesión. Son `admin` las
+   escrituras de `catalogos` y `productos`, y todo `costos`, `backups`, `monitor` y `usuarios`.
 3. **Rutas estáticas antes de `:param`** en los controllers (p. ej. `/inventario/existencia` vs `/inventario/:id`).
 4. **Decimal ↔ number:** usa siempre `dec()` de `common/util.ts` para convertir `Decimal` de Prisma.
 5. **Precios:** todo cambio de precio base/variante **debe** registrarse en `PriceChange`.

@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/preferences";
 import type { BackupFile } from "@/lib/types";
 
 function humano(bytes: number): string {
@@ -14,6 +15,7 @@ function humano(bytes: number): string {
 }
 
 export default function BackupsPage() {
+  const { user } = useAuth();
   const [archivos, setArchivos] = useState<BackupFile[]>([]);
   const [nombre, setNombre] = useState("");
   const [error, setError] = useState("");
@@ -111,6 +113,14 @@ export default function BackupsPage() {
       setCargando(false);
       if (fileInput.current) fileInput.current.value = "";
     }
+  }
+
+  if (user && user.role !== "admin") {
+    return (
+      <AppShell>
+        <div className="card empty">No tienes permiso para ver esta sección.</div>
+      </AppShell>
+    );
   }
 
   return (

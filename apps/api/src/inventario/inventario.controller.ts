@@ -57,37 +57,37 @@ class MinMaxDto {
 export class InventarioController {
   constructor(private readonly inventario: InventarioService) {}
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("existencia")
   existencia() {
     return this.inventario.existencia();
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("existencia/:variantId")
   existenciaDe(@Param("variantId", ParseIntPipe) variantId: number) {
     return this.inventario.existenciaDe(variantId);
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("ubicaciones")
   ubicaciones() {
     return this.inventario.ubicaciones();
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post("ubicaciones")
   crearUbicacion(@Body() dto: UbicacionDto) {
     return this.inventario.crearUbicacion(dto.nombre, dto.tipo ?? "almacen");
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Patch("ubicaciones/:id")
   editarUbicacion(@Param("id", ParseIntPipe) id: number, @Body() dto: Partial<UbicacionDto>) {
     return this.inventario.editarUbicacion(id, dto);
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("movimientos")
   movimientos(
     @Query("variantId") variantId?: string,
@@ -99,7 +99,7 @@ export class InventarioController {
     });
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post("movimiento")
   movimiento(@Body() dto: MovimientoDto, @Req() req: { user: { id: number } }) {
     return this.inventario.movimiento({
@@ -112,7 +112,7 @@ export class InventarioController {
     });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Post("ajuste")
   ajuste(@Body() dto: AjusteDto, @Req() req: { user: { id: number } }) {
     return this.inventario.ajuste({
@@ -124,7 +124,7 @@ export class InventarioController {
     });
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post("mover")
   mover(@Body() dto: MoverDto, @Req() req: { user: { id: number } }) {
     return this.inventario.mover({
@@ -137,13 +137,13 @@ export class InventarioController {
     });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Patch("variantes/:variantId/minmax")
   setMinMax(@Param("variantId", ParseIntPipe) variantId: number, @Body() dto: MinMaxDto) {
     return this.inventario.setMinMax(variantId, dto);
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("exportar.csv")
   @Header("Content-Type", "text/csv; charset=utf-8")
   @Header("Content-Disposition", 'attachment; filename="stock.csv"')

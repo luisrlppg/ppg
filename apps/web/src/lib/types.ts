@@ -10,6 +10,16 @@ export interface Packaging {
   activo: boolean;
 }
 
+export interface Usuario {
+  id: number;
+  username: string;
+  nombre: string;
+  active: boolean;
+  separadorMiles: "espacio" | "coma";
+  createdAt: string;
+  role: "admin" | "operador";
+}
+
 export interface AtributoValor {
   id: number;
   valor: string;

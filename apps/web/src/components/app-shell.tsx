@@ -35,15 +35,18 @@ const SECTIONS: NavSection[] = [
   {
     id: "admin",
     label: "Administración",
-    roles: ["admin", "supervisor"],
-    items: [{ href: "/costos", label: "Costos", icon: "💰", roles: ["admin", "supervisor"] }],
+    roles: ["admin"],
+    items: [
+      { href: "/usuarios", label: "Usuarios", icon: "👤", roles: ["admin"] },
+      { href: "/costos", label: "Costos", icon: "💰", roles: ["admin"] },
+    ],
   },
   {
     id: "ajustes",
     label: "Ajustes",
     items: [
       { href: "/ajustes", label: "Ajustes", icon: "⚙️" },
-      { href: "/backups", label: "Respaldos", icon: "💾" },
+      { href: "/backups", label: "Respaldos", icon: "💾", roles: ["admin"] },
     ],
   },
 ];

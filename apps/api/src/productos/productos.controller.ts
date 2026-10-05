@@ -115,7 +115,7 @@ class SetVarianteAtributoDto {
 export class ProductosController {
   constructor(private readonly productos: ProductosService) {}
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get()
   list(@Query("search") search?: string, @Query("categoria") categoria?: string) {
     return this.productos.list({
@@ -124,25 +124,25 @@ export class ProductosController {
     });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get("variantes")
   variantes(@Query("search") search?: string) {
     return this.productos.buscarVariantes({ search });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id")
   get(@Param("id", ParseIntPipe) id: number) {
     return this.productos.get(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post()
   create(@Body() dto: CreateProductoDto) {
     return this.productos.create(dto);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Patch(":id")
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateProductoDto, @Req() req: { user: { id: number } }) {
     return this.productos.update(id, dto, req.user.id);
@@ -162,13 +162,13 @@ export class ProductosController {
   }
 
   // ------------------------------------------------ Ejes del grid y BOM
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put(":id/ejes")
   ejes(@Param("id", ParseIntPipe) id: number, @Body() dto: { ejes: EjeDto[] }) {
     return this.productos.setEjes(id, dto.ejes);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put(":id/ejes/:attributeId/valores")
   valoresPermitidos(
     @Param("id", ParseIntPipe) id: number,
@@ -178,75 +178,75 @@ export class ProductosController {
     return this.productos.setValoresPermitidos(id, attributeId, dto.valueIds.map(Number));
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put(":id/componentes")
   componentes(@Param("id", ParseIntPipe) id: number, @Body() dto: { componentes: ComponenteDto[] }) {
     return this.productos.setComponentes(id, dto.componentes);
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id/pasos")
   pasos(@Param("id", ParseIntPipe) id: number) {
     return this.productos.getPasos(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put(":id/pasos")
   setPasos(@Param("id", ParseIntPipe) id: number, @Body() dto: SetPasosDto) {
     return this.productos.setPasos(id, dto.pasos);
   }
 
   // -------------------------------------------------- Grid / combos
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id/grid")
   grid(@Param("id", ParseIntPipe) id: number) {
     return this.productos.grid(id);
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id/variantes")
   variantesDeProducto(@Param("id", ParseIntPipe) id: number) {
     return this.productos.variantesDeProducto(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post(":id/variantes")
   crearVariante(@Param("id", ParseIntPipe) id: number, @Body() dto: VarianteDto) {
     return this.productos.createVariant(id, dto);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post(":id/materializar")
   materializar(@Param("id", ParseIntPipe) id: number, @Body() dto: MaterializarDto) {
     return this.productos.materializar(id, dto.valueIds.map(Number));
   }
 
   // ------------------------------------------------------- Variante
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Patch("variantes/:vid/precio")
   precio(@Param("vid", ParseIntPipe) vid: number, @Body() dto: PrecioDto, @Req() req: { user: { id: number } }) {
     return this.productos.setVariantPrice(vid, dto.price === null ? null : Number(dto.price), req.user.id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Patch("variantes/:vid")
   updateVariante(@Param("vid", ParseIntPipe) vid: number, @Body() dto: UpdateVarianteDto) {
     return this.productos.updateVariant(vid, dto);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Delete("variantes/:vid")
   eliminarVariante(@Param("vid", ParseIntPipe) vid: number) {
     return this.productos.eliminarVariante(vid);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put("variantes/:vid/packagings")
   packagings(@Param("vid", ParseIntPipe) vid: number, @Body() dto: VariantePackagingDto) {
     return this.productos.setPackagings(vid, dto.packagings);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put("variantes/:vid/atributos/:attributeId")
   setAtributo(
     @Param("vid", ParseIntPipe) vid: number,
@@ -256,7 +256,7 @@ export class ProductosController {
     return this.productos.setVariantAttribute(vid, attributeId, dto.valueId);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @HttpCode(204)
   @Delete("variantes/:vid/atributos/:attributeId")
   removeAtributo(@Param("vid", ParseIntPipe) vid: number, @Param("attributeId", ParseIntPipe) attributeId: number) {

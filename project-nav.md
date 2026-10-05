@@ -26,7 +26,9 @@ docs/         # Documentación (este mapa vive en la raíz)
 infra/        # Dockerfiles + Caddyfile (perfil full)
 ```
 
-- **Roles/guards:** `admin`, `supervisor`, `operador`. Sólo `auth` (login), `catalogos` y `public` son públicos.
+- **Roles/guards:** `admin`, `operador`. La app está **protegida por defecto**: `JwtAuthGuard` + `RolesGuard`
+  son guards globales (`APP_GUARD` en `auth/auth.module.ts`); sólo lo marcado `@Public()` (login/logout,
+  `health` y `/public/*`) queda sin sesión.
 - La web es una sola app; no hay Redux/react-query: `useState` + `useEffect` + `useCallback` + `fetch` vía `lib/api.ts`.
 
 ---
@@ -90,13 +92,14 @@ Registrados en `app.module.ts`.
 - **No hay entidad OF** (retirada 2026-10-05): la producción se registra como stock y los ensambles se consumen al despachar.
 
 ### 2.6 Catálogos (atributos / categorías / empaques) → `catalogos/`
-- `catalogos.controller.ts` (296) — `@Controller("catalogos")` **público, sin guards**, usa `PrismaService` directo (sin service).
+- `catalogos.controller.ts` (296) — `@Controller("catalogos")` (`JwtAuthGuard`+`RolesGuard`): **lectura** para
+  cualquier sesión, **escrituras sólo `admin`**. Usa `PrismaService` directo (sin service).
   - categorías CRUD · empaques CRUD · atributos listar/crear · editar/eliminar · valores add/del · asignar/desasignar
   - `atributos/producto/:id` (propios + heredados) delega en `catalogos.atributos-producto.ts`
 - `catalogos.atributos-producto.ts` (87): atributos propios + **heredados por recursión BOM** (`atributosPorProducto`).
 
 ### 2.7 Storefront público → `public/`
-- `public.controller.ts` (53) — `@Controller("public")` **público**
+- `public.controller.ts` (53) — `@Controller("public")` **`@Public()`** (sin sesión)
   - `GET public/productos` · `GET public/productos/:id/pasos` · `POST public/orders` · `GET public/orders/:numero` · `GET public/catalog`
 - `public.service.ts`:
   - `crearPedido` (precio recalculado en servidor) · `consultarPedido`
@@ -132,7 +135,9 @@ Registrados en `app.module.ts`.
 ### 2.11 Auth → `auth/`
   - `auth.controller.ts`: `login` (JWT + cookie httpOnly), `logout`, `me`, `PATCH preferences` (separador de miles).
   - `auth.service.ts`: `validate` (bcrypt) · `findById` · `setSeparadorMiles` · `sign` · `verify` · `toPublic`.
-- Guards `guards/jwt-auth.guard.ts` (cookie → `req.user`) y `guards/roles.guard.ts` (`@Roles()`); decorator `decorators/roles.decorator.ts`.
+- Guards `guards/jwt-auth.guard.ts` (cookie → `req.user`; respeta `@Public()`) y `guards/roles.guard.ts` (`@Roles()`);
+  decorators `decorators/roles.decorator.ts` y `decorators/public.decorator.ts`. Ambos guards se registran como
+  **globales** (`APP_GUARD` en `auth.module.ts`): todo exige sesión salvo lo marcado `@Public()`.
 
 ### 2.12 Soporte transversal
 - `prisma/prisma.service.ts` (15) — wrapper Prisma.
@@ -140,7 +145,7 @@ Registrados en `app.module.ts`.
 - `common/valores-permitidos.ts` (81) — `valoresPermitidosLote` (subconjunto de valores por eje, sin N+1).
 
 ### 2.13 Costos (estándar por producto) → `costos/`
-- `costos.controller.ts` — `@Controller("costos")` (`admin`/`supervisor`): `GET /costos` (lista + desglose + precio/margen),
+- `costos.controller.ts` — `@Controller("costos")` (sólo `admin`): `GET /costos` (lista + desglose + precio/margen),
   `GET /costos/:productId` (detalle + receta cruda), `PUT /costos/:productId` (upsert receta + materiales, `$transaction`),
   `DELETE /costos/:productId` (limpia receta).
 - `costos.service.ts`: `list` · `get` · `upsert` · `remove` · `calcular` (materiales = `costoCompra` + Σ líneas;
@@ -148,6 +153,13 @@ Registrados en `app.module.ts`.
   (precio = `basePrice` o mínimo si es 0) para margen de **solo lectura**.
 - **v1 separada del ERP:** captura manual por producto, sin historial ni merma y **sin** enlazar a los precios de
   venta todavía (ver `docs/roadmap.md`). Modelo: `ProductCost` + `ProductCostMaterial` (`docs/data-model.md`).
+
+### 2.14 Usuarios / cuentas → `usuarios/`
+- `usuarios.controller.ts` — `@Controller("usuarios")` (`admin`):
+  - `GET /usuarios` (lista sin `passwordHash`) · `POST /usuarios` (`username`, `nombre`, `password`, `role`)
+  - `PATCH /usuarios/:id` (`nombre`, `role`, `active`) · `PATCH /usuarios/:id/password` (reset)
+- `usuarios.service.ts`: hash con `bcryptjs` (10 rondas); valida rol contra `ROLES` de `@ppg/shared`;
+  impide que un admin se desactive o se quite su propio rol.
 
 ---
 
@@ -169,13 +181,14 @@ y `AppShell` (excepto tienda y login).
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
 | Reportes de producción | `app/reportes/page.tsx` | 693 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
-| Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin`/`supervisor`; en el menú vive en la sección **Administración** |
+| Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin` (guardia en la página); en el menú vive en la sección **Administración** |
+| Usuarios | `app/usuarios/page.tsx` | — | CRUD de cuentas (sólo `admin`): alta (usuario/nombre/contraseña/rol), edición de nombre/rol/activo, cambio de contraseña y activar/desactivar. No permite auto-desactivarse ni quitarse el rol admin |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
 | Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles); en el menú encabeza la sección **Ajustes** |
 | Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin); en el menú vive en la sección **Ajustes** |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
-| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), con **secciones colapsables** de encabezado (**Administración** [admin/supervisor] → Costos; **Ajustes** → Ajustes/Respaldos; estado en `ppg.sidebar.section.<id>`, se auto-abre la sección de la ruta activa). `useAuth()` del `PreferencesProvider` global, logout |
+| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), con **secciones colapsables** de encabezado (**Administración** [admin] → Usuarios/Costos; **Ajustes** → Ajustes/Respaldos [admin]; estado en `ppg.sidebar.section.<id>`, se auto-abre la sección de la ruta activa). `useAuth()` del `PreferencesProvider` global, logout |
 
 ### 3.2 Librerías compartidas (`apps/web/src/lib/`)
 - `api.ts` (31) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`.
@@ -217,7 +230,8 @@ Reutilízalos en vez de inventar clases nuevas:
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
 | Respaldos de la BD (punto de retorno) | `apps/api/src/backups/` · `app/backups/page.tsx` (UI) · `scripts/ppg.sh` (`backup`/`restore`) |
-| Login / roles / JWT | `apps/api/src/auth/` |
+| Login / roles / JWT / guards globales | `apps/api/src/auth/` (`decorators/public.decorator.ts`, `guards/`) |
+| Cuentas de usuario (CRUD admin) | `apps/api/src/usuarios/` · `app/usuarios/page.tsx` |
 | Tipos shared | `apps/web/src/lib/types.ts` |
 | Esquema de BD / migraciones | `packages/db/prisma/schema.prisma` + `pnpm db:deploy` (ver `docs/development.md`) |
 | Catálogo (cambiar ops/seed · estado · toolkit) | `docs/catalog-ops.md` + `docs/catalog-state.md` + `scripts/catalog/` |

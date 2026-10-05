@@ -20,25 +20,25 @@ export class MonitorController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Get("stock-bajo")
   stockBajo() {
     return this.monitor.listarBajo();
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post("check")
   check(@Body() dto: CheckDto) {
     return this.monitor.checkAll(Boolean(dto.force));
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post("notify")
   notify() {
     return this.monitor.checkAll(true);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Get("estado")
   async estado() {
     const canales = this.monitor.canalesConfigurados();
@@ -63,7 +63,7 @@ export class MonitorController {
     return this.monitor.enviarPrueba();
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Get("eventos")
   eventos() {
     return this.prisma.notificationEvent.findMany({

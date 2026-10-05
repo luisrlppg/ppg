@@ -1,4 +1,4 @@
-export const ROLES = ["admin", "supervisor", "operador"] as const;
+export const ROLES = ["admin", "operador"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const SEPARADORES_MILES = ["espacio", "coma"] as const;
@@ -22,7 +22,6 @@ export interface MeResponse {
 
 export const HOME_BY_ROLE: Record<Role, string> = {
   operador: "Tu reporte de producción",
-  supervisor: "Bandeja de pendientes de inventario",
   admin: "Panel de control",
 };
 

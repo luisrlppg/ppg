@@ -13,8 +13,9 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { IsIn, IsNotEmpty, IsString } from "class-validator";
 import type { Request, Response } from "express";
-import { type PublicUser, type SeparadorMiles, SEPARADORES_MILES } from "@ppg/shared";
+import { type PublicUser, type Role, type SeparadorMiles, SEPARADORES_MILES } from "@ppg/shared";
 import { AuthService } from "./auth.service";
+import { Public } from "./decorators/public.decorator";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
 class LoginDto {
@@ -51,6 +52,7 @@ export class AuthController {
     return this.config.get<string>("COOKIE_NAME", "ppg_session");
   }
 
+  @Public()
   @Post("login")
   @HttpCode(200)
   async login(
@@ -65,7 +67,7 @@ export class AuthController {
       username: user.username,
       nombre: user.nombre,
       active: user.active,
-      role: user.role.name as "admin" | "supervisor" | "operador",
+      role: user.role.name as Role,
       separadorMiles: user.separadorMiles as SeparadorMiles,
     };
     const token = this.auth.sign({
@@ -85,6 +87,7 @@ export class AuthController {
     return { user: this.auth.toPublic(authUser) as PublicUser };
   }
 
+  @Public()
   @Post("logout")
   @HttpCode(200)
   logout(@Res({ passthrough: true }) res: Response) {

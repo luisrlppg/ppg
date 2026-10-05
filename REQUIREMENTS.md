@@ -58,7 +58,7 @@ apps/erp/
 ### Diagrama
 
 ```
-users ──< roles (admin | supervisor | operador)
+users ──< roles (admin | operador)
 
 categories
 packagings                       — catálogo (Caja de almacén, Caja de cartón, Bolsa...)
@@ -84,13 +84,12 @@ production_reports ──< production_report_lines ── variant_id   (E3)
 | Tabla | Campos | Notas |
 |---|---|---|
 | `users` | id, username, password_hash, role_id, nombre, activo, timestamps | Login propio |
-| `roles` | id, nombre | `admin`, `supervisor`, `operador` |
+| `roles` | id, nombre | `admin`, `operador` |
 
 Alcances:
-- **admin**: todo + gestión de usuarios.
-- **supervisor**: alta/edición/ajuste de inventario, ventas y órdenes de fabricación (incl. alta manual y reposición), ver reportes.
-- **operador**: lectura de productos/stock; (futuro) reportar producción.
-- **Encargada de inventario** (rol supervisor u otro): revisa y **acepta** reportes (E3), asigna **ubicaciones** — la cantidad nunca se tipea dos veces.
+- **admin**: todo + gestión de usuarios + configuración (productos/catálogos) + costos, respaldos y monitoreo.
+- **operador**: operación diaria — ventas (crear/confirmar/despachar/cancelar), inventario (entrada/salida/ajuste/transferencia),
+  reportes de producción (crear/aplicar/ubicar lotes) y clientes (alta/edición); lectura del resto.
 
 #### Catálogos
 | Tabla | Campos |
@@ -397,7 +396,7 @@ distintos según el tipo:
 - **Comprables:** se captura su `costo_compra`.
 - **Arranque separado:** no alimenta aún los precios de venta; precio y margen se muestran
   solo como referencia. La unificación con la página de precios queda como pendiente.
-- **Acceso:** ver/editar `admin` y `supervisor`.
+- **Acceso:** ver/editar sólo `admin`.
 - **API:** `GET /costos` · `GET /costos/:productId` · `PUT /costos/:productId` ·
   `DELETE /costos/:productId`. **Web:** `/costos` (lista + editor en modal).
 

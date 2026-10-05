@@ -65,7 +65,6 @@ La web escucha en `http://localhost:3000` y reenvía `/api/*` a la API (misma or
 | Usuario | Contraseña | Rol |
 |---|---|---|
 | `admin` | `admin123` | admin (configurado desde `.env`, ver seed) |
-| `super` | `super123` | supervisor |
 | `juan`  | `op123`    | operador |
 
 ## Despliegue completo (perfil full)

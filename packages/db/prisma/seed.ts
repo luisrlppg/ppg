@@ -9,7 +9,7 @@ function env(name: string, fallback: string): string {
 
 async function main() {
   // --- Roles y usuarios (E0) ---
-  const ROLES = ["admin", "supervisor", "operador"] as const;
+  const ROLES = ["admin", "operador"] as const;
   for (const name of ROLES) {
     await prisma.role.upsert({
       where: { name },
@@ -34,7 +34,6 @@ async function main() {
   });
 
   const users = [
-    { username: "super", password: "super123", nombre: "Supervisora de Inventario", role: "supervisor" },
     { username: "juan", password: "op123", nombre: "Juan", role: "operador" },
   ];
   for (const u of users) {

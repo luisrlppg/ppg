@@ -54,25 +54,25 @@ class DespacharDto {
 export class VentasController {
   constructor(private readonly ventas: VentasService) {}
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get()
   list(@Query("search") search?: string, @Query("estado") estado?: string, @Query("origen") origen?: string) {
     return this.ventas.list({ search, estado, origen });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id")
   get(@Param("id", ParseIntPipe) id: number) {
     return this.ventas.get(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post()
   create(@Body() dto: CrearVentaDto, @Req() req: { user: { id: number } }) {
     return this.ventas.create({ ...dto, lines: dto.lines.map((l) => ({ ...l, cantidad: Number(l.cantidad) })) }, req.user.id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Patch(":id")
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: EditarVentaDto) {
     return this.ventas.update(id, {
@@ -83,19 +83,19 @@ export class VentasController {
     });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id/desglose")
   desglose(@Param("id", ParseIntPipe) id: number) {
     return this.ventas.desglose(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post(":id/confirmar")
   confirmar(@Param("id", ParseIntPipe) id: number, @Req() req: { user: { id: number } }) {
     return this.ventas.confirmar(id, req.user.id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post(":id/lineas/:lineaId/despachar")
   despachar(
     @Param("id", ParseIntPipe) id: number,
@@ -106,7 +106,7 @@ export class VentasController {
     return this.ventas.despacharLinea(id, lineaId, { cantidad: Number(dto.cantidad), locationId: dto.locationId, userId: req.user.id });
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post(":id/cancelar")
   cancelar(@Param("id", ParseIntPipe) id: number, @Req() req: { user: { id: number } }) {
     return this.ventas.cancelar(id, req.user.id);

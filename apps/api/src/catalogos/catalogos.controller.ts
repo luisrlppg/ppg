@@ -11,8 +11,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
 import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Roles } from "../auth/decorators/roles.decorator";
 import { PrismaService } from "../prisma/prisma.service";
 import { atributosPorProducto } from "./catalogos.atributos-producto";
 
@@ -49,6 +53,7 @@ class ValorDto {
 }
 
 @Controller("catalogos")
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CatalogosController {
   constructor(private prisma: PrismaService) {}
 
@@ -62,6 +67,7 @@ export class CatalogosController {
     return rows.map((r) => ({ ...r, productos: r._count.products, _count: undefined }));
   }
 
+  @Roles("admin")
   @Post("categorias")
   async crearCategoria(@Body() dto: CategoriaDto) {
     const clean = dto.nombre.trim();
@@ -72,6 +78,7 @@ export class CatalogosController {
     });
   }
 
+  @Roles("admin")
   @Patch("categorias/:id")
   async editarCategoria(
     @Param("id", ParseIntPipe) id: number,
@@ -80,6 +87,7 @@ export class CatalogosController {
     return this.prisma.category.update({ where: { id }, data: { nombre: dto.nombre.trim() } });
   }
 
+  @Roles("admin")
   @Delete("categorias/:id")
   @HttpCode(204)
   async borrarCategoria(@Param("id", ParseIntPipe) id: number) {
@@ -92,11 +100,13 @@ export class CatalogosController {
     return this.prisma.packaging.findMany({ orderBy: { nombre: "asc" } });
   }
 
+  @Roles("admin")
   @Post("empaques")
   async crearEmpaque(@Body() dto: EmpaqueDto) {
     return this.prisma.packaging.create({ data: { nombre: dto.nombre.trim() } });
   }
 
+  @Roles("admin")
   @Patch("empaques/:id")
   async editarEmpaque(
     @Param("id", ParseIntPipe) id: number,
@@ -130,6 +140,7 @@ export class CatalogosController {
     }));
   }
 
+  @Roles("admin")
   @Post("atributos")
   async crearAtributo(@Body() dto: AtributoDto) {
     const nombre = dto.nombre.trim();
@@ -152,6 +163,7 @@ export class CatalogosController {
     });
   }
 
+  @Roles("admin")
   @Patch("atributos/:id")
   async editarAtributo(
     @Param("id", ParseIntPipe) id: number,
@@ -174,6 +186,7 @@ export class CatalogosController {
     return attr;
   }
 
+  @Roles("admin")
   @Delete("atributos/:id")
   @HttpCode(204)
   async eliminarAtributo(@Param("id", ParseIntPipe) id: number) {
@@ -190,6 +203,7 @@ export class CatalogosController {
     await this.prisma.attribute.delete({ where: { id } });
   }
 
+  @Roles("admin")
   @Post("atributos/:id/valores")
   async agregarValor(
     @Param("id", ParseIntPipe) id: number,
@@ -206,6 +220,7 @@ export class CatalogosController {
     });
   }
 
+  @Roles("admin")
   @Delete("atributos/:id/valores/:valorId")
   @HttpCode(204)
   async eliminarValor(
@@ -225,6 +240,7 @@ export class CatalogosController {
     await this.prisma.attributeValue.delete({ where: { id: valorId } });
   }
 
+  @Roles("admin")
   @Patch("atributos/:id/valores/:valorId")
   async renombrarValor(
     @Param("id", ParseIntPipe) id: number,
@@ -256,6 +272,7 @@ export class CatalogosController {
   }
 
   // --- Asignar/desasignar atributo a producto ---
+  @Roles("admin")
   @Post("atributos/:id/asignar/:productoId")
   async asignarAtributo(
     @Param("id", ParseIntPipe) attributeId: number,
@@ -279,6 +296,7 @@ export class CatalogosController {
     });
   }
 
+  @Roles("admin")
   @Delete("atributos/:id/desasignar/:productoId")
   @HttpCode(204)
   async desasignarAtributo(

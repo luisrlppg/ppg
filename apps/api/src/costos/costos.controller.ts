@@ -56,19 +56,19 @@ class UpsertCostoDto {
 export class CostosController {
   constructor(private readonly costos: CostosService) {}
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Get()
   list(@Query("search") search?: string) {
     return this.costos.list({ search });
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Get(":productId")
   get(@Param("productId", ParseIntPipe) productId: number) {
     return this.costos.get(productId);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Put(":productId")
   upsert(
     @Param("productId", ParseIntPipe) productId: number,
@@ -78,7 +78,7 @@ export class CostosController {
     return this.costos.upsert(productId, dto, req.user.id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Delete(":productId")
   remove(@Param("productId", ParseIntPipe) productId: number) {
     return this.costos.remove(productId);

@@ -43,25 +43,25 @@ class ImportCsvDto {
 export class ClientesController {
   constructor(private readonly clientes: ClientesService) {}
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get()
   list(@Query("search") search?: string, @Query("todos") todos?: string) {
     return this.clientes.list({ search, incluirInactivos: todos === "1" });
   }
 
-  @Roles("admin", "supervisor", "operador")
+  @Roles("admin", "operador")
   @Get(":id")
   get(@Param("id", ParseIntPipe) id: number) {
     return this.clientes.get(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Post()
   create(@Body() dto: ClienteDto) {
     return this.clientes.create(dto);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin", "operador")
   @Patch(":id")
   update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateClienteDto) {
     return this.clientes.update(id, dto);
@@ -80,7 +80,7 @@ export class ClientesController {
     return this.clientes.eliminar(id);
   }
 
-  @Roles("admin", "supervisor")
+  @Roles("admin")
   @Post("importar")
   importar(@Body() dto: ImportCsvDto) {
     return this.clientes.importar(dto.csv);

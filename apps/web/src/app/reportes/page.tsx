@@ -95,7 +95,7 @@ export default function ReportesPage() {
       .catch(() => setUser(null));
   }, []);
 
-  const esGestion = user?.role === "admin" || user?.role === "supervisor";
+  const esGestion = user?.role === "admin";
 
   // ------------------------------------------------------------------ Formulario
   const [turno, setTurno] = useState<Turno>(turnoPorHora);

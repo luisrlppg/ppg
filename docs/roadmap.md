@@ -31,6 +31,17 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Roles reducidos a `admin`/`operador` + gestión de usuarios + app protegida (2026-10-05):** se retiró
+  el rol `supervisor` (migración `20261005160000_remove_supervisor_role` reasigna sus usuarios a `admin`
+  y borra el rol; el seed ya sólo crea `admin`/`operador`). `JwtAuthGuard`+`RolesGuard` pasaron a
+  **globales** (`APP_GUARD` en `auth/auth.module.ts`) con el decorator `@Public()` para login/logout,
+  `health` y `/public/*`; el resto exige sesión. Se remapearon los `@Roles` (operador = operación
+  completa: ventas, inventario, producción, clientes y reportes; admin = configuración/seguridad,
+  costos, respaldos, monitor, catálogos y productos). Se añadió el módulo `usuarios/`
+  (`GET/POST /usuarios`, `PATCH /usuarios/:id`, `PATCH /usuarios/:id/password`, sólo `admin`) y la
+  página `app/usuarios/page.tsx` (sección **Administración**). Las escrituras de `catalogos` dejaron de
+  ser públicas. Ver `conventions.md` §2.
+
 - **Desglose de venta en árbol plegable (2026-10-06):** `GET /ventas/:id/desglose` ahora devuelve,
   además de `lineas` (lista plana agregada que sigue usando Fabricación), un `arbol` de
   `DesgloseNodo` construido por raíz vendida (`planificacion.desglosar`). En el detalle de venta
@@ -39,8 +50,8 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   de plegado). UI en `app/ventas/page.tsx`; tipos en `lib/types.ts`. Sin migración.
 
 - **Menú lateral por secciones y retiro de la página Monitor (2026-10-05):** `components/app-shell.tsx`
-  pasó de lista plana a **secciones colapsables** con encabezado: **Administración** (solo
-  `admin`/`supervisor`) contiene **Costos**; **Ajustes** contiene **Preferencias** (`/ajustes`) y
+  pasó de lista plana a **secciones colapsables** con encabezado: **Administración** (hoy sólo
+  `admin`) contiene **Usuarios** y **Costos**; **Ajustes** contiene **Preferencias** (`/ajustes`) y
   **Respaldos** (`/backups`). El estado de cada sección se persiste en `ppg.sidebar.section.<id>` y la
   sección de la ruta activa se auto-abre; el botón **Ajustes** del footer se retiró. Se **eliminó la
   página** `app/monitor/page.tsx` (su vista ya vive en Inventario/Fabricación) y la tarjeta homónima del
@@ -92,7 +103,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   creación de OFs y el neteo de ventas de los **BTVPE** (p. ej. Delineador), que fallaban con
   "No hay variante de Escurridor compatible". Sin migración. Ver `conventions.md` §6.
 
-- **Módulo de Costos v1 (2026-10-05):** página `/costos` (menú lateral, sólo `admin`/`supervisor`) para
+- **Módulo de Costos v1 (2026-10-05):** página `/costos` (menú lateral, hoy sólo `admin`) para
   administrar el **costo estándar por producto**. Captura manual por concepto: materiales (líneas
   `ProductCostMaterial`), costo de compra, mano de obra (horas×tarifa), máquina (horas×tarifa), molde
   (amortización = costo/piezas), ensamble, empaque y notas. Muestra desglose, precio y margen de
@@ -144,7 +155,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   "Por variante min max") ahora edita inline las celdas Mín/Máx con `CantidadEditable` (props
   nuevas `title`/`min`); guarda vía `PATCH /inventario/variantes/:vid/minmax`, disponible para
   **todos** los roles. El endpoint es dedicado para no ampliar `PATCH /productos/variantes/:vid`
-  (admin/supervisor), que además permite nombre/activo/notas. No dispara el monitor: el estado se
+  (hoy sólo `admin`), que además permite nombre/activo/notas. No dispara el monitor: el estado se
   recalcula en el siguiente movimiento/consulta (paridad con `productos.updateVariant`).
 - **Flags de suministro fabricable/comprable (2026-10-04):** `Product` ganó `fabricable` y
   `comprable` (migración `20261004160000_product_fabricable_comprable`, backfill desde el BOM:

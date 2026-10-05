@@ -6,6 +6,7 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { HOME_BY_ROLE } from "@ppg/shared";
+import { useAuth } from "@/lib/preferences";
 import type { NecesidadesResp, StockBajo } from "@/lib/types";
 
 const MODULES = [
@@ -24,6 +25,7 @@ interface Pendientes {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const [pend, setPend] = useState<Pendientes | null>(null);
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function Home() {
         title="Inicio"
         subtitle={
           <>
-            Tu área: <strong>{HOME_BY_ROLE["admin"]}</strong> (adaptable por rol en E3).
+            Tu área: <strong>{user ? HOME_BY_ROLE[user.role] : "Panel de control"}</strong>.
           </>
         }
       />

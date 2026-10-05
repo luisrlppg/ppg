@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post } from "@nestjs/common";
 import { Type } from "class-transformer";
 import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Public } from "../auth/decorators/public.decorator";
 import { PublicService } from "./public.service";
 
 class LineaPublicDto {
@@ -29,6 +30,7 @@ class CrearPedidoDto {
   @IsArray() @IsNotEmpty() @ValidateNested({ each: true }) @Type(() => LineaPublicDto) lines!: LineaPublicDto[];
 }
 
+@Public()
 @Controller("public")
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
