@@ -71,7 +71,17 @@ export default function ProductoDetallePage() {
       const result = await api<{ propios: Atributo[]; heredados: Atributo[] }>(`/catalogos/atributos/producto/${prodId}`);
       setPropios(result.propios);
       setHeredados(result.heredados);
-    } catch { setPropios([]); setHeredados([]); }
+      return result;
+    } catch {
+      setPropios([]);
+      setHeredados([]);
+      return { propios: [] as Atributo[], heredados: [] as Atributo[] };
+    }
+  }, [prodId]);
+
+  const cargarGrid = useCallback(async () => {
+    const g = await api<Grid>(`/productos/${prodId}/grid`);
+    setGrid(g);
   }, [prodId]);
 
   const cargar = useCallback(async () => {
@@ -154,7 +164,7 @@ export default function ProductoDetallePage() {
       setCreateAttrNombre("");
       setCreateAttrValores("");
       setShowInlineCreate(false);
-      await cargarAtributosProducto();
+      await Promise.all([cargarAtributosProducto(), cargarGrid()]);
       if (created) setExpandedAttr(created.id);
       notify(null, "Atributo creado y asignado.");
     } catch (e) { notify(e as Error, e instanceof Error ? e.message : "Error"); }
@@ -175,13 +185,14 @@ export default function ProductoDetallePage() {
         body: JSON.stringify({ valor: nombre }),
       });
       setNewValor("");
-      await cargarAtributosProducto();
-      const updated = [...propios, ...heredados].find((a) => a.id === attr.id);
-      if (updated && attr.permitidos !== undefined) {
+      const { propios: p, heredados: h } = await cargarAtributosProducto();
+      if (attr.permitidos !== undefined) {
         // Si el eje ya tenía valores explícitos, el nuevo valor se agrega como permitido.
-        const nuevo = updated.valores.find((v) => v.valor === nombre);
-        if (nuevo) await guardarValoresPermitidos(updated, [...attr.permitidos, nuevo.id]);
+        const updated = [...p, ...h].find((a) => a.id === attr.id);
+        const nuevo = updated?.valores.find((v) => v.valor === nombre);
+        if (updated && nuevo) await guardarValoresPermitidos(updated, [...attr.permitidos, nuevo.id]);
       }
+      await cargarGrid();
       notify(null, "Valor agregado.");
     } catch (e) { notify(e as Error, ""); }
   }
@@ -189,7 +200,7 @@ export default function ProductoDetallePage() {
   async function eliminarValor(attr: Atributo, valorId: number) {
     try {
       await api(`/catalogos/atributos/${attr.id}/valores/${valorId}`, { method: "DELETE" });
-      await cargarAtributosProducto();
+      await Promise.all([cargarAtributosProducto(), cargarGrid()]);
       notify(null, "Valor eliminado.");
     } catch (e) { notify(e as Error, ""); }
   }
@@ -198,7 +209,7 @@ export default function ProductoDetallePage() {
     try {
       await api(`/catalogos/atributos/${attrId}/desasignar/${prodId}`, { method: "DELETE" });
       if (expandedAttr === attrId) setExpandedAttr(null);
-      await cargarAtributosProducto();
+      await Promise.all([cargarAtributosProducto(), cargarGrid()]);
       notify(null, "Atributo desasignado del producto.");
     } catch (e) { notify(e as Error, ""); }
   }
@@ -210,7 +221,7 @@ export default function ProductoDetallePage() {
       setAddAttrSearch("");
       setShowAddAttrDropdown(false);
       setExpandedAttr(attrId);
-      await cargarAtributosProducto();
+      await Promise.all([cargarAtributosProducto(), cargarGrid()]);
       notify(null, "Atributo asignado.");
     } catch (e) { notify(e as Error, ""); }
     finally { setAsigningAttr(false); }

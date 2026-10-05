@@ -26,6 +26,11 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Refresco del materializador al editar atributos (2026-10-05):** en la ficha de producto
+  (`productos/[id]`), las altas/bajas de atributos, ejes y valores ahora recargan también el
+  `grid` (`GET /productos/:id/grid`), no solo `propios`/`heredados`. Así el bloque "Materializar
+  combinación" (un select por eje) aparece/se actualiza sin recargar la página. Nuevo callback
+  `cargarGrid` (no usa `cargar()` para no descartar ediciones sin guardar de BOM/pasos).
 - **Buscador/encabezados fijos y productos alfabético (2026-10-04):** el área de contenido
   (`.content`) pasó a ser el contenedor de scroll (`100dvh; overflow:auto`; sidebar fijo) y el
   `thead` de `.table` se pega debajo de un `StickyBar` (mide su alto en `--sticky-head`). Aplicado
