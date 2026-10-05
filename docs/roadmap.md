@@ -5,8 +5,8 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 ## Pendientes activos
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos:
-   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (718),
-   `ventas/page.tsx` (469), `fabricacion/page.tsx` (431). La API ya quedó mayormente modularizada.
+   `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (693),
+   `ventas/page.tsx` (516), `fabricacion/page.tsx` (254). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, crosswalk con
    SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
@@ -30,6 +30,18 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 - `common/util.ts`: helpers mezclados, candidato a separar.
 
 ## Trabajo reciente (contexto)
+
+- **Fabricación sin OF: panel de necesidades + alta de producción (2026-10-05):** se **eliminó por
+  completo** la entidad de orden de fabricación (`ManufacturingOrder`/`ManufacturingOrderLine` y enums
+  `TipoOF`/`OrigenOF`/`EstadoOF`; migración `20261005154000_remove_manufacturing_order`). El módulo
+  `fabricacion` ahora expone `GET /fabricacion/necesidades` (dos listas: **por mínimo** y **por ventas**
+  —explosión neta de las ventas abiertas confirmadas con pool compartido de stock—, más `porComprar`) y
+  `POST /fabricacion/produccion {variantId, cantidad, locationId}` (entrada de stock motivo `produccion`
+  a la ubicación elegida; sin reportes). La UI `app/fabricacion/page.tsx` se reescribió como dos listas
+  con ingreso de producción en 2 pasos (cantidad → ubicación). Los **ensambles** se arman contra pedido y
+  ahora `ventas.despacharLinea` **consume sus componentes** (`planificacion.consumirEnsamble`) al despachar.
+  Se retiraron "Crear OF", la tabla de OFs de la venta, el deep-link `?of=`, el select de OF en reportes y
+  `cantidadEnOF` del monitor; `reportes` ya no se liga a OF.
 
 - **Desglose de componentes en ventas (2026-10-05):** al abrir el detalle de una venta se calcula en vivo
   la explosión neta multi-nivel (`GET /ventas/:id/desglose`, `planificacion.desglosar`, pool compartido de
@@ -198,7 +210,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 ## Verificaciones end-to-end
 
 - **E3 (reportes → confirmación → ubicar):** verificado 2026-08-31 con `scripts/seed-demo.ts`.
-- **E2 (venta → confirmación → neteo → cascada de OFs multi-nivel → despacho/consumo → `despachada`):**
+- **E2 (venta → confirmación → desglose multi-nivel → despacho/consumo → `despachada`):**
   verificado 2026-08-31 con `scripts/seed-demo-ventas.ts`. Durante la verificación se corrigieron 3 bugs:
   1. El DTO de ventas internas no aceptaba `configuracion` (`whitelist: true` la descartaba).
   2. Doble bucle en `confirmar` generaba cada OF dos veces; se eliminó el bucle redundante y `ventas.ofs.ts`.

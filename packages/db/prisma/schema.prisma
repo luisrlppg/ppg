@@ -154,8 +154,6 @@ model ProductVariant {
   moves               StockMove[]
   priceChanges        PriceChange[]
   salesLines          SalesOrderLine[]
-  manufacturingOrders ManufacturingOrder[]
-  moLines             ManufacturingOrderLine[]
   reportLines         ProductionReportLine[]
 
   @@index([productId])
@@ -457,69 +455,8 @@ model SalesOrderLine {
   estadoEntrega  EstadoEntrega @default(pendiente)
   configuracion  Json?         // respuestas de las 5 preguntas (atributos seleccionados)
 
-  manufacturingOrders ManufacturingOrder[]
-
   @@index([orderId])
   @@index([variantId])
-}
-
-enum TipoOF {
-  fabricacion // 1 componente exacto (§ decisión): se produce de una sola materia/componente
-  ensamble    // 2+ componentes exactos: se arma a partir de varios
-}
-
-enum OrigenOF {
-  venta              // generada al confirmar una venta
-  manual             // creada manualmente por el usuario
-  reposicion_minimo  // reaprovisionamiento hasta stock_min
-  reposicion_maximo  // reaprovisionamiento hasta stock_max
-}
-
-enum EstadoOF {
-  borrador
-  confirmada
-  en_progreso
-  hecha
-  cancelada
-}
-
-model ManufacturingOrder {
-  id            Int          @id @default(autoincrement())
-  numero        String       @unique
-  variantId     Int
-  variant       ProductVariant @relation(fields: [variantId], references: [id])
-  cantidad      Decimal
-  tipo          TipoOF
-  origen        OrigenOF     @default(venta)
-  estado        EstadoOF     @default(confirmada)
-  fecha         DateTime     @default(now())
-  notas         String?
-  generatedFrom String?
-  finalizadoAt  DateTime?
-  userId        Int?
-  configuracion Json?
-  salesOrderLineId Int?
-
-  salesOrderLine SalesOrderLine? @relation(fields: [salesOrderLineId], references: [id])
-  lines ManufacturingOrderLine[]
-  reports ProductionReport[]
-
-  @@index([variantId])
-  @@index([estado])
-  @@index([salesOrderLineId])
-}
-
-model ManufacturingOrderLine {
-  id                 Int                 @id @default(autoincrement())
-  orderId            Int
-  order              ManufacturingOrder  @relation(fields: [orderId], references: [id])
-  componentVariantId Int
-  componentVariant   ProductVariant      @relation(fields: [componentVariantId], references: [id])
-  cantidadRequerida  Decimal
-  cantidadReservada  Decimal             @default(0)
-
-  @@index([orderId])
-  @@index([componentVariantId])
 }
 
 // ---------------------------------------------------------------------------
@@ -564,10 +501,8 @@ model ProductionReport {
   notas               String?
   estado              EstadoReporte        @default(pendiente)
   aplicadoAt          DateTime?
-  interno             Boolean              @default(false) // reporte automático generado al concluir una OF hoja (alimenta Recibo/Ubicar; no cuenta en métricas)
+  interno             Boolean              @default(false) // reporte automático histórico (no cuenta en métricas)
   userId              Int?
-  manufacturingOrderId Int?                // OF en ejecución (§8.5); al aplicar pasa a hecha
-  manufacturingOrder  ManufacturingOrder?  @relation(fields: [manufacturingOrderId], references: [id])
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 

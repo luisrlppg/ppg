@@ -23,11 +23,10 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
   variantes activas; se marca con el checkbox "Vendible en Ventas" (detalle y lista de productos).
   Sustituye al retirado `ProductVariant.published`.
 - **`Product.fabricable` / `Product.comprable`** — flags independientes (ambos pueden ser `true`) que
-  definen cómo entra el producto al **neteo** al confirmar una venta o crear una OF:
-  - `fabricable` → se produce (genera orden de fabricación); puede o no tener BOM exacto. Si no tiene
-    componentes, la OF se crea sin líneas.
+  definen cómo entra el producto al **desglose** al confirmar una venta y al panel de necesidades:
+  - `fabricable` → se produce (`POST /fabricacion/produccion`); puede o no tener BOM exacto.
   - `comprable` → se adquiere por compra (aparece en "Pendientes de compra" / `resumen.comprar`).
-  - Si es ambos, el neteo **prioriza fabricar**. Si no es ninguno, cae a compra (respaldo).
+  - Si es ambos, el desglose **prioriza fabricar**. Si no es ninguno, cae a compra (respaldo).
   - Se editan con los checkboxes de la ficha y la lista de productos. El seed de catálogo todavía
     **no** declara estos flags (ver `roadmap.md`).
 - **`ProductPasso`** — pasos del storefront (ver abajo).
@@ -150,22 +149,24 @@ precio de venta; el margen que muestra es solo referencia.
   seleccionar), pidiendo las opciones del paso con la selección de los pasos **anteriores**. "Atrás"
   reofrece el paso conservando la elección previa y limpia en silencio los posteriores inválidos.
 
-## Órdenes de fabricación y cierre (2026-10-05)
+## Fabricación y producción (2026-10-05)
 
-- El neteo (ventas/manual/reposición) recorre el BOM recursivamente y crea **1 OF de ensamble**
-  por producto con BOM + **1 OF de fabricación** por componente fabricable faltante. Los comprables
-  faltantes solo se **avisan** en la UI ("Pendientes de compra", informativo; no hay OC).
-- El cierre es **manual** desde Fabricación (`POST /fabricacion/:id/concluir`), no por reportes:
-  - **Ensamble**: valida y **descuenta los componentes exactos** (`motivo consumo`). **No** da entrada
-    al ensamble (los ensambles se arman contra pedido y no acumulan stock).
-  - **Fabricación (hoja)**: crea un `ProductionReport` **`interno` aplicado** con una línea `final`
-    (sección `fabricacion`) → entrada a "Recibo de Producción" (`motivo produccion`) para el flujo
-    **Ubicar**. Los reportes `interno` no cuentan en métricas (`list`/`stats`/`export` los excluyen).
-- **Despacho de un ensamble**: si la línea tiene OF de ensamble y no está `hecha`, se bloquea; si está
-  `hecha`, no descuenta stock del ensamble (ya se consumieron los componentes). Sin OF, comportamiento
-  normal (valida/descuenta stock).
-- `SeccionProduccion.fabricacion` y `ProductionReport.interno` viven en
-  `20261005130000_reporte_interno_of`.
+- **No existe entidad de orden de fabricación** (`ManufacturingOrder`/`ManufacturingOrderLine` y los
+  enums `TipoOF`/`OrigenOF`/`EstadoOF` se retiraron; migración
+  `20261005154000_remove_manufacturing_order`). La planificación dejó de ser un documento persistente.
+- **Panel de necesidades** (`GET /fabricacion/necesidades`): dos listas separadas.
+  - `porMinimo`: fabricables con `stock < objetivo` (`objetivo = stockMax>0 ? stockMax : stockMin`).
+  - `porVentas`: explosión neta multi-nivel de las ventas **abiertas confirmadas** (`planificacion.desglosar`
+    con pool compartido de stock). Incluye ensambles como ítem *Armar* y marca los pedidos que aportan.
+  - `porComprar`: no fabricables faltantes (informativo; no hay OC).
+- **Alta de producción** (`POST /fabricacion/produccion {variantId, cantidad, locationId}`): solo hojas
+  fabricables (0–1 componente). Registra `StockMove` con `motivo produccion` en la ubicación elegida y
+  dispara el monitor. **No** crea `ProductionReport` (por eso no alimenta métricas E3).
+- **Ensamble (2+ componentes)**: se arma **contra pedido**, no acumula stock. Al despachar la línea
+  (`ventas.despacharLinea`) se consumen sus componentes exactos (`planificacion.consumirEnsamble`,
+  `motivo consumo`); se valida stock de cada componente.
+- El flujo de reportes de producción (`/reportes`, `ProductionReport`) sigue existiendo y es independiente
+  de fabricación; `ProductionReport.interno` se conserva por histórico.
 
 ## Reglas de negocio relevantes
 

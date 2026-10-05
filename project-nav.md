@@ -53,17 +53,15 @@ Registrados en `app.module.ts`.
   - Valores permitidos con `valoresPermitidosLote` (`common/valores-permitidos.ts`, batcheado, sin N+1); si no hay filas → todos los valores del atributo.
   - La generación masiva (`generar`/`combinacionesCartesianas`) fue **retirada**.
 
-### 2.2 Ventas / desglose / OFs → `ventas/`
+### 2.2 Ventas / desglose → `ventas/`
 - `ventas.controller.ts` — rutas `/api/ventas...`
 - `ventas.service.ts`, zonas:
-  - `list` · `get` (con OFs asociados; cada línea incluye `imagen = variant.imagen ?? product.imagen`) · `create` · `update`
-  - **`confirmar` = DESGLOSE (ya NO crea OFs)**: calcula el desglose neto vía `planificacion.desglosar` y persiste `resumen` (`fabricar`/`comprar`) + `confirmadaAt`. Las OFs las crea el vendedor por componente.
-  - **`desglose`** (`GET /ventas/:id/desglose`): explosión neta multi-nivel en vivo (requerido / stock / faltante por variante) + OFs ya creadas de la venta. Alimenta el botón "Crear OF".
-  - **`crearOFDesdeDesglose`** (`POST /ventas/:id/desglose/of {variantId}`): crea **una** OF (`origen: venta`, `generatedFrom`, `salesOrderLineId` de origen) por el faltante actual del componente; idempotente si ya existe OF activa.
-  - `despacharLinea` (consume stock; **ensambles**: exige OF de ensamble `hecha` y no descuenta stock del ensamble; dispara monitor) · `cancelar` (cancela OFs asociadas)
+  - `list` · `get` (cada línea incluye `imagen = variant.imagen ?? product.imagen`) · `create` · `update`
+  - **`confirmar` = DESGLOSE**: calcula el desglose neto vía `planificacion.desglosar` y persiste `resumen` (`fabricar`/`comprar`) + `confirmadaAt`. **No** crea órdenes.
+  - **`desglose`** (`GET /ventas/:id/desglose`): explosión neta multi-nivel en vivo (requerido / stock / faltante por variante).
+  - `despacharLinea` (consume stock; **ensambles** (2+ componentes): consume sus componentes al despachar, sin stock propio; dispara monitor) · `cancelar`.
 - `ventas.types.ts`: `ResumenItem`, `ResumenNeteo`, `ConfiguracionLinea` + re-export de `Desglose`/`DesgloseLinea` (definidos en `fabricacion/planificacion.service.ts`).
-- **`ventas.ofs.ts` ya no existe**: el cálculo quedó en `planificacion.desglosar`.
-- Acoplos: inyecta `planificacion.service` (`desglosar`/`crearOFUnica`), `productos.service` (`resolveComponentVariant`) y `monitor.service`.
+- Acoplos: inyecta `planificacion.service` (`desglosar`/`consumirEnsamble`) y `monitor.service`.
 
 ### 2.3 Reportes de producción → `reportes/`
 - `reportes.controller.ts` (127) — rutas `/api/reportes...`
@@ -81,17 +79,15 @@ Registrados en `app.module.ts`.
   - `existencia` 38 · `existenciaDe` 75 · `movimientos` 114
   - `movimiento` (entrada/salida: upsert stock + `StockMove` + monitor) 124 · `ajuste` (cantidad absoluta + delta `motivo: ajuste`) 179 · `mover` (transferencia) 228
   - `setMinMax` (`PATCH /inventario/variantes/:vid/minmax`: mín/máx de variante desde la tabla; todos los roles) 284 · `exportarCSV` 309
-- **Retirado (2026-10-02):** el ensamble BOM de inventario (`inventario.ensamble.ts` / `POST /inventario/ensamble`) se eliminó. "Ensamble" queda sólo como **tipo de OF**; el enum `MotivoStock.ensamble` se conserva para histórico.
+- **Retirado (2026-10-02):** el ensamble BOM de inventario (`inventario.ensamble.ts` / `POST /inventario/ensamble`) se eliminó. El enum `MotivoStock.ensamble` se conserva para histórico.
 
-### 2.5 Órdenes de fabricación → `fabricacion/`
-- `fabricacion.controller.ts` (74) · `fabricacion.service.ts` (217):
-  - `list` (estado/tipo/**origen**/search) 17 · `get` 62 · `iniciar` 90 · `cancelar` 102
-  - **`concluir`** (cierre manual desde Fabricación): ensamble → consume componentes (`consumo`); hoja → reporte interno `aplicado` con línea `final` a "Recibo de Producción" (para Ubicar). Ninguno produce stock del ensamble.
-  - `crearManual` (alta manual OF, exactamente N, `origen: manual`) 113
-  - `previewReponer` (no escribe) 161 · `reponer` (cascada hasta mín/máx) 175 · `faltantes` 192
-- `planificacion.service.ts`: `planificar(tx, demandas, { netearRaiz })` y `crearOFs(tx, plan, { origen })` (los usa fabricación manual/reposición con `netearRaiz: false`); `desglosar(tx, demandas)` (explosión neta multi-nivel con pool de stock, usada por `ventas.desglose`/`confirmar`) y `crearOFUnica(tx, item, opts)` (una OF sin cascada, la usa el botón "Crear OF" de la venta).
-- OFs guardan `origen` (`venta | manual | reposicion_minimo | reposicion_maximo`); las de venta se ligan a `salesOrderLineId` y `generatedFrom = numero` de la venta.
-- **Cierre**: manual con `concluir` (antes lo hacía `reportes.aplicar`, ya no). El despacho exige la OF de ensamble en `hecha`.
+### 2.5 Necesidades de fabricación → `fabricacion/`
+- `fabricacion.controller.ts` · `fabricacion.service.ts`:
+  - **`necesidades`** (`GET /fabricacion/necesidades`): faltantes vivos en dos listas: `porMinimo` (fabricables bajo stock objetivo; `objetivo = max>0?max:min`) y `porVentas` (explosión neta de las ventas **abiertas confirmadas** con pool compartido de stock, incluye ensambles como ítem *Armar*), más `porComprar` (no fabricables).
+  - **`registrarProduccion`** (`POST /fabricacion/produccion {variantId, cantidad, locationId}`): entrada de stock (motivo `produccion`) a la ubicación elegida + monitor. Solo hojas fabricables (0–1 componente); rechaza ensambles.
+  - `faltantes` (pendientes de compra agregados desde `resumen.comprar`).
+- `planificacion.service.ts`: `desglosar(tx, demandas)` (explosión neta multi-nivel con pool de stock; la usan ventas y necesidades) y `consumirEnsamble(tx, variantId, cantidad, ref, userId)` (consume componentes de un ensamble contra pedido al despachar).
+- **No hay entidad OF** (retirada 2026-10-05): la producción se registra como stock y los ensambles se consumen al despachar.
 
 ### 2.6 Catálogos (atributos / categorías / empaques) → `catalogos/`
 - `catalogos.controller.ts` (296) — `@Controller("catalogos")` **público, sin guards**, usa `PrismaService` directo (sin service).
@@ -161,18 +157,18 @@ y `AppShell` (excepto tienda y login).
 
 | Página | Archivo | Líneas | Funcionalidad |
 |---|---|---|---|
-| Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, OFs activas, faltantes, bajo stock) + tarjetas de módulos |
+| Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, necesidades de fabricación, pendientes de compra, bajo stock) + tarjetas de módulos |
 | Lista productos | `app/productos/page.tsx` | 402 | grid/tabla + alta en modal; sin botón eliminar (el borrado vive en el detalle del producto) |
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
-| Ventas | `app/ventas/page.tsx` | 595 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** arranca **colapsado** (click en el encabezado para expandir) y las filas de "Órdenes de fabricación de esta venta" abren la OF en `/fabricacion?of=<id>`; alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
-| Fabricación (OFs) | `app/fabricacion/page.tsx` | 485 | listar/acciones/detalle; **+ Nueva OF** y **Reponer** (mín/máx con preview); acepta deep-link `?of=<id>` (`Suspense` + `useSearchParams`) para abrir directo el detalle de una OF (lo usa el detalle de venta) |
+| Ventas | `app/ventas/page.tsx` | 516 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** arranca **colapsado** (click en el encabezado para expandir) y muestra necesita/stock/falta + estado (Fabricar/Ensamblar/Comprar); alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
+| Fabricación (necesidades) | `app/fabricacion/page.tsx` | 254 | dos listas separadas **Por mínimo** / **Por ventas** (fabricables faltantes; ensambles como *Armar* solo lectura) + **Pendientes de compra**; botón **Ingresar producción** (`GET /inventario/ubicaciones` → `POST /fabricacion/produccion`) con paso extra para elegir ubicación |
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
-| Reportes de producción | `app/reportes/page.tsx` | 718 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
+| Reportes de producción | `app/reportes/page.tsx` | 693 | form · bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin`/`supervisor` |
 | Clientes | `app/clientes/page.tsx` | 293 | CRUD + import CSV en modal; vista Tabla/Grid (`components/clientes/cliente-card.tsx`); form compartido en `components/clientes/cliente-form-modal.tsx` (107) |
-| Monitor stock | `app/monitor/page.tsx` | 156 | estado + acciones |
+| Monitor stock | `app/monitor/page.tsx` | 102 | estado (bajo stock + eventos) y enlace a Fabricación |
 | Ajustes | `app/ajustes/page.tsx` | — | preferencias personales (separador de miles) |
 | Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin) |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
@@ -203,11 +199,11 @@ Reutilízalos en vez de inventar clases nuevas:
 |---|---|
 | Nuevo atributo/variante/grid de producto | `productos.service.ts` (`grid` 430, `materializar` 434) · `productos.controller.ts` · `app/productos/[id]/page.tsx` |
 | Editar BOM / componentes | `productos.service.ts:255` · `app/productos/[id]/page.tsx` (Lista de materiales) |
-| Desglose de componentes / crear OFs de venta | `ventas.service.ts` (`desglose`, `crearOFDesdeDesglose`, `confirmar`) + `fabricacion/planificacion.service.ts` (`desglosar`, `crearOFUnica`) |
-| Despachar línea / consumo de stock | `ventas.service.ts:309` |
+| Desglose de componentes / necesidades de fabricación | `ventas.service.ts` (`desglose`, `confirmar`) + `fabricacion/fabricacion.service.ts` (`necesidades`, `registrarProduccion`) + `fabricacion/planificacion.service.ts` (`desglosar`) |
+| Despachar línea / consumo de stock (ensambles consumen componentes) | `ventas.service.ts` (`despacharLinea`) + `planificacion.service.ts` (`consumirEnsamble`) |
 | Documento de venta PDF (IVA, imagen) | `components/ventas/documento-venta.tsx` (overlay/descarga) · `components/ventas/documento-venta-pdf.tsx` (layout `@react-pdf/renderer`) · `app/ventas/page.tsx` (overlay `imprimirVenta`) · `ventas.service.get` (`imagen`) |
-| Reporte de producción / aplicar | `reportes.service.ts:222` |
-| Alta manual de OF / reponer mín-máx | `fabricacion.service.ts:113` y `:175` |
+| Reporte de producción / aplicar | `reportes.service.ts` (`aplicar`) |
+| Panel de Fabricación: mínimos, ventas y alta de producción | `fabricacion.service.ts` (`necesidades`, `registrarProduccion`) · `app/fabricacion/page.tsx` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |
 | Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`, `resolverConfiguracion`) · `public.controller.ts` · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` (con pasos) · `components/ventas/modal-seleccion-variante.tsx` (selector por eje con `<select>`, sin pasos) · `lib/pasos-wizard.ts` |

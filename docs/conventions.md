@@ -53,10 +53,11 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     no crees scripts one-off. Valida con `pnpm cat:snapshot` + dry-run (`cat:apply --file …`).
     Tras editar valores de variantes en la UI, corre `pnpm cat:export-seed` para volcarlos al seed.
     Estado y pendientes: `docs/catalog-state.md`.
-19. **Órdenes de fabricación (creación y cierre):** `ventas.confirmar` **no** crea OFs; solo calcula/guarda
-    el desglose (`planificacion.desglosar`). Las OFs de venta se crean por componente desde el desglose
-    (`ventas.crearOFDesdeDesglose` → `planificacion.crearOFUnica`, una sola OF, sin cascada). El cierre es
-    manual (`fabricacion.concluir`), no por reportes. Un **ensamble** consume componentes y **no** produce
-    stock del ensamble; una **hoja** produce vía un `ProductionReport` **`interno` aplicado** (línea `final`
-    a "Recibo de Producción"). Los reportes `interno` se excluyen de métricas. Al cambiar
-    `SeccionProduccion`/`ProductionReport`, genera la migración (`--create-only`) y aplica con `pnpm db:deploy`.
+19. **Fabricación (necesidades y producción):** no hay entidad de orden de fabricación (retirada
+    2026-10-05). `ventas.confirmar` solo calcula/guarda el desglose; el panel de Fabricación lista las
+    **necesidades** (`fabricacion.necesidades`: por mínimo + por ventas, con pool compartido de stock) y
+    registra producción como **entrada de stock** (`POST /fabricacion/produccion`, motivo `produccion`, a
+    la ubicación elegida), sin crear reportes. Los **ensambles** (2+ componentes) se arman contra pedido:
+    no se inventarían y `ventas.despacharLinea` **consume sus componentes** (`planificacion.consumirEnsamble`).
+    Al tocar el BOM, `SeccionProduccion` o `ProductionReport`, genera la migración (`--create-only`) y aplica
+    con `pnpm db:deploy`.

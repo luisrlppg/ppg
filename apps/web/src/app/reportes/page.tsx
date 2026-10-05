@@ -9,7 +9,6 @@ import { useFormatCantidad } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 import type {
   LoteUbicar,
-  OrdenFabricacion,
   Reporte,
   ReporteDetalle,
   SeccionReporte,
@@ -74,7 +73,6 @@ interface UltimoReporte {
   personas: number;
   horasTrabajadas?: number;
   notas?: string;
-  manufacturingOrderId?: number;
   lines: { variantId: number; sku: string; nombre: string; producto: string; uom: string; seccion: SeccionReporte; tipo: TipoLineaReporte; ok: number }[];
 }
 
@@ -105,20 +103,12 @@ export default function ReportesPage() {
   const [personas, setPersonas] = useState("1");
   const [horas, setHoras] = useState("");
   const [notas, setNotas] = useState("");
-  const [ofId, setOfId] = useState("");
-  const [ofs, setOfs] = useState<OrdenFabricacion[]>([]);
   const [lines, setLines] = useState<LineaForm[]>([]);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [editandoNumero, setEditandoNumero] = useState("");
   const [busqVar, setBusqVar] = useState("");
   const [resultados, setResultados] = useState<VarianteBuscada[]>([]);
   const [guardando, setGuardando] = useState(false);
-
-  useEffect(() => {
-    api<OrdenFabricacion[]>("/fabricacion")
-      .then((o) => setOfs(o.filter((x) => x.estado === "confirmada" || x.estado === "en_progreso")))
-      .catch(() => setOfs([]));
-  }, []);
 
   useEffect(() => {
     if (!busqVar.trim()) {
@@ -153,7 +143,6 @@ export default function ReportesPage() {
         setPersonas(String(u.personas));
         setHoras(u.horasTrabajadas ? String(u.horasTrabajadas) : "");
         setNotas(u.notas ?? "");
-        setOfId(u.manufacturingOrderId ? String(u.manufacturingOrderId) : "");
       } else {
         setLines([]);
       }
@@ -199,7 +188,6 @@ export default function ReportesPage() {
     setPersonas("1");
     setHoras("");
     setNotas("");
-    setOfId("");
     setEditandoId(null);
     setEditandoNumero("");
     setFecha(hoy());
@@ -217,7 +205,6 @@ export default function ReportesPage() {
       personas: Number(personas) || 1,
       horasTrabajadas: horas ? Number(horas) : undefined,
       notas: notas || undefined,
-      manufacturingOrderId: ofId ? Number(ofId) : undefined,
       lines: lines.map((l) => ({ variantId: l.variantId, seccion: l.seccion, tipo: l.tipo, ok: Number(l.cantidad) })),
     };
     setGuardando(true);
@@ -272,7 +259,6 @@ export default function ReportesPage() {
     setPersonas(String(d.personas));
     setHoras(d.horasTrabajadas ? String(d.horasTrabajadas) : "");
     setNotas(d.notas ?? "");
-    setOfId(d.manufacturingOrder ? String(ofs.find((o) => o.numero === d.manufacturingOrder?.numero)?.id ?? "") : "");
     setLines(
       d.lines.map((l) => ({
         key: `${l.variantId}-${l.seccion}-${l.id}`,
@@ -427,17 +413,6 @@ export default function ReportesPage() {
           Horas trabajadas <span className="muted small">(opcional)</span>
           <input type="number" step="0.5" min="0.1" value={horas} onChange={(e) => setHoras(e.target.value)} placeholder={turno === "vespertino" ? "7.5" : "8"} />
         </label>
-        <label style={{ flex: 1.4 }}>
-          Orden de fabricación (opcional)
-          <select value={ofId} onChange={(e) => setOfId(e.target.value)}>
-            <option value="">— Sin OF —</option>
-            {ofs.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.numero} · {o.producto} {o.nombre} × {formatCantidad(o.cantidad)}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
       <label>
         Notas
@@ -552,7 +527,6 @@ export default function ReportesPage() {
                 <span>
                   <strong>{r.numero}</strong> · {new Date(r.fecha).toLocaleDateString("es-MX")} · {r.turno}
                   {r.personas > 1 ? ` · ${r.personas} pers.` : ""}
-                  {r.manufacturingOrder ? ` · OF ${r.manufacturingOrder}` : ""}
                   <div className="small muted">
                     {r.lineas} líneas · final {formatCantidad(r.totalFinal)} {r.totalConsumo > 0 ? ` · consumo ${formatCantidad(r.totalConsumo)}` : ""}
                   </div>
@@ -580,7 +554,6 @@ export default function ReportesPage() {
                 {detalle.horasTrabajadas ? ` · ${detalle.horasTrabajadas}h` : ""}
               </span>
             </div>
-            {detalle.manufacturingOrder && <p className="muted small" style={{ margin: "4px 0" }}>OF: {detalle.manufacturingOrder.numero} ({detalle.manufacturingOrder.estado})</p>}
             {detalle.notas && <p className="muted small" style={{ margin: "4px 0" }}>Notas: {detalle.notas}</p>}
             <ul className="step-list">
               {detalle.lines.map((l) => (

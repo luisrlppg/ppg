@@ -105,15 +105,13 @@ async function main() {
     for (const sku of VARIANTES_BORRAR) {
       const v = await tx.productVariant.findFirst({ where: { productId: product.id, sku } });
       if (!v) { logs.push(`${sku}: ya no existe`); continue; }
-      const [ventas, ofs, lineasOF, reportes, precios] = await Promise.all([
+      const [ventas, reportes, precios] = await Promise.all([
         tx.salesOrderLine.count({ where: { variantId: v.id } }),
-        tx.manufacturingOrder.count({ where: { variantId: v.id } }),
-        tx.manufacturingOrderLine.count({ where: { componentVariantId: v.id } }),
         tx.productionReportLine.count({ where: { variantId: v.id } }),
         tx.priceChange.count({ where: { variantId: v.id } }),
       ]);
-      if (ventas + ofs + lineasOF + reportes + precios > 0) {
-        throw new Error(`Abortado: ${sku} tiene historial (${ventas} ventas, ${ofs} OFs, ${lineasOF} usos, ${reportes} reportes, ${precios} precios)`);
+      if (ventas + reportes + precios > 0) {
+        throw new Error(`Abortado: ${sku} tiene historial (${ventas} ventas, ${reportes} reportes, ${precios} precios)`);
       }
       const sm = await tx.stockMove.deleteMany({ where: { variantId: v.id } });
       const sl = await tx.stockLevel.deleteMany({ where: { variantId: v.id } });

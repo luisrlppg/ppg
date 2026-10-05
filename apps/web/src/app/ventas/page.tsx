@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
@@ -27,7 +26,6 @@ interface VentaLista {
 
 export default function VentasPage() {
   const formatCantidad = useFormatCantidad();
-  const router = useRouter();
   const [ventas, setVentas] = useState<VentaLista[]>([]);
   const [fEstado, setFEstado] = useState("");
   const [fOrigen, setFOrigen] = useState("");
@@ -83,28 +81,10 @@ export default function VentasPage() {
       await api(`/ventas/${id}/confirmar`, { method: "POST", body: "{}" });
       setConfirmarOpen(false);
       await abrirDetalle(id);
-      setMsg("Venta confirmada. Revisa el desglose y crea las OFs de los componentes que falten.");
+      setMsg("Venta confirmada. Revisa el desglose; la producción faltante se registra desde Fabricación.");
     } catch (e) {
       setError((e as Error).message);
       setConfirmarOpen(false);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  async function crearOF(variantId: number) {
-    if (!detalle) return;
-    setCargando(true);
-    setError("");
-    try {
-      const r = await api<{ creada: boolean; of: { numero: string; estado: string } }>(
-        `/ventas/${detalle.id}/desglose/of`,
-        { method: "POST", body: JSON.stringify({ variantId }) },
-      );
-      await abrirDetalle(detalle.id);
-      setMsg(r.creada ? `Orden de fabricación ${r.of.numero} creada.` : `Ya existía la OF ${r.of.numero}.`);
-    } catch (e) {
-      setError((e as Error).message);
     } finally {
       setCargando(false);
     }
@@ -160,7 +140,6 @@ export default function VentasPage() {
   if (vista === "detalle" && detalle) {
     const d = detalle;
     const pendientes = d.lines.filter((l) => l.cantidad - (l.qtyDelivered ?? 0) > 0).length;
-    const etapa = !d.confirmadaAt ? 1 : (d.ordenesFabricacion ?? []).length > 0 ? 3 : 2;
     const etapaFinal = d.estado === "despachada";
     return (
       <AppShell>
@@ -199,11 +178,8 @@ export default function VentasPage() {
           <div className={`step ${d.confirmadaAt ? "done" : "current"}`}>
             <span className="num">2</span> Confirmada (desglose + neteo)
           </div>
-          <div className={`step ${etapa > 2 ? "done" : etapa === 2 && d.confirmadaAt ? "current" : ""}`}>
-            <span className="num">3</span> OFs creadas
-          </div>
-          <div className={`step ${etapaFinal ? "done" : etapa === 3 ? "current" : ""}`}>
-            <span className="num">4</span> Despachada
+          <div className={`step ${etapaFinal ? "done" : d.confirmadaAt ? "current" : ""}`}>
+            <span className="num">3</span> Despachada
           </div>
         </div>
 
@@ -218,7 +194,7 @@ export default function VentasPage() {
                   Confirmar venta (desglose)
                 </button>
                 <span className="muted small" style={{ flex: 1 }}>
-                  Al confirmar se calcula y guarda el desglose. Las OFs se crean por componente cuando falte stock.
+                  Al confirmar se calcula y guarda el desglose. La producción faltante se registra desde Fabricación.
                 </span>
               </>
             ) : (
@@ -320,7 +296,7 @@ export default function VentasPage() {
               <>
                 <HelpNote>
                   Cálculo en vivo de lo que consume este pedido según su lista de materiales, descontando
-                  stock nivel por nivel. Crea una OF por cada componente que falte y esté marcado como fabricable.
+                  stock nivel por nivel. Lo que falte se produce y registra desde <a href="/fabricacion">Fabricación</a>.
                 </HelpNote>
             <div className="card" style={{ padding: 0 }}>
               <div className="table-wrap">
@@ -332,12 +308,10 @@ export default function VentasPage() {
                       <th className="num">En stock</th>
                       <th className="num">Falta</th>
                       <th>Estado</th>
-                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {desglose.lineas.map((l) => {
-                      const of = desglose.ofs.find((o) => o.variantId === l.variantId);
                       return (
                         <tr key={l.variantId} style={l.raiz ? { background: "#fafafa" } : undefined}>
                           <td>
@@ -356,17 +330,6 @@ export default function VentasPage() {
                             ) : (
                               <span className="badge bajo">Comprar</span>
                             )}
-                          </td>
-                          <td>
-                            {of ? (
-                              <span className="muted small">{of.numero} · {of.estado}</span>
-                            ) : !l.suficiente && l.fabricable && d.estado === "abierta" ? (
-                              <div className="row-actions">
-                                <button className="btn ghost sm" disabled={cargando} onClick={() => crearOF(l.variantId)}>
-                                  Crear OF
-                                </button>
-                              </div>
-                            ) : null}
                           </td>
                         </tr>
                       );
@@ -397,55 +360,13 @@ export default function VentasPage() {
                 <p className="muted">Sin pendientes de compra.</p>
               )}
             </div>
-
-            {(d.ordenesFabricacion ?? []).length > 0 && (
-              <>
-                <HelpNote>
-                  Los ensambles (2+ componentes) se arman contra pedido: para despacharlos, primero
-                  <strong> concluye</strong> su orden de ensamble desde <a href="/fabricacion">Fabricación</a>.
-                </HelpNote>
-                <div className="card" style={{ padding: 0 }}>
-                <h4 style={{ padding: "12px 16px", margin: 0 }}>Órdenes de fabricación de esta venta</h4>
-                <div className="table-wrap">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>OF</th>
-                        <th>Producto</th>
-                        <th className="num">Cant.</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        <th>Componentes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {d.ordenesFabricacion.map((of) => (
-                        <tr key={of.id} onClick={() => router.push(`/fabricacion?of=${of.id}`)} style={{ cursor: "pointer" }}>
-                          <td>{of.numero}</td>
-                          <td>
-                            <strong>{of.producto}</strong> <span className="muted small">({of.sku})</span>
-                          </td>
-                          <td className="num">{formatCantidad(of.cantidad)}</td>
-                          <td>
-                            <span className={`badge ${of.tipo === "ensamble" ? "bajo" : "normal"}`}>{of.tipo}</span>
-                          </td>
-                          <td>{of.estado}</td>
-                          <td className="small muted">{(of.lines ?? []).map((l) => `${l.nombre} ×${formatCantidad(l.cantidadRequerida)}`).join(" · ")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              </>
-            )}
           </>
         )}
 
         {confirmarOpen && (
           <ConfirmDialog
             title="Confirmar venta"
-            message="Se calculará y guardará el desglose (fabricar vs comprar). No se crean órdenes de fabricación automáticamente."
+            message="Se calculará y guardará el desglose (fabricar vs comprar). La producción faltante se registra desde Fabricación."
             confirmLabel="Confirmar venta"
             loading={cargando}
             onConfirm={() => confirmar(d.id)}
@@ -456,7 +377,7 @@ export default function VentasPage() {
         {cancelarOpen && (
           <ConfirmDialog
             title="Cancelar venta"
-            message="Las órdenes de fabricación asociadas también se cancelarán. Esta acción no se puede deshacer."
+            message="Esta acción no se puede deshacer."
             confirmLabel="Cancelar venta"
             danger
             loading={cargando}

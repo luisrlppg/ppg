@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 /**
  * seed-demo-ventas.ts — Siembra datos de demostración para probar el flujo
- * de VENTAS → OFs recursivas (E2 §7.4/§7.5).
+ * de VENTAS → desglose de componentes (E2 §7.4/§7.5).
  *
  * Crea (idempotente):
  *   1. Variante única real de Vástago   (VAST-STD) sin stock
@@ -50,7 +50,7 @@ async function crearVarianteUnica(productId: number, sku: string, nombre: string
 }
 
 async function main() {
-  console.log("=== Seed demo ventas → OFs recursivas ===\n");
+  console.log("=== Seed demo ventas → desglose de componentes ===\n");
 
   const vastago = await prisma.product.findUnique({ where: { skuBase: "VAST" } });
   const cerda = await prisma.product.findUnique({ where: { skuBase: "CERD" } });

@@ -94,16 +94,14 @@ async function moveLine(tx: Tx, originAttrId: number, productId: number, targetA
 }
 
 async function bloqueos(tx: Tx, variantId: number) {
-  const [stock, movs, precios, ventas, ofs, ofLineas, reportes] = await Promise.all([
+  const [stock, movs, precios, ventas, reportes] = await Promise.all([
     tx.stockLevel.count({ where: { variantId } }),
     tx.stockMove.count({ where: { variantId } }),
     tx.priceChange.count({ where: { variantId } }),
     tx.salesOrderLine.count({ where: { variantId } }),
-    tx.manufacturingOrder.count({ where: { variantId } }),
-    tx.manufacturingOrderLine.count({ where: { componentVariantId: variantId } }),
     tx.productionReportLine.count({ where: { variantId } }),
   ]);
-  return { stock, movs, precios, ventas, ofs, ofLineas, reportes };
+  return { stock, movs, precios, ventas, reportes };
 }
 
 async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) => void): Promise<void> {
@@ -453,7 +451,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       const v = await variantBySku(tx, o.sku);
       if (!v) { log(`variant.delete ya aplicado: ${o.sku}`); return; }
       const b = await bloqueos(tx, v.id);
-      const historial = b.precios + b.ventas + b.ofs + b.ofLineas + b.reportes;
+      const historial = b.precios + b.ventas + b.reportes;
       if (historial > 0) throw new Error(`variant.delete: "${o.sku}" tiene historial ${JSON.stringify(b)}`);
       if (b.stock + b.movs > 0 && !o.allowStock) throw new Error(`variant.delete: "${o.sku}" tiene stock/movimientos; usa allowStock:true`);
       await tx.stockMove.deleteMany({ where: { variantId: v.id } });
@@ -474,7 +472,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       let movs = 0;
       for (const vid of vids) {
         const b = await bloqueos(tx, vid);
-        const historial = b.precios + b.ventas + b.ofs + b.ofLineas + b.reportes;
+        const historial = b.precios + b.ventas + b.reportes;
         if (historial > 0) throw new Error(`product.delete: "${p.nombre}" variante ${vid} tiene historial ${JSON.stringify(b)}`);
         stock += b.stock;
         movs += b.movs;

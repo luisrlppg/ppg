@@ -17,12 +17,6 @@ async function reset() {
   await prisma.priceChange.deleteMany({});
   console.log("- PriceChange: OK");
 
-  await prisma.manufacturingOrderLine.deleteMany({});
-  console.log("- ManufacturingOrderLine: OK");
-
-  await prisma.manufacturingOrder.deleteMany({});
-  console.log("- ManufacturingOrder: OK");
-
   await prisma.productionReportLine.deleteMany({});
   console.log("- ProductionReportLine: OK");
 

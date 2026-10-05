@@ -11,7 +11,6 @@ export async function exportarReportes(
     where: { interno: false, fecha: { gte: desde, lte: hasta } },
     orderBy: { fecha: "asc" },
     include: {
-      manufacturingOrder: { select: { numero: true } },
       lines: {
         include: { variant: { include: { product: { select: { nombre: true, uom: true } } } } },
       },
@@ -30,7 +29,6 @@ export async function exportarReportes(
     "sku",
     "tipo",
     "cantidad",
-    "of",
   ];
   const filas = reports.flatMap((r) =>
     r.lines.map((l) =>
@@ -47,7 +45,6 @@ export async function exportarReportes(
         l.variant.sku,
         l.tipo,
         dec(l.ok),
-        r.manufacturingOrder?.numero ?? "",
       ].join(";"),
     ),
   );

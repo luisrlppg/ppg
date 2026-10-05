@@ -163,7 +163,6 @@ export interface StockBajo {
   stockActual: number;
   longLead: boolean;
   deficit: number;
-  cantidadEnOF: number;
   objetivo: number;
 }
 
@@ -280,7 +279,6 @@ export interface Desglose {
   lineas: DesgloseLinea[];
   fabricar: ResumenItem[];
   comprar: ResumenItem[];
-  ofs: { variantId: number; numero: string; estado: string }[];
 }
 
 export interface Venta {
@@ -300,38 +298,6 @@ export interface Venta {
   partner: (Pick<Partner, "id" | "nombre" | "empresa" | "telefono" | "direccion" | "email">) | null;
   resumen: ResumenNeteo | null;
   lines: VentaLinea[];
-  ordenesFabricacion: OrdenFabricacion[];
-}
-
-export type OrigenOF = "venta" | "manual" | "reposicion_minimo" | "reposicion_maximo";
-
-export interface OrdenFabricacion {
-  id: number;
-  numero: string;
-  sku: string;
-  nombre: string;
-  producto: string;
-  cantidad: number;
-  uom?: string;
-  tipo: "fabricacion" | "ensamble";
-  origen?: OrigenOF;
-  estado: "borrador" | "confirmada" | "en_progreso" | "hecha" | "cancelada";
-  fecha?: string;
-  notas?: string | null;
-  generatedFrom?: string | null;
-  venta?: string | null;
-  cliente?: string | null;
-  componenteVariantes?: number;
-  lines: {
-    id: number;
-    variantId: number;
-    sku: string;
-    nombre: string;
-    producto: string;
-    uom: string;
-    cantidadRequerida: number;
-    cantidadReservada: number;
-  }[];
 }
 
 export interface FaltanteCompra {
@@ -341,6 +307,28 @@ export interface FaltanteCompra {
   producto: string;
   cantidad: number;
   pedidos: string[];
+}
+
+export interface NecesidadFabricacion {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  producto: string;
+  uom: string;
+  stockActual: number;
+  stockMin: number;
+  stockMax: number;
+  objetivo: number;
+  necesidad: number;
+  tipo?: "fabricacion" | "ensamble";
+  ensamble: boolean;
+  pedidos: string[];
+}
+
+export interface NecesidadesResp {
+  porMinimo: NecesidadFabricacion[];
+  porVentas: NecesidadFabricacion[];
+  porComprar: NecesidadFabricacion[];
 }
 
 // ---------------------------------------------------------------- E3: reportes
@@ -374,7 +362,6 @@ export interface Reporte {
   notas: string | null;
   estado: "pendiente" | "aplicado" | "cancelado";
   aplicadoAt: string | null;
-  manufacturingOrder: string | null;
   lineas: number;
   secciones: string[];
   totalFinal: number;
@@ -391,7 +378,6 @@ export interface ReporteDetalle {
   notas: string | null;
   estado: "pendiente" | "aplicado" | "cancelado";
   aplicadoAt: string | null;
-  manufacturingOrder: { numero: string; estado: string } | null;
   lines: ReporteLinea[];
 }
 

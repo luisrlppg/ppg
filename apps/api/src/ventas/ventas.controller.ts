@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { Type } from "class-transformer";
-import { IsArray, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -47,10 +47,6 @@ class EditarVentaDto {
 class DespacharDto {
   @IsNumber() cantidad!: number;
   @IsOptional() @IsNumber() locationId?: number;
-}
-
-class CrearOFDesgloseDto {
-  @IsInt() variantId!: number;
 }
 
 @Controller("ventas")
@@ -91,16 +87,6 @@ export class VentasController {
   @Get(":id/desglose")
   desglose(@Param("id", ParseIntPipe) id: number) {
     return this.ventas.desglose(id);
-  }
-
-  @Roles("admin", "supervisor")
-  @Post(":id/desglose/of")
-  crearOFDesglose(
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: CrearOFDesgloseDto,
-    @Req() req: { user: { id: number } },
-  ) {
-    return this.ventas.crearOFDesdeDesglose(id, dto.variantId, req.user.id);
   }
 
   @Roles("admin", "supervisor")

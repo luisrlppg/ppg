@@ -89,11 +89,6 @@ export class VentasService {
       },
     });
     if (!o) throw new NotFoundException("Venta no encontrada");
-    const ofs = await this.prisma.manufacturingOrder.findMany({
-      where: { generatedFrom: o.numero },
-      orderBy: { id: "asc" },
-      include: { variant: { include: { product: true } }, lines: { include: { componentVariant: { include: { product: true } } } } },
-    });
     return {
       id: o.id,
       numero: o.numero,
@@ -134,27 +129,6 @@ export class VentasService {
           valoracion,
         };
       }),
-      ordenesFabricacion: ofs.map((mo) => ({
-        id: mo.id,
-        numero: mo.numero,
-        sku: mo.variant.sku,
-        nombre: mo.variant.nombre,
-        producto: mo.variant.product.nombre,
-        cantidad: dec(mo.cantidad),
-        tipo: mo.tipo,
-        estado: mo.estado,
-        salesOrderLineId: mo.salesOrderLineId,
-        configuracion: mo.configuracion as ConfiguracionLinea | null,
-        lineas: mo.lines.map((ml) => ({
-          id: ml.id,
-          variantId: ml.componentVariantId,
-          sku: ml.componentVariant.sku,
-          nombre: ml.componentVariant.nombre,
-          producto: ml.componentVariant.product.nombre,
-          cantidadRequerida: dec(ml.cantidadRequerida),
-          cantidadReservada: dec(ml.cantidadReservada),
-        })),
-      })),
     };
   }
 
@@ -278,9 +252,8 @@ export class VentasService {
 
   // ------------------------------------------------- Confirmar (desglose)
   /**
-   * Calcula el desglose neto multi-nivel y lo guarda en `resumen`. Ya **no**
-   * genera órdenes de fabricación: el vendedor las crea por componente desde
-   * el desglose (`crearOFDesdeDesglose`).
+   * Calcula el desglose neto multi-nivel y lo guarda en `resumen`. No genera
+   * órdenes: la producción faltante se registra desde el panel de Fabricación.
    */
   async confirmar(id: number, userId?: number): Promise<{ resumen: ResumenNeteo; modelo: { numero: string; estado: string } }> {
     void userId;
@@ -303,58 +276,14 @@ export class VentasService {
   }
 
   // -------------------------------------------------- Desglose (vendedor)
-  /** Explosión neta multi-nivel con stock/faltante y las OFs ya creadas de la venta. */
-  async desglose(id: number): Promise<Desglose & { ofs: { variantId: number; numero: string; estado: string }[] }> {
+  /** Explosión neta multi-nivel con stock/faltante (en vivo). */
+  async desglose(id: number): Promise<Desglose> {
     const order = await this.prisma.salesOrder.findUnique({ where: { id }, include: { lines: true } });
     if (!order) throw new NotFoundException("Venta no encontrada");
-    const desglose = await this.planificacion.desglosar(
+    return this.planificacion.desglosar(
       this.prisma,
       order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
     );
-    const ofs = await this.prisma.manufacturingOrder.findMany({
-      where: { generatedFrom: order.numero, estado: { not: "cancelada" } },
-      select: { variantId: true, numero: true, estado: true },
-      orderBy: { id: "asc" },
-    });
-    return { ...desglose, ofs };
-  }
-
-  /** Crea (o reutiliza) una OF para un componente del desglose por su faltante actual. */
-  async crearOFDesdeDesglose(id: number, variantId: number, userId?: number) {
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.salesOrder.findUnique({ where: { id }, include: { lines: true } });
-      if (!order) throw new NotFoundException("Venta no encontrada");
-      if (order.estado !== "abierta") throw new BadRequestException("Solo se crea una OF en una venta abierta");
-
-      const desglose = await this.planificacion.desglosar(
-        tx,
-        order.lines.map((l) => ({ variantId: l.variantId, cantidad: dec(l.cantidad), salesOrderLineId: l.id })),
-      );
-      const linea = desglose.lineas.find((l) => l.variantId === variantId);
-      if (!linea) throw new NotFoundException("La variante no forma parte del desglose de esta venta");
-      if (!linea.fabricable) throw new BadRequestException(`"${linea.producto}" no es fabricable (es de compra).`);
-      if (linea.faltante <= 0) throw new BadRequestException(`No falta stock de "${linea.nombre}"; no hay nada que fabricar.`);
-
-      const existente = await tx.manufacturingOrder.findFirst({
-        where: { generatedFrom: order.numero, variantId, estado: { not: "cancelada" } },
-        orderBy: { id: "desc" },
-      });
-      if (existente) return { creada: false, of: { id: existente.id, numero: existente.numero, estado: existente.estado } };
-
-      const configuracion = order.lines.find((l) => l.id === linea.salesOrderLineId)?.configuracion ?? undefined;
-      const of = await this.planificacion.crearOFUnica(
-        tx,
-        { variantId, sku: linea.sku, nombre: linea.nombre, producto: linea.producto, cantidad: linea.faltante, tipo: linea.tipo },
-        {
-          origen: "venta",
-          generatedFrom: order.numero,
-          userId: userId ?? null,
-          salesOrderLineId: linea.salesOrderLineId,
-          configuracion,
-        },
-      );
-      return { creada: true, of };
-    });
   }
 
   // -------------------------------------------------- Despachar una línea
@@ -381,17 +310,19 @@ export class VentasService {
         throw new BadRequestException(`Solo faltan ${pendiente} por despachar de esta línea`);
       }
 
-      // Los ensambles se arman contra pedido: su OF de ensamble debe estar concluida y
-      // no manejan stock propio (los componentes ya se consumieron al concluir).
-      const ofEnsamble = await tx.manufacturingOrder.findFirst({
-        where: { generatedFrom: line.order.numero, variantId: line.variantId, tipo: "ensamble" },
-        orderBy: { id: "desc" },
+      // Los ensambles (2+ componentes) se arman contra pedido y no manejan stock
+      // propio: al despachar se consumen sus componentes.
+      const vendido = await tx.productVariant.findUnique({
+        where: { id: line.variantId },
+        include: { product: { include: { components: { where: { tipo: "exacto" }, select: { id: true } } } } },
       });
-      if (ofEnsamble && ofEnsamble.estado !== "hecha") {
-        throw new BadRequestException(`Concluye primero la orden de ensamble ${ofEnsamble.numero}`);
-      }
+      const esEnsamble = !!vendido && vendido.product.fabricable && vendido.product.components.length > 1;
 
-      if (!ofEnsamble) {
+      if (esEnsamble) {
+        notificar.push(
+          ...(await this.planificacion.consumirEnsamble(tx, line.variantId, cantidad, line.order.numero, params.userId)),
+        );
+      } else {
         let levels = await tx.stockLevel.findMany({ where: { variantId: line.variantId } });
         const preferido =
           params.locationId ??
@@ -456,10 +387,6 @@ export class VentasService {
       if (!order) throw new NotFoundException("Venta no encontrada");
       if (order.estado === "despachada") throw new BadRequestException("Una venta despachada no se puede cancelar");
       await tx.salesOrder.update({ where: { id }, data: { estado: "cancelada" } });
-      await tx.manufacturingOrder.updateMany({
-        where: { generatedFrom: order.numero, estado: { in: ["confirmada", "en_progreso"] } },
-        data: { estado: "cancelada" },
-      });
       void userId;
       return { ok: true };
     });

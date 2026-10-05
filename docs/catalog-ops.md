@@ -86,7 +86,7 @@ ops:
 - **Transaccional**: si una op falla, no se aplica ninguna.
 - **Dry-run por defecto**: sin `--apply` no escribe.
 - **Guardas**: no borra valores/atributos en uso, detecta colisiones, respeta `ProductPasso`
-  y el historial de variantes (ventas/OFs/reportes/precios).
+  y el historial de variantes (ventas/reportes/precios).
 - **Sin SQL crudo**: solo el vocabulario de arriba.
 
 ## `odoo-diff`

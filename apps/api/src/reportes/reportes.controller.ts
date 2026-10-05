@@ -31,7 +31,6 @@ class ReporteDto {
   @IsOptional() @IsInt() @Min(1) personas?: number;
   @IsOptional() @IsNumber() @Min(0.1) horasTrabajadas?: number;
   @IsOptional() @IsString() notas?: string;
-  @IsOptional() @IsInt() @Min(1) manufacturingOrderId?: number;
   @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => LineaReporteDto) lines!: LineaReporteDto[];
 }
 
@@ -52,9 +51,8 @@ export class ReportesController {
     @Query("estado") estado?: string,
     @Query("turno") turno?: string,
     @Query("fecha") fecha?: string,
-    @Query("of") of?: string,
   ) {
-    return this.reportes.list({ search, estado, turno, fecha, of });
+    return this.reportes.list({ search, estado, turno, fecha });
   }
 
   @Roles("admin", "supervisor")

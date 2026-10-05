@@ -550,13 +550,11 @@ export class ProductosService {
   // ------------------------------------------------------ Eliminar
   /** Bloqueos de negocio que impiden borrar una variante. */
   private async bloqueosVariante(variantId: number): Promise<string[]> {
-    const [stock, movimientos, cambiosPrecio, lineasVenta, ofs, lineasOF, reportes] = await Promise.all([
+    const [stock, movimientos, cambiosPrecio, lineasVenta, reportes] = await Promise.all([
       this.prisma.stockLevel.count({ where: { variantId } }),
       this.prisma.stockMove.count({ where: { variantId } }),
       this.prisma.priceChange.count({ where: { variantId } }),
       this.prisma.salesOrderLine.count({ where: { variantId } }),
-      this.prisma.manufacturingOrder.count({ where: { variantId } }),
-      this.prisma.manufacturingOrderLine.count({ where: { componentVariantId: variantId } }),
       this.prisma.productionReportLine.count({ where: { variantId } }),
     ]);
     const motivos: string[] = [];
@@ -564,8 +562,6 @@ export class ProductosService {
     if (movimientos) motivos.push(`${movimientos} movimiento(s) de stock`);
     if (cambiosPrecio) motivos.push(`${cambiosPrecio} cambio(s) de precio`);
     if (lineasVenta) motivos.push(`${lineasVenta} línea(s) de venta`);
-    if (ofs) motivos.push(`${ofs} orden(es) de fabricación`);
-    if (lineasOF) motivos.push(`${lineasOF} uso(s) como componente en OF`);
     if (reportes) motivos.push(`${reportes} línea(s) de reporte de producción`);
     return motivos;
   }

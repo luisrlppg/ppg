@@ -66,5 +66,5 @@ Qué actualizar según el cambio:
   one-off. Tras ediciones manuales en la UI: `pnpm cat:export-seed`.
 - **Migración / reconciliación Odoo:** `docs/scripts.md` (sección Odoo) + `docs/data-model.md`.
 - **Reglas de negocio / requisitos:** `REQUIREMENTS.md` (+ `docs/plan-btvpe.md` para BTVPE).
-- **Bugs de flujo ventas→OFs o producción:** `project-nav.md` §2.2 (`ventas.confirmar`),
+- **Bugs de flujo ventas→desglose/fabricación o producción:** `project-nav.md` §2.2 (`ventas.confirmar`),
   §2.5 (`fabricacion`/`planificacion`) y §2.3 (`reportes.aplicar`); contexto en `docs/roadmap.md`.

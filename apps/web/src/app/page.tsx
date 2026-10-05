@@ -6,20 +6,20 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { HOME_BY_ROLE } from "@ppg/shared";
-import type { OrdenFabricacion, StockBajo } from "@/lib/types";
+import type { NecesidadesResp, StockBajo } from "@/lib/types";
 
 const MODULES = [
   { href: "/ventas", title: "Ventas", desc: "Órdenes (locales y web), confirmación con desglose/neteo y despacho por línea." },
-  { href: "/fabricacion", title: "Fabricación", desc: "Órdenes de fabricación y ensamble, estado y pendientes de compra." },
+  { href: "/fabricacion", title: "Fabricación", desc: "Faltantes por mínimo y por ventas; registra la producción conforme llega." },
   { href: "/productos", title: "Productos y variantes", desc: "Catálogo, grid de combos, precios, empaques por variante y listas de materiales (BOM)." },
-  { href: "/inventario", title: "Inventario", desc: "Existencia por ubicación, ajustes, transferencias y registro de ensambles." },
+  { href: "/inventario", title: "Inventario", desc: "Existencia por ubicación, ajustes, transferencias y entrada de producción." },
   { href: "/clientes", title: "Clientes", desc: "Alta, edición e importación por CSV de los clientes." },
   { href: "/monitor", title: "Monitor de stock", desc: "Bajo stock, alertas por Telegram / WhatsApp / email y eventos." },
 ];
 
 interface Pendientes {
   ventasAbiertas: number;
-  ofsActivas: number;
+  necesidades: number;
   faltantes: number;
   bajoStock: number;
 }
@@ -29,16 +29,15 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const [ventas, ofsConf, ofsProg, faltantes, bajo] = await Promise.all([
+      const [ventas, necesidades, faltantes, bajo] = await Promise.all([
         api<unknown[]>("/ventas?estado=abierta").catch(() => []),
-        api<OrdenFabricacion[]>("/fabricacion?estado=confirmada").catch(() => []),
-        api<OrdenFabricacion[]>("/fabricacion?estado=en_progreso").catch(() => []),
+        api<NecesidadesResp>("/fabricacion/necesidades").catch(() => null),
         api<unknown[]>("/fabricacion/faltantes").catch(() => []),
         api<StockBajo[]>("/monitor/stock-bajo").catch(() => []),
       ]);
       setPend({
         ventasAbiertas: ventas.length,
-        ofsActivas: ofsConf.length + ofsProg.length,
+        necesidades: (necesidades?.porMinimo.length ?? 0) + (necesidades?.porVentas.length ?? 0),
         faltantes: faltantes.length,
         bajoStock: bajo.length,
       });
@@ -47,7 +46,7 @@ export default function Home() {
 
   const stats = [
     { href: "/ventas", value: pend?.ventasAbiertas ?? 0, label: "Ventas abiertas", alert: (pend?.ventasAbiertas ?? 0) > 0 },
-    { href: "/fabricacion", value: pend?.ofsActivas ?? 0, label: "OFs activas", alert: (pend?.ofsActivas ?? 0) > 0 },
+    { href: "/fabricacion", value: pend?.necesidades ?? 0, label: "Necesidades de fabricación", alert: (pend?.necesidades ?? 0) > 0 },
     { href: "/fabricacion", value: pend?.faltantes ?? 0, label: "Pendientes de compra", alert: (pend?.faltantes ?? 0) > 0 },
     { href: "/monitor", value: pend?.bajoStock ?? 0, label: "Productos con bajo stock", alert: (pend?.bajoStock ?? 0) > 0 },
   ];

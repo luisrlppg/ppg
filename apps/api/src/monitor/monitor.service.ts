@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Prisma } from "@ppg/db";
-import { dec } from "../common/util";
 import { formatCantidad } from "@ppg/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { Notificadores } from "./monitor.notificadores";
@@ -19,7 +18,6 @@ export interface LowVariant {
   stockActual: number;
   longLead: boolean;
   deficit: number;
-  cantidadEnOF: number;
   objetivo: number;
 }
 
@@ -85,17 +83,6 @@ export class MonitorService {
       if (stockActual <= stockMin) bajos.push(v);
     }
 
-    const ids = bajos.map((v) => v.id);
-    const enOF = new Map<number, number>();
-    if (ids.length > 0) {
-      const sums = await this.prisma.manufacturingOrder.groupBy({
-        by: ["variantId"],
-        where: { variantId: { in: ids }, estado: { notIn: ["cancelada", "hecha"] } },
-        _sum: { cantidad: true },
-      });
-      for (const s of sums) enOF.set(s.variantId, dec(s._sum.cantidad));
-    }
-
     for (const v of bajos) {
       const stockMin = Number(v.stockMin);
       const stockMax = Number(v.stockMax);
@@ -111,7 +98,6 @@ export class MonitorService {
         stockActual,
         longLead: v.longLead,
         deficit: stockMin - stockActual,
-        cantidadEnOF: enOF.get(v.id) ?? 0,
         objetivo: stockMax > 0 ? stockMax : stockMin,
       });
     }
@@ -152,10 +138,6 @@ export class MonitorService {
     if (low) {
       const nuevo = !wasLow;
       if (nuevo) {
-        const enOFSum = await this.prisma.manufacturingOrder.aggregate({
-          where: { variantId, estado: { notIn: ["cancelada", "hecha"] } },
-          _sum: { cantidad: true },
-        });
         const stockMax = Number(v.stockMax);
         const lowData: LowVariant = {
           variantId: v.id,
@@ -168,7 +150,6 @@ export class MonitorService {
           stockActual,
           longLead: v.longLead,
           deficit: stockMin - stockActual,
-          cantidadEnOF: dec(enOFSum._sum.cantidad),
           objetivo: stockMax > 0 ? stockMax : stockMin,
         };
         canales = await this.enviarAlerta(lowData);

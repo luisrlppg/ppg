@@ -9,7 +9,6 @@ const prisma = new PrismaClient();
  * Crea (por upsert):
  *   1. Variante real Vástago 10mm   -> para reportar PRODUCCIÓN (tipo final)
  *   2. Variante real Cerda Negra     -> con stock para reportar CONSUMO (tipo consumo)
- *   3. OF en_progreso para fabricar vástagos -> para probar la ejecución de OF (§8.5)
  *
  * No borra reportes ni ventas existentes. Solo agrega lo que haga falta.
  */
@@ -125,37 +124,11 @@ async function main() {
   }
 
   // ---------------------------------------------------------------
-  // 3. OF en_progreso para fabricar vástagos (prueba ejecución de OF §8.5)
-  // ---------------------------------------------------------------
-  const numeroOF = "OF-DEMO-1";
-  const ofExistente = await prisma.manufacturingOrder.findFirst({ where: { numero: numeroOF } });
-  if (ofExistente) {
-    console.log(`- ${numeroOF} ya existía`);
-  } else {
-    await prisma.manufacturingOrder.create({
-      data: {
-        numero: numeroOF,
-        variantId: vVastago.id,
-        cantidad: 200,
-        tipo: "fabricacion",
-        estado: "en_progreso",
-        notas: "OF de demostración para probar el flujo de reportes (E3)",
-        generatedFrom: "seed-demo",
-        userId: adminId,
-        lines: {
-          create: [{ componentVariantId: vVastago.id, cantidadRequerida: 200 }],
-        },
-      },
-    });
-    console.log(`- ${numeroOF} creada (en_progreso) para Vástago 10mm`);
-  }
-
   console.log("\n=== Seed demo E3 listo ===");
   console.log("\nPara probar el flujo desde /reportes:");
   console.log("  1. Reporte del día: busca 'Vástago 10mm' (tipo final, sección maquina1) y 'Cerda Negra' (tipo consumo).");
-  console.log("  2. Enlaza la OF " + numeroOF + " al reporte.");
-  console.log("  3. Acepta el reporte: la OF pasará a 'hecha', el vástago entrará a 'Recibo de Producción', la cerda restará.");
-  console.log("  4. Ubicar: asigna el lote del Recibo a un compartimento.");
+  console.log("  2. Acepta el reporte: el vástago entrará a 'Recibo de Producción' y la cerda restará del stock.");
+  console.log("  3. Ubicar: asigna el lote del Recibo a un compartimento.");
 }
 
 main()

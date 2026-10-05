@@ -23,7 +23,7 @@ Construir un ERP propio, libre de Odoo, con una **base de datos central (Postgre
 | Acceso multi-app | Otras apps solo por API/REST (futuro SSE); nunca acceso directo a la DB |
 | Despliegue | Servidor local / LAN · Linux · Docker Compose |
 | Alcance inicial | Portar PPG Unified (reportes de producción, signage, stock) |
-| Ventas internas | Panel interno (equipo): teléfono/WhatsApp/correo; neteo, venta mínima, OF (§7) |
+| Ventas internas | Panel interno (equipo): teléfono/WhatsApp/correo; desglose, venta mínima (§7) |
 | Venta pública (futura) | Tienda propia (storefront) tras E2: catálogo + pedido invitado; SOLO vía `/api/public` (leer productos + alta de órdenes); **nunca** acceso directo a la DB (§7.7) |
 | Usuarios | Login por usuario con roles y distintos alcances administrativos |
 | Moneda | Solo MXN |
@@ -31,7 +31,7 @@ Construir un ERP propio, libre de Odoo, con una **base de datos central (Postgre
 | Variantes configurables | Creación bajo demanda (lazy); el inventario incluye la acción "materializar variante" |
 | Venta en E2 | **Mínima**: solo lo necesario para planear (cliente, producto, cantidad, precio). `fecha_entrega_deseada` y notas son campos opcionales del dominio, pero la UI de alta ya no los pide. Cotización/factura/IVA después |
 | Desglose BOM | **Multi-nivel** para componentes `exacto`; los `consumible` (cerda) quedan **fuera del neteo** (§5.7) |
-| Componentes faltantes | **Cascada automática**: generar órdenes de fabricación en cascada para componentes fabricables (§7.5) |
+| Componentes faltantes | **Desglose multi-nivel** del faltante por ventas y por mínimo; el panel de Fabricación lista las necesidades y registra producción como entrada de stock (§7.5) |
 | Unidad de medida | `products.uom` (pieza / metro…); cantidades decimales cuando `uom = metro` (§5.8) |
 | Ubicaciones | **Desde el schema inicial** (`locations` + `stock_levels`); stock por ubicación y `stock_actual` = suma (§5.9) |
 | Confirmación de inventario | El reporte de producción **no toca inventario**: `pendiente` → revisión por la encargada → `aplicado` (§8.2) |
@@ -153,8 +153,8 @@ Motivos: `produccion`, `consumo`, `ensamble`, `ubicacion`, `despacho`, `ajuste`,
 #### Fabricación (E2)
 | Tabla | Campos | Notas |
 |---|---|---|
-| `manufacturing_orders` | id, numero, variant_id (a fabricar), cantidad, estado (`borrador`\|`confirmada`\|`en_progreso`\|`hecha`\|`cancelada`), fecha, notas, generated_from (id de venta/orden), user_id | Orden de fabricación |
-| `manufacturing_order_lines` | id, order_id, component_variant_id, cantidad_requerida, cantidad_reservada | Componentes que consume la orden |
+| `manufacturing_orders` | id, numero, variant_id (a fabricar), cantidad, estado (`borrador`\|`confirmada`\|`en_progreso`\|`hecha`\|`cancelada`), fecha, notas, generated_from (id de venta/orden), user_id | Orden de fabricación. **Retirada 2026-10-05** |
+| `manufacturing_order_lines` | id, order_id, component_variant_id, cantidad_requerida, cantidad_reservada | Componentes que consume la orden. **Retirada 2026-10-05** |
 
 #### Producción (E3)
 | Tabla | Campos | Notas |
@@ -192,7 +192,10 @@ Cuando existan piezas ensambladas almacenadas (pinceles sobrados), **se registra
 - Ajuste con motivo referenciando el BOM cuando aplique.
 
 ### 5.4 Registrar ensamble (con BOM) — RETIRADO (2026-10-02)
-> **Retirado:** la operación manual de ensamble de inventario (`POST /inventario/ensamble`) se eliminó. El "ensamble" pasa a ser únicamente un **tipo de orden de fabricación** (producto con 2+ componentes exactos). Las OFs se crean desde ventas, manualmente o por reposición mín/máx, y el stock se mueve al aplicar reportes de producción. Se conserva esta sección como referencia histórica.
+> **Retirado:** la operación manual de ensamble de inventario (`POST /inventario/ensamble`) se eliminó,
+> y en 2026-10-05 también la entidad de orden de fabricación. El "ensamble" queda como una propiedad del
+> producto con 2+ componentes exactos: se arma contra pedido y sus componentes se consumen al despachar.
+> Se conserva esta sección como referencia histórica.
 
 **Qué era**: operación de inventario para cuando físicamente **armas un producto terminado a partir de sus componentes** (su BOM) — por ejemplo los pinceles sobrantes del §5.3. Se asentaba en un solo paso para que el stock no mintiera.
 
@@ -297,6 +300,14 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 ```
 
 ### 7.5 Órdenes de fabricación y cascada automática
+
+> **Actualización 2026-10-05:** la entidad de **orden de fabricación se eliminó**. El desglose sigue
+> calculando el faltante neto multi-nivel (§7.4), pero ya **no** persiste órdenes: el panel de
+> **Fabricación** lista las necesidades (**por mínimo** y **por ventas**) y registra la producción como
+> **entrada de stock** a una ubicación elegida (`POST /fabricacion/produccion`). Los ensambles se arman
+> contra pedido y sus componentes se consumen al despachar. Lo de abajo queda como referencia de la
+> intención original.
+>
 - El sistema **genera la orden de fabricación** para los artículos que faltan.
 - **Cascada**: los componentes `exacto` que a su vez faltan y tienen su propio BOM generan órdenes de fabricación hijas; los componentes fabricables sin stock suficiente se van neteando nivel a nivel.
 - Los faltantes **no fabricables** se listan como *pendientes de compra* (no se auto-compra).
@@ -306,7 +317,7 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 ### 7.6 Web
 - **Órdenes de venta**: crear, ver, editar; desglose visible y resultado del neteo (fabricar vs existencia).
 - **Alta de venta** (2026-08-31): parte de un **grid de productos públicos** (`/public/productos`) y cada producto se configura desde un **modal guiado paso a paso** (reusa `getPasos` del storefront). Sin búsqueda libre de variantes; la configuración debe resolver a una variante **publicada existente** del producto (para más opciones, se materializan y publican variantes en el admin).
-- **Órdenes de fabricación**: lista con estado y componentes requeridos; confirmada→en progreso→hecha (ejecución real se registra en E3 con los reportes).
+- **Fabricación (2026-10-05):** panel de **necesidades** (por mínimo / por ventas) con **alta de producción** a una ubicación elegida; ya no hay lista de órdenes de fabricación.
 - **Resumen de faltantes** y pendientes de compra.
 
 ### 7.7 Tienda pública (storefront) — tras E2
@@ -319,7 +330,7 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
   - `POST /api/public/orders` → alta de orden **pendiente**, `origen='web'`, datos de invitado (nombre, teléfono, email).
   - `GET /api/public/orders/:numero` → el cliente consulta el estado de su pedido.
 - Reglas: los **precios se recalculan en servidor** (nunca se confía en el precio que manda el cliente); límite de peticiones/rate-limit; **sin** inventario, usuarios, reportes ni datos internos.
-- La orden web entra a la **misma tubería** `sales_orders` (§7.1–7.5): al confirmar el equipo se aplica neteo, venta mínima y órdenes de fabricación con cascada.
+- La orden web entra a la **misma tubería** `sales_orders` (§7.1–7.5): al confirmar el equipo se aplica el desglose y se listan las necesidades de fabricación.
 - Pago: `sales_orders.payment_method` queda **nullable** como punto de extensión; hoy la tienda solo registra el pedido y se cobra por teléfono/WhatsApp. Una pasarela (Stripe/MercadoPago…) se integra después sin cambiar la estructura.
 - **Pendiente (2026-08-31):** `apps/storefront` separada + pasarela de pago + **imágenes** de opciones en el wizard (hoy placeholders/iconos) + **precios** en la UI (ocultos a propósito, los revisa el equipo).
 
@@ -359,11 +370,11 @@ Reglas:
 Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `final`** (la que entrega/almacena) incrementa inventario; el resto de secciones quedan como métrica operativa (persona/hora).
 
 ### 8.5 Ejecución de órdenes de fabricación (E2 → E3)
-> **Actualización 2026-10-05:** el cierre de una OF es **manual desde Fabricación**
-> (`POST /fabricacion/:id/concluir`), no por reportes. Un **ensamble** consume sus componentes y no
-> produce stock del ensamble (se arma contra pedido); una **hoja** da entrada a "Recibo de Producción"
-> mediante un reporte **interno** aplicado. Los reportes de producción dejan de marcar la OF como
-> `hecha`. El despacho de un ensamble exige su OF en `hecha`.
+
+> **Retirado 2026-10-05:** ya no existen órdenes de fabricación. La producción se registra como
+> **entrada de stock** desde el panel de Fabricación (`POST /fabricacion/produccion`) y los reportes de
+> producción (`/reportes`) son un flujo independiente (no marcan ninguna orden). Los ensambles se
+> consumen al despachar. Se conserva esta sección como referencia histórica.
 
 - Las órdenes de E2 `confirmadas` se ejecutan desde la línea: al cerrar la jornada, el reporte correspondiente aplica (con la confirmación de §8.2) el producto terminado y el consumo de componentes vinculados → la orden pasa a `hecha`.
 - Las secciones de producción se asocian a la orden en ejecución cuando aplique (trazabilidad).
@@ -412,7 +423,7 @@ distintos según el tipo:
 |---|---|---|
 | **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
 | **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), ~~registrar ensamble~~ (retirado 2026-10-02) | ✅ entregado |
-| **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, neteo, órdenes de fabricación con cascada automática. **Flujo venta→confirmación→neteo→cascada de OFs→despacho verificado end-to-end (2026-08-31)** | ✅ entregado |
+| **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, necesidades de fabricación (por mínimo y por ventas) y alta de producción. **Flujo venta→confirmación→desglose→despacho verificado end-to-end (2026-08-31; modelo sin OF desde 2026-10-05)** | ✅ entregado |
 | **Tienda (futura)** | Storefront público: `/api/public` + (futuro) `apps/storefront`. **Ya está operativa la tubería completa**: `GET /public/productos`, `getPasos` (variantes publicadas), pedido invitado (`origen=web`, precio recalculado en servidor, consulta por número), y tienda guiada integrada en `apps/web/tienda/[productId]`. Falta la app `apps/storefront` separada + pasarela de pago + **imágenes** de opciones (hoy placeholders) + **precios** en la UI (ocultos a propósito). | 🟡 tubería + tienda guiada operativas |
 | **E3** | Producción/Reportes: reporte ligado a variantes, confirmación de inventario (pendiente→aplicado), auto-inventario a "Recibo de Producción", pantalla Ubicar, ejecución de órdenes de fabricación, consumo de cerda, stats/CSV. **Flujo verificado end-to-end (2026-08-31)** | ✅ entregado |
 | **Costos (post-E3)** | Módulo de costo estándar por producto (materiales manuales, M.O., máquina, molde, ensamble, empaque; precio/margen de referencia). Arranca separado de los precios de venta. Ver §8.7 | 🟡 v1 en curso |

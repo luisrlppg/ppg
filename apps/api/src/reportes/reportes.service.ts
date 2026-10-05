@@ -27,7 +27,6 @@ export interface CrearReporteInput {
   personas?: number;
   horasTrabajadas?: number;
   notas?: string;
-  manufacturingOrderId?: number;
   lines: LineaInput[];
 }
 
@@ -50,7 +49,7 @@ export class ReportesService {
   }
 
   // ---------------------------------------------------------------- Lista
-  async list(query: { search?: string; estado?: string; turno?: string; fecha?: string; of?: string }) {
+  async list(query: { search?: string; estado?: string; turno?: string; fecha?: string }) {
     const estados = ["pendiente", "aplicado", "cancelado"] as const;
     const estadoOk = query.estado && (estados as readonly string[]).includes(query.estado);
     const turnoOk = query.turno && (TURNOS as readonly string[]).includes(query.turno);
@@ -64,14 +63,12 @@ export class ReportesService {
       ...(turnoOk ? { turno: query.turno as Prisma.ProductionReportWhereInput["turno"] } : {}),
       ...(query.fecha ? { fecha: { gte: ini, lt: fin } } : {}),
       ...(query.search ? { numero: { contains: query.search, mode: "insensitive" } } : {}),
-      ...(query.of ? { manufacturingOrder: { numero: query.of } } : {}),
     };
 
     const rows = await this.prisma.productionReport.findMany({
       where,
       orderBy: { fecha: "desc" },
       include: {
-        manufacturingOrder: { select: { numero: true } },
         lines: {
           include: { variant: { include: { product: { select: { nombre: true, uom: true } } } } },
         },
@@ -92,7 +89,6 @@ export class ReportesService {
         notas: r.notas,
         estado: r.estado,
         aplicadoAt: r.aplicadoAt,
-        manufacturingOrder: r.manufacturingOrder?.numero ?? null,
         lineas: r.lines.length,
         secciones,
         totalFinal,
@@ -122,7 +118,6 @@ export class ReportesService {
       personas: r.personas,
       horasTrabajadas: dec(r.horasTrabajadas) > 0 ? dec(r.horasTrabajadas) : undefined,
       notas: r.notas,
-      manufacturingOrderId: r.manufacturingOrderId ?? undefined,
       lines: r.lines.map((l) => ({
         variantId: l.variantId,
         sku: l.variant.sku,
@@ -141,7 +136,6 @@ export class ReportesService {
     const r = await this.prisma.productionReport.findUnique({
       where: { id },
       include: {
-        manufacturingOrder: { select: { numero: true, estado: true } },
         lines: {
           include: { variant: { include: { product: { select: { nombre: true, uom: true } } } } },
         },
@@ -150,7 +144,6 @@ export class ReportesService {
     if (!r) throw new NotFoundException("Reporte no encontrado");
     return {
       ...r,
-      manufacturingOrder: r.manufacturingOrder,
       lines: r.lines.map((l) => ({
         id: l.id,
         variantId: l.variantId,
@@ -179,7 +172,6 @@ export class ReportesService {
           fecha: input.fecha ? new Date(`${input.fecha}T12:00:00`) : undefined,
           personas: input.personas ?? 1,
           horasTrabajadas: input.horasTrabajadas ?? null,
-          manufacturingOrderId: input.manufacturingOrderId ?? null,
           notas: input.notas ?? null,
           userId,
         },
@@ -208,7 +200,6 @@ export class ReportesService {
           notas: input.notas ?? null,
           personas: input.personas ?? 1,
           horasTrabajadas: input.horasTrabajadas ?? null,
-          manufacturingOrderId: input.manufacturingOrderId ?? null,
         },
       });
       await tx.productionReportLine.deleteMany({ where: { reportId: id } });
