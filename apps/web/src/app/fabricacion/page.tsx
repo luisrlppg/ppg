@@ -50,6 +50,15 @@ function TablaNecesidades({
             <tr key={n.variantId}>
               <td>
                 <strong>{n.producto}</strong>
+                <div className="attr-list">
+                  {n.valoracion.length > 0
+                    ? n.valoracion.map((a) => (
+                        <span key={a.attribute} className="attr-item">
+                          <span className="attr-name">{a.attribute}</span> {a.valor}
+                        </span>
+                      ))
+                    : <span className="muted small">—</span>}
+                </div>
                 <div className="small muted">{n.nombre} · {n.sku}</div>
               </td>
               <td className="num">{formatCantidad(n.stockActual)} {n.uom}</td>
