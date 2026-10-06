@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import StickyBar from "@/components/ui/sticky-bar";
+import Modal from "@/components/ui/modal";
 import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import { api } from "@/lib/api";
 import { useFiltroAtributos } from "@/lib/filtro-atributos";
@@ -12,26 +13,32 @@ import { refrescarPorUbicar } from "@/lib/por-ubicar";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { LoteUbicar, Ubicacion } from "@/lib/types";
 
+function DetalleLote({ l }: { l: LoteUbicar }) {
+  return (
+    <>
+      <div className="small muted">
+        {l.valoracion.map((v) => `${v.attribute}: ${v.valor}`).join(" · ") || `del reporte ${l.reporte}`}
+      </div>
+      <div className="small muted">
+        {l.origen === "reporte" ? `Reporte ${l.reporte}` : "Producción desde Fabricación"} · lo registró{" "}
+        <strong>{l.usuario ?? "—"}</strong>
+      </div>
+    </>
+  );
+}
+
 function SeccionLotes({
   titulo,
   descripcion,
   lotes,
-  ubicaciones,
-  asig,
-  setAsigLote,
-  onUbicar,
-  cargando,
+  onAbrir,
   formatCantidad,
   vacio,
 }: {
   titulo: string;
   descripcion: string;
   lotes: LoteUbicar[];
-  ubicaciones: Ubicacion[];
-  asig: Record<number, { locationId: string; cantidad: string }>;
-  setAsigLote: (lineaId: number, campo: "locationId" | "cantidad", valor: string) => void;
-  onUbicar: (l: LoteUbicar) => void;
-  cargando: boolean;
+  onAbrir: (l: LoteUbicar) => void;
   formatCantidad: (n: number) => string;
   vacio: string;
 }) {
@@ -44,56 +51,32 @@ function SeccionLotes({
           <p className="muted" style={{ padding: 16 }}>{vacio}</p>
         ) : (
           <ul className="step-list" style={{ padding: 12 }}>
-            {lotes.map((l) => {
-              const a = asig[l.lineaId];
-              return (
-                <li key={l.lineaId} style={{ background: "#fafafa", borderRadius: 8, padding: "8px 12px" }}>
-                  <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                    <span>
-                      <strong>{l.producto}</strong> {l.nombre}
-                      <span className="muted small"> ({l.sku})</span>
-                      <div className="small muted">
-                        {l.valoracion.map((v) => `${v.attribute}: ${v.valor}`).join(" · ") || `del reporte ${l.reporte}`}
-                      </div>
-                      <div className="small muted">
-                        {l.origen === "reporte" ? `Reporte ${l.reporte}` : "Producción desde Fabricación"} · lo registró{" "}
-                        <strong>{l.usuario ?? "—"}</strong>
-                      </div>
-                    </span>
-                    <span className="badge normal">
-                      {formatCantidad(l.pendiente)} {l.uom}
-                    </span>
-                  </div>
-                  <div className="row" style={{ alignItems: "end", marginTop: 6 }}>
-                    <label style={{ flex: 1.4 }}>
-                      Compartimento
-                      <select value={a?.locationId ?? ""} onChange={(e) => setAsigLote(l.lineaId, "locationId", e.target.value)}>
-                        <option value="">— Elegir —</option>
-                        {ubicaciones.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label style={{ width: 110 }}>
-                      Cantidad
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0.001"
-                        max={l.pendiente}
-                        value={a?.cantidad ?? String(l.pendiente)}
-                        onChange={(e) => setAsigLote(l.lineaId, "cantidad", e.target.value)}
-                      />
-                    </label>
-                    <button className="btn primary" style={{ flex: 0 }} disabled={cargando} onClick={() => onUbicar(l)}>
-                      Ubicar
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
+            {lotes.map((l) => (
+              <li
+                key={l.lineaId}
+                className="lote-row"
+                role="button"
+                tabIndex={0}
+                onClick={() => onAbrir(l)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onAbrir(l);
+                  }
+                }}
+              >
+                <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                  <span>
+                    <strong>{l.producto}</strong> {l.nombre}
+                    <span className="muted small"> ({l.sku})</span>
+                    <DetalleLote l={l} />
+                  </span>
+                  <span className="badge normal">
+                    {formatCantidad(l.pendiente)} {l.uom}
+                  </span>
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -101,11 +84,121 @@ function SeccionLotes({
   );
 }
 
+function ModalUbicarLote({
+  lote,
+  ubicaciones,
+  cargando,
+  onClose,
+  onUbicar,
+  formatCantidad,
+}: {
+  lote: LoteUbicar;
+  ubicaciones: Ubicacion[];
+  cargando: boolean;
+  onClose: () => void;
+  onUbicar: (locationId: number, cantidad: number) => void;
+  formatCantidad: (n: number) => string;
+}) {
+  const [busqueda, setBusqueda] = useState("");
+  const [locationId, setLocationId] = useState<number | null>(null);
+  const [cantidad, setCantidad] = useState(String(lote.pendiente));
+  const [mostrarLista, setMostrarLista] = useState(false);
+
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return ubicaciones;
+    return ubicaciones.filter((u) => u.nombre.toLowerCase().includes(q));
+  }, [busqueda, ubicaciones]);
+
+  function elegir(u: Ubicacion) {
+    setLocationId(u.id);
+    setBusqueda(u.nombre);
+    setMostrarLista(false);
+  }
+
+  const cantidadNum = Number(cantidad);
+  const valido = locationId !== null && cantidadNum > 0 && cantidadNum <= lote.pendiente;
+
+  return (
+    <Modal
+      title={`Ubicar ${lote.producto} ${lote.nombre}`}
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" className="btn ghost" onClick={onClose} disabled={cargando}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={cargando || !valido}
+            onClick={() => locationId !== null && onUbicar(locationId, cantidadNum)}
+          >
+            Ubicar
+          </button>
+        </>
+      }
+    >
+      <p className="muted small" style={{ marginTop: 0 }}>
+        {lote.sku} · pendiente {formatCantidad(lote.pendiente)} {lote.uom}
+      </p>
+      <DetalleLote l={lote} />
+
+      <div style={{ marginTop: 12 }}>
+        <div className="small" style={{ marginBottom: 4 }}>Buscar compartimento</div>
+        <div className="buscador-wrap" style={{ maxWidth: "100%" }}>
+          <input
+            autoFocus
+            value={busqueda}
+            placeholder="Escribe el nombre de la ubicación…"
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              setLocationId(null);
+              setMostrarLista(true);
+            }}
+            onFocus={() => setMostrarLista(true)}
+            onBlur={() => setTimeout(() => setMostrarLista(false), 120)}
+          />
+          {mostrarLista && (
+            <ul className="buscador-lista">
+              {filtradas.length === 0 ? (
+                <li className="muted small" style={{ padding: "8px 10px" }}>
+                  Sin coincidencias.
+                </li>
+              ) : (
+                filtradas.map((u) => (
+                  <li key={u.id}>
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(u)}>
+                      {u.nombre}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <label style={{ display: "block", marginTop: 12 }}>
+        Cantidad a mover
+        <input
+          type="number"
+          step="0.001"
+          min="0.001"
+          max={lote.pendiente}
+          value={cantidad}
+          onChange={(e) => setCantidad(e.target.value)}
+        />
+      </label>
+    </Modal>
+  );
+}
+
 export default function UbicacionesPage() {
   const formatCantidad = useFormatCantidad();
   const [lotes, setLotes] = useState<LoteUbicar[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
-  const [asig, setAsig] = useState<Record<number, { locationId: string; cantidad: string }>>({});
+  const [loteModal, setLoteModal] = useState<LoteUbicar | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -135,36 +228,17 @@ export default function UbicacionesPage() {
   const sinCoincidencias = "Sin coincidencias con el filtro.";
   const totalPendiente = lotes.reduce((a, l) => a + l.pendiente, 0);
 
-  function setAsigLote(lineaId: number, campo: "locationId" | "cantidad", valor: string) {
-    setAsig((a) => ({
-      ...a,
-      [lineaId]: { locationId: a[lineaId]?.locationId ?? "", cantidad: a[lineaId]?.cantidad ?? "", [campo]: valor },
-    }));
-  }
-
-  async function ubicarLote(l: LoteUbicar) {
-    const a = asig[l.lineaId];
-    if (!a?.locationId) {
-      setError("Elige un compartimento para el lote.");
-      return;
-    }
-    const cantidad = Number(a.cantidad || l.pendiente);
-    if (!(cantidad > 0)) {
-      setError("Cantidad inválida.");
-      return;
-    }
+  async function ubicarLote(locationId: number, cantidad: number) {
+    if (!loteModal) return;
     setCargando(true);
     setError("");
     try {
-      await api(`/reportes/lotes/${l.lineaId}/ubicar`, {
+      await api(`/reportes/lotes/${loteModal.lineaId}/ubicar`, {
         method: "POST",
-        body: JSON.stringify({ cantidad, locationId: Number(a.locationId) }),
+        body: JSON.stringify({ cantidad, locationId }),
       });
-      setMsg(`Lote de ${l.producto} ${l.nombre} ubicado.`);
-      setAsig((s) => {
-        const { [l.lineaId]: _omit, ...rest } = s;
-        return rest;
-      });
+      setMsg(`Lote de ${loteModal.producto} ${loteModal.nombre} ubicado.`);
+      setLoteModal(null);
       await cargar();
       refrescarPorUbicar();
     } catch (err) {
@@ -185,8 +259,8 @@ export default function UbicacionesPage() {
 
       <HelpNote>
         Aquí llega lo producido por <strong>reporte de turno</strong> (tras aceptarlo en la bandeja de
-        Reportes) y lo registrado en <strong>Fabricación</strong>. Asigna el compartimento y la cantidad
-        que se mueve del Recibo de Producción al almacén.
+        Reportes) y lo registrado en <strong>Fabricación</strong>. Haz clic en un producto para asignar el
+        compartimento y la cantidad que se mueve del Recibo de Producción al almacén.
       </HelpNote>
 
       <StickyBar>
@@ -203,11 +277,7 @@ export default function UbicacionesPage() {
         titulo="Por reporte de producción"
         descripcion="Productos terminados de reportes de turno ya aceptados."
         lotes={deReporte}
-        ubicaciones={ubicaciones}
-        asig={asig}
-        setAsigLote={setAsigLote}
-        onUbicar={ubicarLote}
-        cargando={cargando}
+        onAbrir={setLoteModal}
         formatCantidad={formatCantidad}
         vacio={hayFiltro ? sinCoincidencias : "Nada pendiente de reportes."}
       />
@@ -216,16 +286,23 @@ export default function UbicacionesPage() {
         titulo="Por fabricación"
         descripcion="Producción registrada desde el panel de Fabricación."
         lotes={deFabricacion}
-        ubicaciones={ubicaciones}
-        asig={asig}
-        setAsigLote={setAsigLote}
-        onUbicar={ubicarLote}
-        cargando={cargando}
+        onAbrir={setLoteModal}
         formatCantidad={formatCantidad}
         vacio={hayFiltro ? sinCoincidencias : "Nada pendiente de fabricación."}
       />
 
       <FiltroAtributosModal filtro={filtroAtributos} />
+
+      {loteModal && (
+        <ModalUbicarLote
+          lote={loteModal}
+          ubicaciones={ubicaciones}
+          cargando={cargando}
+          onClose={() => !cargando && setLoteModal(null)}
+          onUbicar={ubicarLote}
+          formatCantidad={formatCantidad}
+        />
+      )}
     </AppShell>
   );
 }

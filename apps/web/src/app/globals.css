@@ -253,6 +253,19 @@ select:focus {
   margin: 8px 0;
 }
 
+/* ---- Bandeja de ubicación: fila compacta clicable ---- */
+.lote-row {
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.lote-row:hover,
+.lote-row:focus-visible {
+  border-color: var(--info-line, var(--line));
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
 /* ---- Navegación ---- */
 .nav-links {
   display: flex;
