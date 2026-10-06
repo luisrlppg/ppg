@@ -31,6 +31,13 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Bandeja de aceptación retirada de `/reportes` (2026-10-06):** se eliminó la pestaña **Bandeja**
+  (listar pendientes/aplicados/cancelados, aceptar/aplicar, modificar y cancelar) de
+  `app/reportes/page.tsx`. La página queda con **Reporte del día** (captura por pasos) y
+  **Estadísticas** (admin); los reportes siguen creándose **pendientes** (`POST /reportes`) y el
+  backend (`list`/`aplicar`/`editar`/`cancelar`) queda intacto, pero sin UI de aceptación. La
+  bandeja de ubicación en `/ubicaciones` no cambia. Sin migración.
+
 - **Bandeja de ubicación unificada en `/ubicaciones` (2026-10-06):** todo lo producido termina en
   **"Recibo de Producción"** pendiente de ubicar y se gestiona en una **página nueva del sidebar**
   (`app/ubicaciones/page.tsx`), separada en secciones **Por reporte de producción** y **Por fabricación**

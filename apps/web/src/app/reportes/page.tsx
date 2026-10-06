@@ -1,18 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import Segmented from "@/components/ui/segmented";
 import StatsProduccion from "@/components/reportes/stats-produccion";
 import { api } from "@/lib/api";
-import { refrescarPorUbicar } from "@/lib/por-ubicar";
-import { useFormatCantidad } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 import type {
   CepillosNylonGrid,
-  Reporte,
-  ReporteDetalle,
   SeccionReporte,
   TipoLineaReporte,
   Turno,
@@ -46,15 +42,6 @@ function turnoPorHora(): TurnoCaptura {
   return new Date().getHours() < 14 ? "matutino" : "vespertino";
 }
 
-function aDate(s: string): string {
-  const d = new Date(s);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function badgeEstado(e: string) {
-  return e === "aplicado" ? "normal" : e === "pendiente" ? "bajo" : "critico";
-}
-
 interface LineaForm {
   key: string;
   variantId: number;
@@ -69,22 +56,17 @@ interface LineaForm {
   color: string;
 }
 
-type Tab = "reporte" | "bandeja" | "stats";
+type Tab = "reporte" | "stats";
 
 export default function ReportesPage() {
-  const formatCantidad = useFormatCantidad();
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [tab, setTab] = useState<Tab>("bandeja");
+  const [tab, setTab] = useState<Tab>("reporte");
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
-  const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
     api<{ user: PublicUser }>("/auth/me")
-      .then((d) => {
-        setUser(d.user);
-        if (d.user.role === "operador") setTab("reporte");
-      })
+      .then((d) => setUser(d.user))
       .catch(() => setUser(null));
   }, []);
 
@@ -96,8 +78,6 @@ export default function ReportesPage() {
   const [fecha, setFecha] = useState(hoy);
   const [personas, setPersonas] = useState("1");
   const [lines, setLines] = useState<LineaForm[]>([]);
-  const [editandoId, setEditandoId] = useState<number | null>(null);
-  const [editandoNumero, setEditandoNumero] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   // ------------------------------------------------------------------ Wizard
@@ -205,8 +185,6 @@ export default function ReportesPage() {
     setLines([]);
     setPersonas("1");
     setFecha(hoy());
-    setEditandoId(null);
-    setEditandoNumero("");
     setMaquina(null);
     setFormaId(null);
     setColorId(null);
@@ -230,129 +208,13 @@ export default function ReportesPage() {
     setError("");
     setMsg("");
     try {
-      if (editandoId) {
-        await api(`/reportes/${editandoId}`, { method: "PATCH", body: JSON.stringify(dto) });
-        setMsg(`Reporte ${editandoNumero} actualizado. Queda pendiente de aceptación.`);
-      } else {
-        await api("/reportes", { method: "POST", body: JSON.stringify(dto) });
-        setMsg("Reporte guardado. Queda en la bandeja de pendientes a la espera de aceptación.");
-        limpiarForm();
-      }
-      cargarBandeja();
+      await api("/reportes", { method: "POST", body: JSON.stringify(dto) });
+      setMsg("Reporte guardado.");
+      limpiarForm();
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setGuardando(false);
-    }
-  }
-
-  // ------------------------------------------------------------------ Bandeja
-  const [bandeja, setBandeja] = useState<Reporte[]>([]);
-  const [fEstadoB, setFEstadoB] = useState("pendiente");
-  const [detalle, setDetalle] = useState<ReporteDetalle | null>(null);
-  const [selId, setSelId] = useState<number | null>(null);
-
-  const cargarBandeja = useCallback(async () => {
-    try {
-      setBandeja(await api<Reporte[]>(`/reportes?${new URLSearchParams(fEstadoB ? { estado: fEstadoB } : {})}`));
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }, [fEstadoB]);
-
-  useEffect(() => {
-    if (tab === "bandeja") cargarBandeja();
-  }, [tab, cargarBandeja]);
-
-  useEffect(() => {
-    if (selId === null) {
-      setDetalle(null);
-      return;
-    }
-    api<ReporteDetalle>(`/reportes/${selId}`).then(setDetalle).catch((err) => setError((err as Error).message));
-  }, [selId, cargarBandeja, tab]);
-
-  async function iniciarEdicion(d: ReporteDetalle) {
-    let g = grid;
-    try {
-      g = await cargarGrid();
-    } catch {
-      g = null;
-    }
-    const idxShape = g ? g.ejes.findIndex((e) => /forma/i.test(e.nombre)) : -1;
-    const idxColor = g ? g.ejes.findIndex((e) => /color/i.test(e.nombre)) : -1;
-    const mapeadas: LineaForm[] = [];
-    const otras: LineaForm[] = [];
-    for (const l of d.lines) {
-      const base = {
-        key: `${l.variantId}-${l.seccion}-${l.id}`,
-        variantId: l.variantId,
-        sku: l.sku,
-        nombre: l.nombre,
-        producto: l.producto,
-        uom: l.uom,
-        seccion: l.seccion,
-        tipo: l.tipo,
-        cantidad: String(Number(l.ok)),
-      };
-      const ex = g?.existentes.find((v) => v.varianteId === l.variantId);
-      if (g && ex && idxShape >= 0 && idxColor >= 0) {
-        const fid = ex.valueIds[idxShape];
-        const cid = ex.valueIds[idxColor];
-        mapeadas.push({
-          ...base,
-          forma: g.ejes[idxShape].valores.find((x) => x.id === fid)?.valor ?? "—",
-          color: g.ejes[idxColor].valores.find((x) => x.id === cid)?.valor ?? "—",
-        });
-      } else {
-        otras.push({ ...base, forma: "—", color: "—" });
-      }
-    }
-    setTurno(d.turno === "vespertino" ? "vespertino" : "matutino");
-    setFecha(aDate(d.fecha));
-    setPersonas(String(d.personas));
-    setLines([...mapeadas, ...otras]);
-    setEditandoId(d.id);
-    setEditandoNumero(d.numero);
-    setError("");
-    setMsg("");
-    setFase("captura");
-    setTab("reporte");
-  }
-
-  async function aceptar(id: number) {
-    if (!window.confirm("¿Aceptar este reporte? Se aplicará: los productos terminados entran a 'Recibo de Producción' y los consumos restan de su stock.")) return;
-    setCargando(true);
-    setError("");
-    try {
-      const res = await api<{ ok: boolean; canales: string[] }>(`/reportes/${id}/aplicar`, { method: "POST", body: "{}" });
-      setMsg(`Reporte aceptado y aplicado al inventario${res.canales.length ? " · notificado: " + res.canales.join(", ") : "."}`);
-      cargarBandeja();
-      refrescarPorUbicar();
-      if (selId !== null) {
-        const d = await api<ReporteDetalle>(`/reportes/${selId}`);
-        setDetalle(d);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  async function cancelar(id: number) {
-    if (!window.confirm("¿Cancelar este reporte pendiente?")) return;
-    setCargando(true);
-    setError("");
-    try {
-      await api(`/reportes/${id}/cancelar`, { method: "POST", body: "{}" });
-      setMsg("Reporte cancelado.");
-      cargarBandeja();
-      setSelId(null);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setCargando(false);
     }
   }
 
@@ -387,20 +249,13 @@ export default function ReportesPage() {
       <button className="btn primary block" disabled={cargandoGrid}>
         {cargandoGrid ? "Cargando…" : "Comenzar"}
       </button>
-      {editandoId && (
-        <button type="button" className="btn ghost block" onClick={limpiarForm}>
-          Cancelar edición
-        </button>
-      )}
     </form>
   );
 
   const capturaForm = (
     <div className="card">
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap" }}>
-        <h4 style={{ margin: 0 }}>
-          {editandoId ? `Editando ${editandoNumero} (pendiente)` : "Paso 1 · Producción de cepillos de Nylon"}
-        </h4>
+        <h4 style={{ margin: 0 }}>Paso 1 · Producción de cepillos de Nylon</h4>
         <span className="muted small">
           {turno === "matutino" ? "Matutino" : "Vespertino"} · {new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX")} ·{" "}
           {personas} pers.
@@ -510,115 +365,13 @@ export default function ReportesPage() {
       <form onSubmit={guardar}>
         <div className="row" style={{ marginTop: 8 }}>
           <button className="btn primary block" disabled={guardando}>
-            {guardando ? "Guardando…" : editandoId ? "Guardar cambios" : "Finalizar reporte"}
+            {guardando ? "Guardando…" : "Finalizar reporte"}
           </button>
           <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
             Reiniciar
           </button>
         </div>
       </form>
-    </div>
-  );
-
-  const contentBandeja = (
-    <div className="grid-2">
-      <div className="card">
-        <h4 style={{ marginTop: 0 }}>Bandeja de pendientes</h4>
-        <div className="row" style={{ marginBottom: 8 }}>
-          <select value={fEstadoB} onChange={(e) => { setFEstadoB(e.target.value); setSelId(null); }}>
-            <option value="pendiente">Pendientes</option>
-            <option value="">Todos los estados</option>
-            <option value="aplicado">Aplicados</option>
-            <option value="cancelado">Cancelados</option>
-          </select>
-          <button className="btn ghost" style={{ flex: 0 }} onClick={cargarBandeja}>
-            Actualizar
-          </button>
-        </div>
-        <ul className="step-list">
-          {bandeja.map((r) => (
-            <li key={r.id} onClick={() => setSelId(r.id === selId ? null : r.id)} style={{ cursor: "pointer", background: selId === r.id ? "#fff8e6" : undefined }}>
-              <div className="row" style={{ justifyContent: "space-between" }}>
-                <span>
-                  <strong>{r.numero}</strong> · {new Date(r.fecha).toLocaleDateString("es-MX")} · {r.turno}
-                  {r.personas > 1 ? ` · ${r.personas} pers.` : ""}
-                  <div className="small muted">
-                    {r.lineas} líneas · final {formatCantidad(r.totalFinal)} {r.totalConsumo > 0 ? ` · consumo ${formatCantidad(r.totalConsumo)}` : ""}
-                  </div>
-                </span>
-                <span style={{ flex: 0 }}>
-                  <span className={`badge ${badgeEstado(r.estado)}`}>{r.estado}</span>
-                </span>
-              </div>
-            </li>
-          ))}
-          {bandeja.length === 0 && <li className="muted">Sin reportes {fEstadoB ? `(${fEstadoB})` : ""}.</li>}
-        </ul>
-      </div>
-
-      <div className="card">
-        {detalle && detalle.estado === "pendiente" ? (
-          <>
-            <div className="row" style={{ justifyContent: "space-between", marginTop: 0 }}>
-              <h4 style={{ margin: 0 }}>
-                {detalle.numero}
-                <span className={`badge ${badgeEstado(detalle.estado)}`}>{detalle.estado}</span>
-              </h4>
-              <span className="muted small">
-                {new Date(detalle.fecha).toLocaleDateString("es-MX")} · {detalle.turno} · {detalle.personas} pers.
-                {detalle.horasTrabajadas ? ` · ${detalle.horasTrabajadas}h` : ""}
-              </span>
-            </div>
-            {detalle.notas && <p className="muted small" style={{ margin: "4px 0" }}>Notas: {detalle.notas}</p>}
-            <ul className="step-list">
-              {detalle.lines.map((l) => (
-                <li key={l.id}>
-                  <span className={`badge ${l.tipo === "final" ? "normal" : "critico"}`}>{l.tipo}</span>{" "}
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {formatCantidad(Number(l.ok))} {l.uom}
-                  <div className="small muted">Sección: {l.seccion}</div>
-                </li>
-              ))}
-            </ul>
-            <div className="row">
-              <button className="btn primary" disabled={cargando} onClick={() => aceptar(detalle.id)}>
-                Aceptar y aplicar al inventario
-              </button>
-              <button className="btn ghost" style={{ flex: 0 }} disabled={cargando} onClick={() => iniciarEdicion(detalle)}>
-                Modificar
-              </button>
-              <button className="btn ghost" style={{ flex: 0 }} disabled={cargando} onClick={() => cancelar(detalle.id)}>
-                Cancelar reporte
-              </button>
-            </div>
-          </>
-        ) : detalle ? (
-          <>
-            <h4 style={{ marginTop: 0 }}>
-              {detalle.numero} <span className={`badge ${badgeEstado(detalle.estado)}`}>{detalle.estado}</span>
-            </h4>
-            <p className="muted small">
-              {new Date(detalle.fecha).toLocaleDateString("es-MX")} · {detalle.turno} · {detalle.personas} pers.
-              {detalle.aplicadoAt ? ` · aplicado ${new Date(detalle.aplicadoAt).toLocaleString("es-MX")}` : ""}
-            </p>
-            <ul className="step-list">
-              {detalle.lines.map((l) => (
-                <li key={l.id}>
-                  <span className={`badge ${l.tipo === "final" ? "normal" : "critico"}`}>{l.tipo}</span>{" "}
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) × {formatCantidad(Number(l.ok))} {l.uom}
-                  {l.tipo === "final" && l.pendienteUbicar > 0 && (
-                    <div className="small muted">aplicado {formatCantidad(Number(l.qtyAplicada))} · por ubicar {formatCantidad(Number(l.pendienteUbicar))}</div>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="muted small">
-              Un reporte aplicado no se edita. Si hay un error, corrige con un ajuste de stock con referencia (Inventario).
-            </p>
-          </>
-        ) : (
-          <p className="muted">Selecciona un reporte para revisarlo.</p>
-        )}
-      </div>
     </div>
   );
 
@@ -636,22 +389,13 @@ export default function ReportesPage() {
           Reporte del día
         </button>
         {esGestion && (
-          <>
-            <button
-              className={`btn ${tab === "bandeja" ? "primary" : "ghost"}`}
-              onClick={() => { setTab("bandeja"); setError(""); setMsg(""); }}
-            >
-              Bandeja {bandeja.filter((r) => r.estado === "pendiente").length > 0 && `(${bandeja.filter((r) => r.estado === "pendiente").length})`}
-            </button>
-            <button className={`btn ${tab === "stats" ? "primary" : "ghost"}`} onClick={() => { setTab("stats"); setError(""); setMsg(""); }}>
-              Estadísticas
-            </button>
-          </>
+          <button className={`btn ${tab === "stats" ? "primary" : "ghost"}`} onClick={() => { setTab("stats"); setError(""); setMsg(""); }}>
+            Estadísticas
+          </button>
         )}
       </div>
 
       {tab === "reporte" && (fase === "setup" ? setupForm : capturaForm)}
-      {tab === "bandeja" && esGestion && contentBandeja}
       {tab === "stats" && esGestion && (
         <StatsProduccion onError={(msg) => setError(msg)} />
       )}
