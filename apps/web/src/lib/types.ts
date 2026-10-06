@@ -108,7 +108,8 @@ export interface EnsartadoCombinacion {
 export interface EnsartadoData {
   productId: number;
   nombre: string;
-  mangos: { variantId: number; sku: string; etiqueta: string }[];
+  ejes: { attributeId: number; nombre: string; valores: { id: number; valor: string }[] }[];
+  mangos: { variantId: number; sku: string; etiqueta: string; valueIds: number[] }[];
   colores: { id: number; valor: string }[];
   combinaciones: EnsartadoCombinacion[];
 }

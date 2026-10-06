@@ -106,7 +106,7 @@ export default function ReportesPage() {
   const [ensartado, setEnsartado] = useState<EnsartadoData | null>(null);
   const [cargandoEnsartado, setCargandoEnsartado] = useState(false);
   const [ensartadoLines, setEnsartadoLines] = useState<EnsartadoForm[]>([]);
-  const [mangoId, setMangoId] = useState<number | null>(null);
+  const [mangoSeleccion, setMangoSeleccion] = useState<number[]>([]);
   const [cerdaColorId, setCerdaColorId] = useState<number | null>(null);
   const [cantidadPincel, setCantidadPincel] = useState("1");
 
@@ -145,6 +145,69 @@ export default function ReportesPage() {
     return ensartado?.combinaciones.find((c) => c.mangoVariantId === mid && c.colorId === cid) ?? null;
   }
 
+  // ------------------------------------------------ Wizard del mango por pasos
+  const ejesMango = ensartado?.ejes ?? [];
+
+  function mangosCompatibles(sel: number[]) {
+    if (!ensartado) return [];
+    return ensartado.mangos.filter((m) => sel.every((v, i) => m.valueIds[i] === v));
+  }
+
+  function autoCompletarMango(sel: number[]): number[] {
+    if (!ensartado) return sel;
+    const s = [...sel];
+    let compat = mangosCompatibles(s);
+    while (compat.length > 1 && s.length < ejesMango.length) {
+      const ids = new Set(compat.map((m) => m.valueIds[s.length]));
+      if (ids.size !== 1) break;
+      s.push([...ids][0]);
+      compat = mangosCompatibles(s);
+    }
+    return s;
+  }
+
+  const seleccionAuto = autoCompletarMango(mangoSeleccion);
+  const mangosDisponibles = mangosCompatibles(seleccionAuto);
+  const mangoResuelto = mangosDisponibles.length === 1 ? mangosDisponibles[0] : null;
+  const pasoMango = mangoResuelto ? null : seleccionAuto.length;
+  let opcionesPaso: { id: number; valor: string }[] = [];
+  if (pasoMango !== null) {
+    const ids = new Set(mangosDisponibles.map((m) => m.valueIds[pasoMango]));
+    opcionesPaso = ejesMango[pasoMango]?.valores.filter((v) => ids.has(v.id)) ?? [];
+  }
+
+  function etiquetaValorMango(paso: number, valueId: number): string {
+    return ejesMango[paso]?.valores.find((v) => v.id === valueId)?.valor ?? "—";
+  }
+
+  function elegirMangoPaso(valueId: number) {
+    setMangoSeleccion([...seleccionAuto, valueId]);
+    setCerdaColorId(null);
+  }
+
+  function retrocederMango() {
+    let s = [...mangoSeleccion];
+    while (s.length > 0) {
+      const j = s.length - 1;
+      s = s.slice(0, j);
+      const compat = mangosCompatibles(s);
+      if (compat.length <= 1) continue;
+      const ids = new Set(compat.map((m) => m.valueIds[j]));
+      if (ids.size > 1) break;
+    }
+    setMangoSeleccion(s);
+    setCerdaColorId(null);
+  }
+
+  function resetMango() {
+    setMangoSeleccion([]);
+    setCerdaColorId(null);
+    setCantidadPincel("1");
+  }
+
+  const pincelPreview =
+    mangoResuelto && cerdaColorId !== null ? resolverPincel(mangoResuelto.variantId, cerdaColorId) : null;
+
   async function cargarEnsartado(): Promise<EnsartadoData> {
     if (ensartado) return ensartado;
     const d = await api<EnsartadoData>("/reportes/ensartado");
@@ -158,9 +221,7 @@ export default function ReportesPage() {
     setCargandoEnsartado(true);
     try {
       await cargarEnsartado();
-      setMangoId(null);
-      setCerdaColorId(null);
-      setCantidadPincel("1");
+      resetMango();
       setFase("ensartado");
     } catch (err) {
       setError((err as Error).message);
@@ -170,8 +231,8 @@ export default function ReportesPage() {
   }
 
   function agregarPincel() {
-    if (mangoId === null || cerdaColorId === null) return;
-    const pincel = resolverPincel(mangoId, cerdaColorId);
+    if (mangoResuelto === null || cerdaColorId === null) return;
+    const pincel = resolverPincel(mangoResuelto.variantId, cerdaColorId);
     if (!pincel) {
       setError("No existe un pincel para ese mango y color.");
       return;
@@ -180,11 +241,10 @@ export default function ReportesPage() {
       setError("Cantidad inválida.");
       return;
     }
-    if (ensartadoLines.some((l) => l.mangoVariantId === mangoId && l.colorId === cerdaColorId)) {
+    if (ensartadoLines.some((l) => l.mangoVariantId === mangoResuelto.variantId && l.colorId === cerdaColorId)) {
       setError("Ese pincel ya está agregado.");
       return;
     }
-    const mango = ensartado?.mangos.find((m) => m.variantId === mangoId)?.etiqueta ?? "—";
     const color = ensartado?.colores.find((c) => c.id === cerdaColorId)?.valor ?? "—";
     setEnsartadoLines([
       ...ensartadoLines,
@@ -193,8 +253,8 @@ export default function ReportesPage() {
         pincelVariantId: pincel.pincelVariantId,
         pincelSku: pincel.sku,
         pincelNombre: pincel.nombre,
-        mangoVariantId: mangoId,
-        mango,
+        mangoVariantId: mangoResuelto.variantId,
+        mango: mangoResuelto.etiqueta,
         colorId: cerdaColorId,
         color,
         cantidad: cantidadPincel,
@@ -202,9 +262,7 @@ export default function ReportesPage() {
     ]);
     setError("");
     setMsg("");
-    setMangoId(null);
-    setCerdaColorId(null);
-    setCantidadPincel("1");
+    resetMango();
   }
 
   function cambiarCantidadPincel(key: string, valor: string) {
@@ -288,7 +346,7 @@ export default function ReportesPage() {
     setColorId(null);
     setCantidad("1");
     setEnsartadoLines([]);
-    setMangoId(null);
+    setMangoSeleccion([]);
     setCerdaColorId(null);
     setCantidadPincel("1");
   }
@@ -494,57 +552,74 @@ export default function ReportesPage() {
         </span>
       </div>
       <p className="muted small" style={{ marginTop: 0 }}>
-        Elige el mango y el color de cerda para armar cada pincel producido.
+        Elige el mango paso a paso y el color de cerda para armar cada pincel producido.
       </p>
 
-      <div className="row" style={{ alignItems: "end", flexWrap: "wrap" }}>
-        <label style={{ flex: 1, minWidth: 240 }}>
-          Mango
-          <select
-            value={mangoId ?? ""}
-            onChange={(e) => {
-              setMangoId(e.target.value ? Number(e.target.value) : null);
-              setCerdaColorId(null);
-            }}
-          >
-            <option value="">Elige un mango…</option>
-            {ensartado?.mangos.map((m) => (
-              <option key={m.variantId} value={m.variantId}>
-                {m.sku} · {m.etiqueta}
-              </option>
+      {seleccionAuto.length > 0 && (
+        <div className="row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+          {seleccionAuto.map((v, i) => (
+            <span key={`${i}-${v}`} className="badge normal">
+              {ejesMango[i]?.nombre}: {etiquetaValorMango(i, v)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {mangoResuelto === null ? (
+        <>
+          <h5 style={{ marginBottom: 4 }}>{ejesMango[pasoMango ?? 0]?.nombre ?? "Mango"}</h5>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            {opcionesPaso.map((o) => (
+              <button key={o.id} type="button" className="btn" onClick={() => elegirMangoPaso(o.id)}>
+                {o.valor}
+              </button>
             ))}
-          </select>
-        </label>
-        <label style={{ width: 180 }}>
-          Color de cerda
-          <select
-            value={cerdaColorId ?? ""}
-            disabled={mangoId === null}
-            onChange={(e) => setCerdaColorId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">Elige el color…</option>
-            {mangoId !== null &&
-              coloresDeMango(mangoId).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.valor}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label style={{ width: 110 }}>
-          Cantidad
-          <input type="number" min="1" step="1" value={cantidadPincel} onChange={(e) => setCantidadPincel(e.target.value)} />
-        </label>
-        <button
-          type="button"
-          className="btn primary"
-          style={{ flex: 0 }}
-          disabled={mangoId === null || cerdaColorId === null}
-          onClick={agregarPincel}
-        >
-          Agregar
-        </button>
-      </div>
+          </div>
+          {opcionesPaso.length === 0 && <p className="muted small">Sin mangos con pincel para esa combinación.</p>}
+          {mangoSeleccion.length > 0 && (
+            <button type="button" className="btn ghost" style={{ flex: 0, marginTop: 8 }} onClick={retrocederMango}>
+              Atrás
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <h5 style={{ marginBottom: 4 }}>
+            Mango: <strong>{mangoResuelto.etiqueta}</strong>{" "}
+            <span className="muted small">({mangoResuelto.sku})</span>
+          </h5>
+          <h5 style={{ marginTop: 12, marginBottom: 4 }}>Color de cerda</h5>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            {coloresDeMango(mangoResuelto.variantId).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`btn ${cerdaColorId === c.id ? "primary" : ""}`}
+                onClick={() => setCerdaColorId(c.id)}
+              >
+                {c.valor}
+              </button>
+            ))}
+          </div>
+          <div className="row" style={{ marginTop: 12, alignItems: "end", flexWrap: "wrap" }}>
+            <label style={{ width: 110 }}>
+              Cantidad
+              <input type="number" min="1" step="1" value={cantidadPincel} onChange={(e) => setCantidadPincel(e.target.value)} />
+            </label>
+            <button type="button" className="btn primary" style={{ flex: 0 }} disabled={cerdaColorId === null} onClick={agregarPincel}>
+              Agregar
+            </button>
+            <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={retrocederMango}>
+              Atrás
+            </button>
+          </div>
+          {pincelPreview && (
+            <p className="muted small" style={{ marginTop: 8 }}>
+              Pincel: <strong>{pincelPreview.nombre}</strong> ({pincelPreview.sku})
+            </p>
+          )}
+        </>
+      )}
 
       <h5 style={{ marginTop: 16, marginBottom: 4 }}>Pinceles capturados ({ensartadoLines.length})</h5>
       {ensartadoLines.length === 0 ? (

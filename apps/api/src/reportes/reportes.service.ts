@@ -64,7 +64,10 @@ export class ReportesService {
   /**
    * Ensartado = mango + color de cerda → pincel. Cruza las variantes de Pincel
    * con las de Mango por los atributos compartidos (Altura/Agujero/Ceja/Tamaño
-   * rosca) para resolver el pincel resultante. La cerda se consume manual.
+   * rosca) para resolver el pincel resultante. Devuelve los ejes del Mango en el
+   * orden de captura (Ceja → Tamaño rosca → Altura → Agujero) y los mangos con
+   * `valueIds` alineados, para que la web arme el wizard por pasos. La cerda se
+   * consume manual.
    */
   async ensartado() {
     const [pincel, mango] = await Promise.all([
@@ -102,6 +105,18 @@ export class ReportesService {
     }
 
     const colorAtributoId = gridPincel.ejes[colorIdx].attributeId;
+
+    // Ejes del Mango en el orden de captura del wizard de ensartado.
+    const ordenEjes = [/ceja/i, /rosca/i, /altura/i, /agujero/i];
+    const ejesMango = ordenEjes
+      .map((re) => gridMango.ejes.find((e) => re.test(e.nombre)))
+      .filter((e): e is (typeof gridMango.ejes)[number] => !!e);
+
+    const reordenar = (valueIds: number[]): number[] => {
+      const porAtributo = new Map(gridMango.ejes.map((e, i) => [e.attributeId, valueIds[i]]));
+      return ejesMango.map((e) => porAtributo.get(e.attributeId)!);
+    };
+
     const combinaciones: {
       mangoVariantId: number;
       colorId: number;
@@ -109,7 +124,10 @@ export class ReportesService {
       sku: string;
       nombre: string;
     }[] = [];
-    const mangos = new Map<number, { variantId: number; sku: string; etiqueta: string }>();
+    const mangos = new Map<
+      number,
+      { variantId: number; sku: string; etiqueta: string; valueIds: number[] }
+    >();
 
     for (const p of gridPincel.existentes) {
       const mangoVar = mangoPorClave.get(claveAtributos(gridPincel.ejes, p.valueIds, colorAtributoId));
@@ -127,14 +145,31 @@ export class ReportesService {
             .map((e, i) => valorPorAtributo.get(e.attributeId)?.get(mangoVar.valueIds[i]))
             .filter((v): v is string => !!v)
             .join(" · ") || mangoVar.nombre;
-        mangos.set(mangoVar.varianteId, { variantId: mangoVar.varianteId, sku: mangoVar.sku, etiqueta });
+        mangos.set(mangoVar.varianteId, {
+          variantId: mangoVar.varianteId,
+          sku: mangoVar.sku,
+          etiqueta,
+          valueIds: reordenar(mangoVar.valueIds),
+        });
       }
     }
+
+    const listaMangos = [...mangos.values()].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta));
+    // Sólo valores que llevan a un mango con pincel materializado (sin callejones sin salida).
+    const ejes = ejesMango.map((eje, k) => {
+      const usados = new Set(listaMangos.map((m) => m.valueIds[k]));
+      return {
+        attributeId: eje.attributeId,
+        nombre: eje.nombre,
+        valores: eje.valores.filter((v) => usados.has(v.id)),
+      };
+    });
 
     return {
       productId: pincel.id,
       nombre: pincel.nombre,
-      mangos: [...mangos.values()].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta)),
+      ejes,
+      mangos: listaMangos,
       colores: gridPincel.ejes[colorIdx].valores,
       combinaciones,
     };

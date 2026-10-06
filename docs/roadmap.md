@@ -31,6 +31,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Ensartado por pasos en el reporte de producción (2026-10-06):** el Paso 2 de `/reportes` dejó de
+  usar un único `<select>` con todas las variantes de Mango y ahora elige el mango **paso a paso**
+  (`Ceja → Tamaño rosca → Altura de Mango → Agujero de Mango`) y al final el color de cerda, con
+  **auto-salto** de pasos que tienen una sola opción y **solo** combinaciones que resuelven pincel
+  (sin callejones sin salida). `reportes.service.ensartado` devuelve ahora `ejes` del Mango
+  reordenados y `mangos` con `valueIds` alineados (además de `colores`/`combinaciones`); la web
+  (`app/reportes/page.tsx`) cascada en el cliente y muestra una vista previa del pincel antes de
+  agregar. Sin migración.
+
 - **Etiqueta de embarque por línea de venta (2026-10-06):** se portó la app Python `etiquetas/`
   (Flask + reportlab) al stack web con `@react-pdf/renderer`. En el detalle de venta cada línea tiene
   un botón **Etiqueta** (siempre visible) que abre un overlay con **vista previa** y **Descargar PDF**:
