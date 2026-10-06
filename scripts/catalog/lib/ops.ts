@@ -48,6 +48,7 @@ export type Op =
       min?: number;
       max?: number;
       longLead?: boolean;
+      prioridad?: "alta" | "media" | "baja";
       activo?: boolean;
       imagen?: string | null;
       notas?: string | null;

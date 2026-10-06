@@ -651,6 +651,33 @@ select:focus {
   color: var(--info);
 }
 
+.prioridad-select {
+  display: inline-block;
+  width: auto;
+  margin-top: 0;
+  padding: 2px 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.prioridad-select.alta {
+  background: #fcd7d7;
+  color: var(--danger-dark);
+}
+
+.prioridad-select.media {
+  background: #ffe9a8;
+  color: #6a4a00;
+}
+
+.prioridad-select.baja {
+  background: #e2f2e6;
+  color: var(--ok);
+}
+
 /* ---- Formularios y utilidades ---- */
 .row {
   display: flex;

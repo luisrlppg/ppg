@@ -19,6 +19,7 @@ export interface SnapshotVariant {
   activo: boolean;
   stockMin: number;
   stockMax: number;
+  prioridad: string;
   attrs: Record<string, string>;
 }
 
@@ -91,6 +92,7 @@ export async function buildSnapshot(
         activo: v.activo,
         stockMin: num(v.stockMin),
         stockMax: num(v.stockMax),
+        prioridad: v.prioridad,
         attrs: Object.fromEntries(v.variantAttributes.map((va) => [va.attribute.nombre, va.value.valor])),
       })),
     })),

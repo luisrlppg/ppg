@@ -384,6 +384,8 @@ export interface FaltanteCompra {
   pedidos: string[];
 }
 
+export type Prioridad = "alta" | "media" | "baja";
+
 export interface NecesidadFabricacion {
   variantId: number;
   sku: string;
@@ -399,6 +401,7 @@ export interface NecesidadFabricacion {
   necesidad: number;
   tipo?: "fabricacion" | "ensamble";
   ensamble: boolean;
+  prioridad: Prioridad;
   pedidos: string[];
 }
 

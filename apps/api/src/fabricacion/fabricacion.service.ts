@@ -6,6 +6,10 @@ import { ReportesService } from "../reportes/reportes.service";
 import { PlanificacionService } from "./planificacion.service";
 import type { ResumenItem } from "../ventas/ventas.service";
 
+/** Niveles de prioridad manual de fabricación (por variante). */
+export type PrioridadNivel = "alta" | "media" | "baja";
+const RANGO_PRIORIDAD: Record<PrioridadNivel, number> = { alta: 0, media: 1, baja: 2 };
+
 /** Fila del panel de necesidades (faltante por mínimo o por ventas). */
 export interface NecesidadItem {
   variantId: number;
@@ -22,6 +26,7 @@ export interface NecesidadItem {
   necesidad: number;
   tipo?: "fabricacion" | "ensamble";
   ensamble: boolean;
+  prioridad: PrioridadNivel;
   pedidos: string[];
 }
 
@@ -52,6 +57,17 @@ export class FabricacionService {
       this.necesidadesPorVentas(),
     ]);
     return { porMinimo, porVentas: ventas.porVentas, porComprar: ventas.porComprar };
+  }
+
+  /** Fija la prioridad manual de fabricación de una variante (admin). */
+  async setPrioridad(variantId: number, prioridad: PrioridadNivel) {
+    const v = await this.prisma.productVariant.findUnique({ where: { id: variantId }, select: { id: true } });
+    if (!v) throw new NotFoundException("Variante no encontrada");
+    return this.prisma.productVariant.update({
+      where: { id: variantId },
+      data: { prioridad },
+      select: { id: true, prioridad: true },
+    });
   }
 
   private async necesidadesPorMinimo(): Promise<NecesidadItem[]> {
@@ -88,10 +104,13 @@ export class FabricacionService {
         necesidad: objetivo - actual,
         tipo,
         ensamble: tipo === "ensamble",
+        prioridad: v.prioridad as PrioridadNivel,
         pedidos: [],
       });
     }
-    return out.sort((a, b) => b.necesidad - a.necesidad);
+    return out.sort(
+      (a, b) => RANGO_PRIORIDAD[a.prioridad] - RANGO_PRIORIDAD[b.prioridad] || b.necesidad - a.necesidad,
+    );
   }
 
   private async necesidadesPorVentas(): Promise<{ porVentas: NecesidadItem[]; porComprar: NecesidadItem[] }> {
@@ -122,6 +141,7 @@ export class FabricacionService {
           select: {
             id: true,
             productId: true,
+            prioridad: true,
             variantAttributes: { include: { attribute: true, value: true } },
           },
         })
@@ -131,6 +151,7 @@ export class FabricacionService {
         v.id,
         {
           productoId: v.productId,
+          prioridad: v.prioridad as PrioridadNivel,
           valoracion: v.variantAttributes
             .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
             .sort((a, b) => a.attribute.localeCompare(b.attribute)),
@@ -158,13 +179,16 @@ export class FabricacionService {
         necesidad: l.faltante,
         tipo: l.tipo,
         ensamble: l.tipo === "ensamble",
+        prioridad: info?.prioridad ?? "baja",
         pedidos: pedido ? [pedido] : [],
       };
       if (l.fabricable) porVentas.push(item);
       else porComprar.push(item);
     }
     const ordenar = (a: NecesidadItem, b: NecesidadItem) => a.producto.localeCompare(b.producto) || a.nombre.localeCompare(b.nombre);
-    return { porVentas: porVentas.sort(ordenar), porComprar: porComprar.sort(ordenar) };
+    const ordenarVentas = (a: NecesidadItem, b: NecesidadItem) =>
+      RANGO_PRIORIDAD[a.prioridad] - RANGO_PRIORIDAD[b.prioridad] || ordenar(a, b);
+    return { porVentas: porVentas.sort(ordenarVentas), porComprar: porComprar.sort(ordenar) };
   }
 
   /**

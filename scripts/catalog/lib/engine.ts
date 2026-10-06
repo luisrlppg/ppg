@@ -577,6 +577,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
             stockMin: o.min ?? 0,
             stockMax: o.max ?? 0,
             longLead: o.longLead ?? false,
+            prioridad: o.prioridad ?? "baja",
             imagen: o.imagen ?? null,
             notas: o.notas ?? null,
             activo: o.activo ?? true,
@@ -590,6 +591,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
           stockMin: o.min ?? Number(v.stockMin),
           stockMax: o.max ?? Number(v.stockMax),
           longLead: o.longLead ?? v.longLead,
+          prioridad: o.prioridad ?? v.prioridad,
           imagen: o.imagen !== undefined ? o.imagen : v.imagen,
           notas: o.notas !== undefined ? o.notas : v.notas,
           activo: o.activo ?? v.activo,
@@ -600,6 +602,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
           Number(v.stockMin) === meta.stockMin &&
           Number(v.stockMax) === meta.stockMax &&
           v.longLead === meta.longLead &&
+          v.prioridad === meta.prioridad &&
           v.imagen === meta.imagen &&
           v.notas === meta.notas &&
           v.activo === meta.activo;

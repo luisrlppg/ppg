@@ -31,6 +31,16 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Prioridad manual de fabricación por niveles (2026-10-05):** `ProductVariant` ganó
+  `prioridad` (`enum Prioridad` `alta`/`media`/`baja`, default `baja`; migración
+  `20261005170000_variant_prioridad`). El panel `/fabricacion` muestra una columna **Prioridad**
+  (badge Alta/Media/Baja) en las listas **Por ventas** y **Por mínimo**, editable inline **solo
+  `admin`** (`PATCH /fabricacion/variantes/:variantId/prioridad`), y un **selector de orden**
+  Prioridad/Cantidad/Producto. `fabricacion.necesidades` devuelve `prioridad` y ordena por nivel.
+  El seed declarativo la preserva (`variant.define.prioridad` en `ops`/`engine`/`export-seed`).
+  Nota: `scripts/catalog/seed/catalog.yaml` sigue desalineado con la BD (pendiente 3), así que **no**
+  se regeneró; la prioridad se volcará al correr `pnpm cat:export-seed` cuando se reconcilie.
+
 - **Ensartado por pasos en el reporte de producción (2026-10-06):** el Paso 2 de `/reportes` dejó de
   usar un único `<select>` con todas las variantes de Mango y ahora elige el mango **paso a paso**
   (`Ceja → Tamaño rosca → Altura de Mango → Agujero de Mango`) y al final el color de cerda, con

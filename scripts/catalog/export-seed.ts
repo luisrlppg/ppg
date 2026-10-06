@@ -131,6 +131,7 @@ async function main() {
         ...(Number(v.stockMin) !== 0 ? { min: Number(v.stockMin) } : {}),
         ...(Number(v.stockMax) !== 0 ? { max: Number(v.stockMax) } : {}),
         ...(v.longLead ? { longLead: true } : {}),
+        ...(v.prioridad !== "baja" ? { prioridad: v.prioridad } : {}),
         ...(!v.activo ? { activo: false } : {}),
         ...(v.imagen ? { imagen: v.imagen } : {}),
         ...(v.notas ? { notas: v.notas } : {}),

@@ -142,6 +142,7 @@ model ProductVariant {
   stockMin         Decimal             @default(0)
   stockMax         Decimal             @default(0)
   longLead         Boolean             @default(false)
+  prioridad        Prioridad           @default(baja) // prioridad manual de fabricación
   imagen           String?
   notas            String?             // anotación interna (ej. medidas del cepillo)
   activo           Boolean             @default(true)
@@ -157,6 +158,14 @@ model ProductVariant {
   reportLines         ProductionReportLine[]
 
   @@index([productId])
+  @@index([prioridad])
+}
+
+/// Prioridad manual de fabricación (3 niveles)
+enum Prioridad {
+  alta
+  media
+  baja
 }
 
 /// Ejes del grid de una familia (combo): product.attribute_lines

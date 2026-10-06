@@ -5,18 +5,42 @@ import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import Modal from "@/components/ui/modal";
+import Segmented from "@/components/ui/segmented";
 import StickyBar from "@/components/ui/sticky-bar";
 import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import { api } from "@/lib/api";
 import { useFiltroAtributos } from "@/lib/filtro-atributos";
 import { refrescarPorUbicar } from "@/lib/por-ubicar";
-import { useFormatCantidad } from "@/lib/preferences";
-import type { NecesidadFabricacion, NecesidadesResp } from "@/lib/types";
+import { useAuth, useFormatCantidad } from "@/lib/preferences";
+import type { NecesidadFabricacion, NecesidadesResp, Prioridad } from "@/lib/types";
+
+const RANGO_PRIORIDAD: Record<Prioridad, number> = { alta: 0, media: 1, baja: 2 };
+const ETIQUETA_PRIORIDAD: Record<Prioridad, string> = { alta: "Alta", media: "Media", baja: "Baja" };
+const CLASE_PRIORIDAD: Record<Prioridad, string> = { alta: "critico", media: "bajo", baja: "normal" };
+
+type Orden = "prioridad" | "necesidad" | "producto";
+
+function ordenarNecesidades(items: NecesidadFabricacion[], orden: Orden): NecesidadFabricacion[] {
+  const arr = [...items];
+  const porProducto = (a: NecesidadFabricacion, b: NecesidadFabricacion) =>
+    a.producto.localeCompare(b.producto) || a.nombre.localeCompare(b.nombre);
+  if (orden === "prioridad") {
+    arr.sort((a, b) => RANGO_PRIORIDAD[a.prioridad] - RANGO_PRIORIDAD[b.prioridad] || porProducto(a, b));
+  } else if (orden === "necesidad") {
+    arr.sort((a, b) => b.necesidad - a.necesidad || porProducto(a, b));
+  } else {
+    arr.sort(porProducto);
+  }
+  return arr;
+}
 
 function TablaNecesidades({
   items,
   conMinMax,
   conPedidos,
+  conPrioridad,
+  esAdmin,
+  onPrioridad,
   onProducir,
   cargando,
   formatCantidad,
@@ -25,6 +49,9 @@ function TablaNecesidades({
   items: NecesidadFabricacion[];
   conMinMax?: boolean;
   conPedidos?: boolean;
+  conPrioridad?: boolean;
+  esAdmin?: boolean;
+  onPrioridad?: (item: NecesidadFabricacion, prioridad: Prioridad) => void;
   onProducir: (item: NecesidadFabricacion) => void;
   cargando: boolean;
   formatCantidad: (n: number) => string;
@@ -41,6 +68,7 @@ function TablaNecesidades({
             {conMinMax && <th className="num">Mín / Máx</th>}
             <th className="num">Necesita</th>
             <th>Tipo</th>
+            {conPrioridad && <th>Prioridad</th>}
             {conPedidos && <th>Pedidos</th>}
             <th></th>
           </tr>
@@ -67,6 +95,24 @@ function TablaNecesidades({
               <td>
                 <span className={`badge ${n.ensamble ? "bajo" : "normal"}`}>{n.ensamble ? "Ensamble" : "Fabricar"}</span>
               </td>
+              {conPrioridad && (
+                <td>
+                  {esAdmin && onPrioridad ? (
+                    <select
+                      className={`prioridad-select ${n.prioridad}`}
+                      value={n.prioridad}
+                      aria-label={`Prioridad de ${n.nombre}`}
+                      onChange={(e) => onPrioridad(n, e.target.value as Prioridad)}
+                    >
+                      {(["alta", "media", "baja"] as Prioridad[]).map((p) => (
+                        <option key={p} value={p}>{ETIQUETA_PRIORIDAD[p]}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className={`badge ${CLASE_PRIORIDAD[n.prioridad]}`}>{ETIQUETA_PRIORIDAD[n.prioridad]}</span>
+                  )}
+                </td>
+              )}
               {conPedidos && <td className="small muted">{n.pedidos.join(", ") || "—"}</td>}
               <td>
                 {n.ensamble ? (
@@ -89,11 +135,14 @@ function TablaNecesidades({
 
 export default function FabricacionPage() {
   const formatCantidad = useFormatCantidad();
+  const { user } = useAuth();
+  const esAdmin = user?.role === "admin";
   const [data, setData] = useState<NecesidadesResp | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [cargando, setCargando] = useState(false);
   const [minimoOpen, setMinimoOpen] = useState(false);
+  const [orden, setOrden] = useState<Orden>("prioridad");
 
   const cargar = useCallback(async () => {
     setData(await api<NecesidadesResp>("/fabricacion/necesidades"));
@@ -111,9 +160,9 @@ export default function FabricacionPage() {
   const filtroAtributos = useFiltroAtributos(todos);
   const { pasaFiltro, hayFiltro } = filtroAtributos;
 
-  const porVentas = (data?.porVentas ?? []).filter(pasaFiltro);
-  const porMinimo = (data?.porMinimo ?? []).filter(pasaFiltro);
-  const porComprar = (data?.porComprar ?? []).filter(pasaFiltro);
+  const porVentas = ordenarNecesidades((data?.porVentas ?? []).filter(pasaFiltro), orden);
+  const porMinimo = ordenarNecesidades((data?.porMinimo ?? []).filter(pasaFiltro), orden);
+  const porComprar = ordenarNecesidades((data?.porComprar ?? []).filter(pasaFiltro), orden);
   const sinCoincidencias = "Sin coincidencias con el filtro.";
 
   // ---------------------------------------------- Ingreso de producción
@@ -152,6 +201,23 @@ export default function FabricacionPage() {
     }
   }
 
+  async function cambiarPrioridad(item: NecesidadFabricacion, prioridad: Prioridad) {
+    setError("");
+    try {
+      await api(`/fabricacion/variantes/${item.variantId}/prioridad`, {
+        method: "PATCH",
+        body: JSON.stringify({ prioridad }),
+      });
+      const aplicar = (lista: NecesidadFabricacion[]) =>
+        lista.map((n) => (n.variantId === item.variantId ? { ...n, prioridad } : n));
+      setData((prev) =>
+        prev ? { porMinimo: aplicar(prev.porMinimo), porVentas: aplicar(prev.porVentas), porComprar: aplicar(prev.porComprar) } : prev,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
   const totalMin = porMinimo.length;
   const totalVen = porVentas.length;
   const totalComprar = porComprar.length;
@@ -173,6 +239,18 @@ export default function FabricacionPage() {
 
       <StickyBar>
         <div className="toolbar">
+          <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <span className="small muted">Ordenar por</span>
+            <Segmented
+              value={orden}
+              onChange={(v) => setOrden(v as Orden)}
+              options={[
+                { value: "prioridad", label: "Prioridad" },
+                { value: "necesidad", label: "Cantidad" },
+                { value: "producto", label: "Producto" },
+              ]}
+            />
+          </div>
           <div className="grow" />
           <BuscadorAtributos filtro={filtroAtributos} />
         </div>
@@ -184,6 +262,9 @@ export default function FabricacionPage() {
         <TablaNecesidades
           items={porVentas}
           conPedidos
+          conPrioridad
+          esAdmin={esAdmin}
+          onPrioridad={cambiarPrioridad}
           onProducir={abrirIngreso}
           cargando={cargando}
           formatCantidad={formatCantidad}
@@ -221,6 +302,9 @@ export default function FabricacionPage() {
             <TablaNecesidades
               items={porMinimo}
               conMinMax
+              conPrioridad
+              esAdmin={esAdmin}
+              onPrioridad={cambiarPrioridad}
               onProducir={abrirIngreso}
               cargando={cargando}
               formatCantidad={formatCantidad}

@@ -19,6 +19,10 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
 - Atributos **propios vs heredados** (de componentes del BOM).
 - **`ProductVariant.notas`** — texto libre **interno** por variante (p. ej. medidas del cepillo).
   No es eje ni se expone en la tienda.
+- **`ProductVariant.prioridad`** — prioridad **manual** de fabricación por variante (`Prioridad`:
+  `alta`/`media`/`baja`, default `baja`). Es global (aplica a por mínimo y por ventas) y la edita
+  solo `admin` inline en `/fabricacion` (`PATCH /fabricacion/variantes/:id/prioridad`). No la
+  gestiona el catálogo salvo para preservarla en el seed (`variant.define.prioridad`).
 - **`Product.vendible`** — el producto aparece en el selector del **modal de Ventas** con sus
   variantes activas; se marca con el checkbox "Vendible en Ventas" (detalle y lista de productos).
   Sustituye al retirado `ProductVariant.published`.
@@ -161,6 +165,10 @@ precio de venta; el margen que muestra es solo referencia.
     entregadas no aportan demanda y las parcialidades piden solo el resto. Incluye ensambles como ítem
     *Armar* y marca los pedidos que aportan.
   - `porComprar`: no fabricables faltantes (informativo; no hay OC).
+- **Prioridad de fabricación** (`ProductVariant.prioridad`, 3 niveles Alta/Media/Baja, default `baja`):
+  ordena las listas `porMinimo` y `porVentas` (prioridad → déficit/nombre). Se asigna **manualmente**,
+  solo `admin`, inline en `/fabricacion`; el selector de orden de la página permite alternar
+  Prioridad / Cantidad / Producto.
 - **Alta de producción** (`POST /fabricacion/produccion {variantId, cantidad}`): solo hojas fabricables
   (0–1 componente). Delega en `reportes.registrarProduccionInterna`: crea un `ProductionReport`
   **interno aplicado** (`interno: true`, sección `fabricacion`, línea `final` con `qtyAplicada`) y deja el
