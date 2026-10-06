@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useImagenesLineas } from "@/lib/imagenes";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { Venta } from "@/lib/types";
 
@@ -9,54 +10,13 @@ interface Props {
   onCerrar: () => void;
 }
 
-function useLineaImagenes(venta: Venta) {
-  const [imagenes, setImagenes] = useState<Record<number, string>>({});
-
-  useEffect(() => {
-    let activo = true;
-    async function cargar() {
-      const entradas = await Promise.all(
-        venta.lines.map(async (l) => {
-          if (!l.imagen) return [l.id, null] as const;
-          try {
-            const res = await fetch(l.imagen, { mode: "cors" });
-            if (!res.ok) return [l.id, null] as const;
-            const blob = await res.blob();
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-              const fr = new FileReader();
-              fr.onload = () => resolve(String(fr.result));
-              fr.onerror = () => reject(fr.error);
-              fr.readAsDataURL(blob);
-            });
-            return [l.id, dataUrl] as const;
-          } catch {
-            return [l.id, null] as const;
-          }
-        }),
-      );
-      if (!activo) return;
-      const mapa: Record<number, string> = {};
-      for (const [id, url] of entradas) {
-        if (url) mapa[id] = url;
-      }
-      setImagenes(mapa);
-    }
-    void cargar();
-    return () => {
-      activo = false;
-    };
-  }, [venta]);
-
-  return imagenes;
-}
-
 export default function DocumentoVenta({ venta, onCerrar }: Props) {
   const formatCantidad = useFormatCantidad();
   const [cobrarIva, setCobrarIva] = useState(false);
   const [descargando, setDescargando] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [generando, setGenerando] = useState(true);
-  const imagenes = useLineaImagenes(venta);
+  const imagenes = useImagenesLineas(venta.lines);
 
   const props = useMemo(
     () => ({ venta, cobrarIva, imagenes, formatCantidad }),

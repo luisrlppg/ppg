@@ -31,6 +31,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Etiqueta de embarque por línea de venta (2026-10-06):** se portó la app Python `etiquetas/`
+  (Flask + reportlab) al stack web con `@react-pdf/renderer`. En el detalle de venta cada línea tiene
+  un botón **Etiqueta** (siempre visible) que abre un overlay con **vista previa** y **Descargar PDF**:
+  `components/ventas/modal-etiqueta.tsx` (solo cantidad y pesos bruto/neto/unitario editables) y el
+  layout `components/ventas/etiqueta-pdf.tsx` (**200×102.1 mm**, 3 columnas: FRÁGIL + imagen default /
+  cliente + detalles de embarque / producto + imagen). Cliente y producto se toman directos de la venta;
+  empresa e imagen `public/etiqueta-fragil.png` son fijas. Se extrajo `lib/imagenes.ts`
+  (`useImagenesLineas`/`useImagenEstatica`) reutilizado por el documento de venta. Sin API, BD ni migración.
+
 - **Paso 2 "Ensartado" en el reporte de producción (2026-10-06):** el wizard de `/reportes` ahora
   continúa tras los cepillos de Nylon con un **Paso 2 Ensartado** (mango + color de cerda +
   cantidad, repetible). Nuevo `GET /reportes/ensartado` (`reportes.service.ensartado`): cruza las

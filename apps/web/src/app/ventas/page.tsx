@@ -9,9 +9,10 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import StickyBar from "@/components/ui/sticky-bar";
 import NuevaVenta from "@/components/ventas/nueva-venta";
 import DocumentoVenta from "@/components/ventas/documento-venta";
+import ModalEtiqueta from "@/components/ventas/modal-etiqueta";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
-import type { Desglose, DesgloseNodo, Venta } from "@/lib/types";
+import type { Desglose, DesgloseNodo, Venta, VentaLinea } from "@/lib/types";
 
 interface VentaLista {
   id: number;
@@ -36,6 +37,7 @@ export default function VentasPage() {
   const [desglose, setDesglose] = useState<Desglose | null>(null);
   const [desgloseColapsados, setDesgloseColapsados] = useState<Set<string>>(new Set());
   const [imprimirVenta, setImprimirVenta] = useState<Venta | null>(null);
+  const [etiquetaLinea, setEtiquetaLinea] = useState<{ venta: Venta; linea: VentaLinea } | null>(null);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
@@ -275,13 +277,16 @@ export default function VentasPage() {
                         <span className={`badge ${badgeEntrega(l.estadoEntrega)}`}>{l.estadoEntrega}</span>
                       </td>
                       <td>
-                        {d.estado === "abierta" && pendiente > 0 && (
-                          <div className="row-actions">
+                        <div className="row-actions">
+                          <button className="btn ghost sm" onClick={() => setEtiquetaLinea({ venta: d, linea: l })}>
+                            Etiqueta
+                          </button>
+                          {d.estado === "abierta" && pendiente > 0 && (
                             <button className="btn ghost sm" disabled={cargando} onClick={() => abrirDespacho(d.id, l.id, pendiente, l.producto, l.sku)}>
                               Despachar
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -416,6 +421,15 @@ export default function VentasPage() {
 
         {imprimirVenta && (
           <DocumentoVenta venta={imprimirVenta} onCerrar={() => setImprimirVenta(null)} />
+        )}
+
+        {etiquetaLinea && (
+          <ModalEtiqueta
+            key={`${etiquetaLinea.venta.id}-${etiquetaLinea.linea.id}`}
+            venta={etiquetaLinea.venta}
+            linea={etiquetaLinea.linea}
+            onCerrar={() => setEtiquetaLinea(null)}
+          />
         )}
 
         {despacho && (

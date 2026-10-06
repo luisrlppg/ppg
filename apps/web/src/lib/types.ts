@@ -349,6 +349,31 @@ export interface Venta {
   lines: VentaLinea[];
 }
 
+export interface EtiquetaEmbarque {
+  cliente: {
+    nombre: string;
+    telefono: string;
+    direccion: string;
+    email: string;
+  };
+  producto: {
+    nombre: string;
+    sku: string;
+    valoracion: { attribute: string; valor: string }[];
+  };
+  cantidad: string;
+  pesoBruto: string;
+  pesoNeto: string;
+  pesoUnitario: string;
+  header: {
+    titulo: string;
+    direccion: string;
+    ciudad: string;
+    contacto: string;
+  };
+  footer: string;
+}
+
 export interface FaltanteCompra {
   variantId: number;
   sku: string;
