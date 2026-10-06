@@ -418,14 +418,17 @@ do_restore() {
     do_stop
   fi
 
+  # Atómico: recrea el schema public y aplica todo en una sola transacción (rollback si falla).
+  local pre='DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;'
   if pg_restore -l "$file" >/dev/null 2>&1; then
-    echo "==> Formato custom: pg_restore --clean --if-exists --single-transaction --exit-on-error"
-    pg_restore --clean --if-exists --no-owner --no-privileges \
-      --single-transaction --exit-on-error -d "$url" "$file"
+    echo "==> Formato custom: recreando schema public + pg_restore (transaccional)"
+    { printf '%s\n' "$pre"; pg_restore --clean --if-exists --no-owner --no-privileges --file - "$file"; } \
+      | psql "$url" -v ON_ERROR_STOP=1 --single-transaction -f -
   else
-    echo "==> Formato SQL plano: recreando schema public y aplicando"
-    psql "$url" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
-    psql "$url" -v ON_ERROR_STOP=1 -f "$file"
+    echo "==> Formato SQL plano: recreando schema public + psql (transaccional)"
+    { printf '%s\n' "$pre"; cat "$file"; } \
+      | psql "$url" -v ON_ERROR_STOP=1 --single-transaction -f -
   fi
 
   # Deja la BD al día con el esquema del repo (evita quedar desactualizada).

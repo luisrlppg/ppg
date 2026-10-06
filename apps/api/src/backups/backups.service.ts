@@ -6,13 +6,24 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { execFile } from "node:child_process";
+import { execFile, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createReadStream, existsSync } from "node:fs";
 import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import type { Readable } from "node:stream";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+
+interface ResultadoProceso {
+  code: number;
+  stderr: string;
+}
+
+interface Proceso {
+  child: ChildProcessWithoutNullStreams;
+  done: Promise<ResultadoProceso>;
+}
 
 export interface BackupFile {
   nombre: string;
@@ -89,15 +100,62 @@ export class BackupsService {
     return resolve(__dirname, "../../../..");
   }
 
-  /** Ejecuta un comando de restauración y propaga el stderr ante error. */
-  private async ejecutar(bin: string, args: string[]): Promise<void> {
+  /** Lanza un proceso, captura su stderr y resuelve al cerrar. */
+  private lanzar(bin: string, args: string[]): Proceso {
+    const child = spawn(bin, args);
+    let stderr = "";
+    child.stderr.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
+    const done = new Promise<ResultadoProceso>((resolve, reject) => {
+      child.on("error", reject);
+      child.on("close", (code) => resolve({ code: code ?? 1, stderr }));
+    });
+    return { child, done };
+  }
+
+  /**
+   * Aplica el respaldo dentro de UNA transacción: recrea el schema `public`
+   * (`DROP SCHEMA ... CASCADE`) y luego vuelca `entrada`. Si algo falla, revierte
+   * todo (no deja la BD a medias) y tampoco tropieza con objetos de un esquema
+   * viejo que los `DROP` de `--clean` no pueden eliminar por dependencias.
+   */
+  private async aplicarAtomico(entrada: Readable, extra: Proceso | null, nombre: string): Promise<void> {
+    const psql = this.lanzar("psql", [
+      "-v",
+      "ON_ERROR_STOP=1",
+      "--single-transaction",
+      "-f",
+      "-",
+      this.url,
+    ]);
+    psql.child.stdin.on("error", () => undefined); // EPIPE si psql aborta primero
+    psql.child.stdout.resume(); // drena salida para evitar bloqueos por buffer
+    psql.child.stdin.write("DROP SCHEMA IF EXISTS public CASCADE;\nCREATE SCHEMA public;\n");
+    entrada.on("error", (e) => psql.child.stdin.destroy(e));
+    entrada.pipe(psql.child.stdin, { end: false });
+    entrada.on("end", () => psql.child.stdin.end());
+
+    let psqlRes: ResultadoProceso;
+    let extraRes: ResultadoProceso;
     try {
-      await execFileAsync(bin, args);
+      [psqlRes, extraRes] = await Promise.all([
+        psql.done,
+        extra ? extra.done : Promise.resolve({ code: 0, stderr: "" }),
+      ]);
     } catch (e) {
-      const err = e as { stderr?: string; message?: string };
-      const detalle = (err.stderr ?? err.message ?? "").trim();
-      this.logger.error(`${bin} falló: ${detalle}`);
-      throw new InternalServerErrorException(`Falló la restauración: ${detalle}`);
+      psql.child.kill();
+      extra?.child.kill();
+      throw new InternalServerErrorException(`Falló la restauración de ${nombre}: ${(e as Error).message}`);
+    }
+
+    if (psqlRes.code !== 0 || extraRes.code !== 0) {
+      const detalle = [extraRes.stderr, psqlRes.stderr]
+        .map((s) => (s ?? "").trim())
+        .filter(Boolean)
+        .join("\n");
+      this.logger.error(`Restauración (${nombre}) falló: ${detalle}`);
+      throw new InternalServerErrorException(`Falló la restauración de ${nombre}: ${detalle}`);
     }
   }
 
@@ -129,28 +187,20 @@ export class BackupsService {
     this.logger.warn(`Restaurando respaldo ${nombre}`);
 
     if (esCustom) {
-      // --single-transaction + --exit-on-error: si algo falla, se revierte todo
-      // (no deja la BD a medias); el stderr se propaga para diagnosticar.
-      await this.ejecutar("pg_restore", [
+      // `pg_restore --file -` genera el SQL; se aplica atómicamente por psql.
+      const pg = this.lanzar("pg_restore", [
         "--clean",
         "--if-exists",
         "--no-owner",
         "--no-privileges",
-        "--single-transaction",
-        "--exit-on-error",
-        "-d",
-        this.url,
+        "--file",
+        "-",
         target,
       ]);
+      pg.child.stdin.end(); // pg_restore no lee stdin
+      await this.aplicarAtomico(pg.child.stdout, pg, nombre);
     } else {
-      await this.ejecutar("psql", [
-        this.url,
-        "-v",
-        "ON_ERROR_STOP=1",
-        "-c",
-        "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;",
-      ]);
-      await this.ejecutar("psql", [this.url, "-v", "ON_ERROR_STOP=1", "-f", target]);
+      await this.aplicarAtomico(createReadStream(target), null, nombre);
     }
 
     // Deja la BD al día con el esquema del repo (evita quedar desactualizada).

@@ -42,13 +42,14 @@ ppg restore docs/backups/ppg-<fecha>-pre-prueba.dump --yes
 ```
 
 - `backup` vuelca la BD con `pg_dump -Fc` en `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
-- `restore` detiene api+web, **sobrescribe** los datos (`pg_restore --clean --if-exists`), **aplica
-  las migraciones pendientes** (`db:deploy` + `prisma generate`) y avisa cuándo volver a levantar
-  (`ppg start`). Acepta `.dump` (custom) o `.sql` (texto plano). Así un respaldo viejo no deja la BD
-  desactualizada.
+- `restore` detiene api+web, **sobrescribe** los datos, **aplica las migraciones pendientes**
+  (`db:deploy` + `prisma generate`) y avisa cuándo volver a levantar (`ppg start`). Acepta `.dump`
+  (custom) o `.sql` (texto plano). Así un respaldo viejo no deja la BD desactualizada.
 - Los comandos usan la URL sin `?schema=public` (pg_dump/pg_restore/psql no aceptan ese query param).
-- El restore es **transaccional**: `pg_restore --single-transaction --exit-on-error` revierte todo si
-  algo falla, en vez de dejar la BD a medias. El detalle del error se propaga (UI y CLI).
+- El restore es **atómico y transaccional**: en una sola transacción hace
+  `DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;` y luego vuelca el respaldo (con
+  `psql --single-transaction` + `ON_ERROR_STOP=1`). Si algo falla, revierte todo en vez de dejar la BD
+  a medias, y el detalle del error se propaga (UI y CLI).
 
 #### Restaurar en otra instancia o stack full (Docker)
 
@@ -56,17 +57,25 @@ Un dump `pg_dump -Fc` incluye **esquema + datos**. Nunca lo restaures sobre una 
 esquema (p. ej. un stack que ya arrancó la API y migró): el `CREATE TABLE` choca y verás
 `relation ... already exists`, `column ... does not exist` y errores de PK/FK.
 
+Tampoco basta `pg_restore --clean --if-exists`: sus `DROP` **no usan `CASCADE`**, así que un objeto
+del destino que ya no existe en el dump (p. ej. una tabla borrada en una migración posterior) bloquea
+el drop y verás `cannot drop constraint ... because other objects depend on it`. Por eso el restore
+recrea el schema `public` completo antes de aplicar.
+
 1. Asegura que el código/imagen destino incluya las migraciones del dump (o posteriores).
 2. Deja la BD vacía: `docker compose --profile full down -v` y `docker compose up -d postgres`.
-3. Restaura **con la API apagada**:
+3. Restaura **con la API apagada** (recrea `public` y aplica en una transacción):
    ```bash
-   docker compose exec -T postgres pg_restore -U ppg -d ppg \
-     --clean --if-exists --no-owner --no-privileges --single-transaction --exit-on-error \
-     < docs/backups/ppg-<fecha>.dump
+   export PGPASSWORD=ppg
+   { echo 'DROP SCHEMA IF EXISTS public CASCADE;'; echo 'CREATE SCHEMA public;';
+     pg_restore --clean --if-exists --no-owner --no-privileges --file - \
+       docs/backups/ppg-<fecha>.dump; } \
+     | psql -h localhost -p "${POSTGRES_PORT:-5432}" -U ppg -d ppg \
+         -v ON_ERROR_STOP=1 --single-transaction -f -
    ```
 4. Levanta el resto (`docker compose --profile full up -d`): la API aplica migraciones pendientes al
    arrancar y concilia el esquema. Alternativa: con solo `postgres` arriba, restaurar desde la UI
-   (menú **Respaldos**), que ya usa `--clean` + `migrate deploy`.
+   (menú **Respaldos**) o `ppg restore`, que hacen lo mismo de forma atómica.
 
 ### Gestor de servidores `scripts/ppg.sh`
 
