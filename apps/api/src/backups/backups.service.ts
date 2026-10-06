@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { execFile } from "node:child_process";
 import { createReadStream, existsSync } from "node:fs";
@@ -83,6 +89,18 @@ export class BackupsService {
     return resolve(__dirname, "../../../..");
   }
 
+  /** Ejecuta un comando de restauración y propaga el stderr ante error. */
+  private async ejecutar(bin: string, args: string[]): Promise<void> {
+    try {
+      await execFileAsync(bin, args);
+    } catch (e) {
+      const err = e as { stderr?: string; message?: string };
+      const detalle = (err.stderr ?? err.message ?? "").trim();
+      this.logger.error(`${bin} falló: ${detalle}`);
+      throw new InternalServerErrorException(`Falló la restauración: ${detalle}`);
+    }
+  }
+
   /** Aplica migraciones pendientes tras restaurar (sin depender de pnpm). */
   private async migrar(): Promise<void> {
     const root = this.repoRoot();
@@ -111,24 +129,28 @@ export class BackupsService {
     this.logger.warn(`Restaurando respaldo ${nombre}`);
 
     if (esCustom) {
-      await execFileAsync("pg_restore", [
+      // --single-transaction + --exit-on-error: si algo falla, se revierte todo
+      // (no deja la BD a medias); el stderr se propaga para diagnosticar.
+      await this.ejecutar("pg_restore", [
         "--clean",
         "--if-exists",
         "--no-owner",
         "--no-privileges",
+        "--single-transaction",
+        "--exit-on-error",
         "-d",
         this.url,
         target,
       ]);
     } else {
-      await execFileAsync("psql", [
+      await this.ejecutar("psql", [
         this.url,
         "-v",
         "ON_ERROR_STOP=1",
         "-c",
         "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;",
       ]);
-      await execFileAsync("psql", [this.url, "-v", "ON_ERROR_STOP=1", "-f", target]);
+      await this.ejecutar("psql", [this.url, "-v", "ON_ERROR_STOP=1", "-f", target]);
     }
 
     // Deja la BD al día con el esquema del repo (evita quedar desactualizada).

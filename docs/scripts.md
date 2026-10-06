@@ -21,9 +21,11 @@ Para datos/migración Odoo, ver la sección al final.
 Punto de retorno rápido de la BD (datos reales). Ver [`development.md`](./development.md).
 
 - `ppg backup [nombre]` → `pg_dump -Fc` a `docs/backups/ppg-<fecha>[-nombre].dump` (comprimido).
-- `ppg restore [archivo] [--yes]` → detiene api+web y restaura con `pg_restore --clean --if-exists`
-  (sin archivo, usa el `.dump` más reciente; acepta `.sql` plano recreando el schema `public`).
-  Al terminar **aplica las migraciones pendientes** (`db:deploy`) y regenera el cliente Prisma.
+- `ppg restore [archivo] [--yes]` → detiene api+web y restaura con `pg_restore --clean --if-exists
+  --single-transaction --exit-on-error` (sin archivo, usa el `.dump` más reciente; acepta `.sql`
+  plano recreando el schema `public`). Al terminar **aplica las migraciones pendientes** (`db:deploy`)
+  y regenera el cliente Prisma. Para restaurar en otra instancia/stack full ver
+  [`development.md`](./development.md#restaurar-en-otra-instancia-o-stack-full-docker).
 - Alias: `pnpm db:backup` · `pnpm db:restore`.
 - `docs/backups/` está en `.gitignore`.
 - **UI:** `apps/web/src/app/backups/page.tsx` + `apps/api/src/backups/` (módulo NestJS, sólo `admin`)

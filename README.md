@@ -103,6 +103,7 @@ pg_dump -h localhost -p 5432 -U ppg -d ppg -Fc -f docs/backups/ppg-pre-docker.du
 # 3) Levantar solo postgres (18) y restaurar
 docker compose up -d postgres
 pg_restore --clean --if-exists --no-owner --no-privileges \
+  --single-transaction --exit-on-error \
   -h localhost -p 5433 -U ppg -d ppg docs/backups/ppg-pre-docker.dump
 
 # 4) Levantar el resto (la API no tiene migraciones pendientes)

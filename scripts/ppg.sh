@@ -419,8 +419,9 @@ do_restore() {
   fi
 
   if pg_restore -l "$file" >/dev/null 2>&1; then
-    echo "==> Formato custom: pg_restore --clean --if-exists"
-    pg_restore --clean --if-exists --no-owner --no-privileges -d "$url" "$file"
+    echo "==> Formato custom: pg_restore --clean --if-exists --single-transaction --exit-on-error"
+    pg_restore --clean --if-exists --no-owner --no-privileges \
+      --single-transaction --exit-on-error -d "$url" "$file"
   else
     echo "==> Formato SQL plano: recreando schema public y aplicando"
     psql "$url" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
