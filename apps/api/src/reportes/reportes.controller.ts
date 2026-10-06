@@ -88,6 +88,12 @@ export class ReportesController {
   }
 
   @Roles("admin", "operador")
+  @Get("ensartado")
+  ensartado() {
+    return this.reportes.ensartado();
+  }
+
+  @Roles("admin", "operador")
   @Get("por-ubicar")
   porUbicar() {
     return this.reportes.porUbicar();

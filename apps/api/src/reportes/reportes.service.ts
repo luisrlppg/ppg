@@ -60,6 +60,86 @@ export class ReportesService {
     return { productId: p.id, nombre: p.nombre, ...grid };
   }
 
+  // ----------------------------------------------- Datos de ensartado (pincel)
+  /**
+   * Ensartado = mango + color de cerda → pincel. Cruza las variantes de Pincel
+   * con las de Mango por los atributos compartidos (Altura/Agujero/Ceja/Tamaño
+   * rosca) para resolver el pincel resultante. La cerda se consume manual.
+   */
+  async ensartado() {
+    const [pincel, mango] = await Promise.all([
+      this.prisma.product.findFirst({ where: { skuBase: "PIN" }, select: { id: true, nombre: true } }),
+      this.prisma.product.findFirst({ where: { skuBase: "VAST" }, select: { id: true, nombre: true } }),
+    ]);
+    if (!pincel) throw new NotFoundException("No se encontró el producto Pincel (PIN)");
+    if (!mango) throw new NotFoundException("No se encontró el producto Mango (VAST)");
+
+    const [gridPincel, gridMango] = await Promise.all([
+      gridProducto(this.prisma, pincel.id),
+      gridProducto(this.prisma, mango.id),
+    ]);
+
+    const colorIdx = gridPincel.ejes.findIndex((e) => /cerda/i.test(e.nombre));
+    if (colorIdx < 0) throw new NotFoundException("El producto Pincel no tiene eje de color de cerda");
+
+    const valorPorAtributo = new Map<number, Map<number, string>>();
+    for (const eje of gridMango.ejes) {
+      valorPorAtributo.set(eje.attributeId, new Map(eje.valores.map((v) => [v.id, v.valor])));
+    }
+
+    // Clave por attributeId (el orden de ejes difiere entre Mango y Pincel).
+    const claveAtributos = (ejes: { attributeId: number }[], valueIds: number[], omitir = -1) =>
+      ejes
+        .map((e, i) => ({ attributeId: e.attributeId, valueId: valueIds[i] }))
+        .filter((p) => p.attributeId !== omitir)
+        .sort((a, b) => a.attributeId - b.attributeId)
+        .map((p) => `${p.attributeId}:${p.valueId}`)
+        .join("|");
+
+    const mangoPorClave = new Map<string, (typeof gridMango.existentes)[number]>();
+    for (const v of gridMango.existentes) {
+      mangoPorClave.set(claveAtributos(gridMango.ejes, v.valueIds), v);
+    }
+
+    const colorAtributoId = gridPincel.ejes[colorIdx].attributeId;
+    const combinaciones: {
+      mangoVariantId: number;
+      colorId: number;
+      pincelVariantId: number;
+      sku: string;
+      nombre: string;
+    }[] = [];
+    const mangos = new Map<number, { variantId: number; sku: string; etiqueta: string }>();
+
+    for (const p of gridPincel.existentes) {
+      const mangoVar = mangoPorClave.get(claveAtributos(gridPincel.ejes, p.valueIds, colorAtributoId));
+      if (!mangoVar) continue;
+      combinaciones.push({
+        mangoVariantId: mangoVar.varianteId,
+        colorId: p.valueIds[colorIdx],
+        pincelVariantId: p.varianteId,
+        sku: p.sku,
+        nombre: p.nombre,
+      });
+      if (!mangos.has(mangoVar.varianteId)) {
+        const etiqueta =
+          gridMango.ejes
+            .map((e, i) => valorPorAtributo.get(e.attributeId)?.get(mangoVar.valueIds[i]))
+            .filter((v): v is string => !!v)
+            .join(" · ") || mangoVar.nombre;
+        mangos.set(mangoVar.varianteId, { variantId: mangoVar.varianteId, sku: mangoVar.sku, etiqueta });
+      }
+    }
+
+    return {
+      productId: pincel.id,
+      nombre: pincel.nombre,
+      mangos: [...mangos.values()].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta)),
+      colores: gridPincel.ejes[colorIdx].valores,
+      combinaciones,
+    };
+  }
+
   // ------------------------------------- Ingreso de producción a Recibo
   /**
    * Ingresa producción que no viene de un reporte de turno (p. ej. Fabricación):

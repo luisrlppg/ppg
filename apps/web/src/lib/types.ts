@@ -97,6 +97,22 @@ export interface CepillosNylonGrid extends Grid {
   nombre: string;
 }
 
+export interface EnsartadoCombinacion {
+  mangoVariantId: number;
+  colorId: number;
+  pincelVariantId: number;
+  sku: string;
+  nombre: string;
+}
+
+export interface EnsartadoData {
+  productId: number;
+  nombre: string;
+  mangos: { variantId: number; sku: string; etiqueta: string }[];
+  colores: { id: number; valor: string }[];
+  combinaciones: EnsartadoCombinacion[];
+}
+
 export interface ProductoDetalle {
   id: number;
   nombre: string;

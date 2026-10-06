@@ -9,6 +9,8 @@ import { api } from "@/lib/api";
 import type { PublicUser } from "@ppg/shared";
 import type {
   CepillosNylonGrid,
+  EnsartadoCombinacion,
+  EnsartadoData,
   SeccionReporte,
   TipoLineaReporte,
   Turno,
@@ -56,6 +58,18 @@ interface LineaForm {
   color: string;
 }
 
+interface EnsartadoForm {
+  key: string;
+  pincelVariantId: number;
+  pincelSku: string;
+  pincelNombre: string;
+  mangoVariantId: number;
+  mango: string;
+  colorId: number;
+  color: string;
+  cantidad: string;
+}
+
 type Tab = "reporte" | "stats";
 
 export default function ReportesPage() {
@@ -73,7 +87,7 @@ export default function ReportesPage() {
   const esGestion = user?.role === "admin";
 
   // ------------------------------------------------------------------ Formulario
-  const [fase, setFase] = useState<"setup" | "captura">("setup");
+  const [fase, setFase] = useState<"setup" | "captura" | "ensartado">("setup");
   const [turno, setTurno] = useState<TurnoCaptura>(turnoPorHora);
   const [fecha, setFecha] = useState(hoy);
   const [personas, setPersonas] = useState("1");
@@ -87,6 +101,14 @@ export default function ReportesPage() {
   const [formaId, setFormaId] = useState<number | null>(null);
   const [colorId, setColorId] = useState<number | null>(null);
   const [cantidad, setCantidad] = useState("1");
+
+  // ------------------------------------------------------------------ Ensartado
+  const [ensartado, setEnsartado] = useState<EnsartadoData | null>(null);
+  const [cargandoEnsartado, setCargandoEnsartado] = useState(false);
+  const [ensartadoLines, setEnsartadoLines] = useState<EnsartadoForm[]>([]);
+  const [mangoId, setMangoId] = useState<number | null>(null);
+  const [cerdaColorId, setCerdaColorId] = useState<number | null>(null);
+  const [cantidadPincel, setCantidadPincel] = useState("1");
 
   const ejes = grid?.ejes ?? [];
   const shapeIdx = ejes.findIndex((e) => /forma/i.test(e.nombre));
@@ -111,6 +133,82 @@ export default function ReportesPage() {
     const g = await api<CepillosNylonGrid>("/reportes/cepillos-nylon");
     setGrid(g);
     return g;
+  }
+
+  function coloresDeMango(mid: number): { id: number; valor: string }[] {
+    if (!ensartado) return [];
+    const ids = new Set(ensartado.combinaciones.filter((c) => c.mangoVariantId === mid).map((c) => c.colorId));
+    return ensartado.colores.filter((c) => ids.has(c.id));
+  }
+
+  function resolverPincel(mid: number, cid: number): EnsartadoCombinacion | null {
+    return ensartado?.combinaciones.find((c) => c.mangoVariantId === mid && c.colorId === cid) ?? null;
+  }
+
+  async function cargarEnsartado(): Promise<EnsartadoData> {
+    if (ensartado) return ensartado;
+    const d = await api<EnsartadoData>("/reportes/ensartado");
+    setEnsartado(d);
+    return d;
+  }
+
+  async function continuarEnsartado() {
+    setError("");
+    setMsg("");
+    setCargandoEnsartado(true);
+    try {
+      await cargarEnsartado();
+      setMangoId(null);
+      setCerdaColorId(null);
+      setCantidadPincel("1");
+      setFase("ensartado");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setCargandoEnsartado(false);
+    }
+  }
+
+  function agregarPincel() {
+    if (mangoId === null || cerdaColorId === null) return;
+    const pincel = resolverPincel(mangoId, cerdaColorId);
+    if (!pincel) {
+      setError("No existe un pincel para ese mango y color.");
+      return;
+    }
+    if (!(Number(cantidadPincel) > 0)) {
+      setError("Cantidad inválida.");
+      return;
+    }
+    if (ensartadoLines.some((l) => l.mangoVariantId === mangoId && l.colorId === cerdaColorId)) {
+      setError("Ese pincel ya está agregado.");
+      return;
+    }
+    const mango = ensartado?.mangos.find((m) => m.variantId === mangoId)?.etiqueta ?? "—";
+    const color = ensartado?.colores.find((c) => c.id === cerdaColorId)?.valor ?? "—";
+    setEnsartadoLines([
+      ...ensartadoLines,
+      {
+        key: `${pincel.pincelVariantId}-${Date.now()}${Math.random()}`,
+        pincelVariantId: pincel.pincelVariantId,
+        pincelSku: pincel.sku,
+        pincelNombre: pincel.nombre,
+        mangoVariantId: mangoId,
+        mango,
+        colorId: cerdaColorId,
+        color,
+        cantidad: cantidadPincel,
+      },
+    ]);
+    setError("");
+    setMsg("");
+    setMangoId(null);
+    setCerdaColorId(null);
+    setCantidadPincel("1");
+  }
+
+  function cambiarCantidadPincel(key: string, valor: string) {
+    setEnsartadoLines(ensartadoLines.map((l) => (l.key === key ? { ...l, cantidad: valor } : l)));
   }
 
   async function comenzar() {
@@ -189,12 +287,25 @@ export default function ReportesPage() {
     setFormaId(null);
     setColorId(null);
     setCantidad("1");
+    setEnsartadoLines([]);
+    setMangoId(null);
+    setCerdaColorId(null);
+    setCantidadPincel("1");
   }
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
-    if (lines.length === 0) {
-      setError("Agrega al menos un cepillo.");
+    const consumo = new Map<number, number>();
+    for (const l of ensartadoLines) {
+      consumo.set(l.mangoVariantId, (consumo.get(l.mangoVariantId) ?? 0) + Number(l.cantidad));
+    }
+    const nuevas = [
+      ...lines.map((l) => ({ variantId: l.variantId, seccion: l.seccion, tipo: l.tipo, ok: Number(l.cantidad) })),
+      ...ensartadoLines.map((l) => ({ variantId: l.pincelVariantId, seccion: "ensartado" as const, tipo: "final" as const, ok: Number(l.cantidad) })),
+      ...[...consumo].map(([variantId, ok]) => ({ variantId, seccion: "ensartado" as const, tipo: "consumo" as const, ok })),
+    ];
+    if (nuevas.length === 0) {
+      setError("Agrega al menos un cepillo o pincel.");
       return;
     }
     const dto = {
@@ -202,7 +313,7 @@ export default function ReportesPage() {
       fecha,
       personas: Number(personas) || 1,
       horasTrabajadas: HORAS_TURNO[turno],
-      lines: lines.map((l) => ({ variantId: l.variantId, seccion: l.seccion, tipo: l.tipo, ok: Number(l.cantidad) })),
+      lines: nuevas,
     };
     setGuardando(true);
     setError("");
@@ -362,13 +473,124 @@ export default function ReportesPage() {
         </ul>
       )}
 
+      <div className="row" style={{ marginTop: 8 }}>
+        <button type="button" className="btn primary block" disabled={cargandoEnsartado} onClick={continuarEnsartado}>
+          {cargandoEnsartado ? "Cargando…" : "Continuar a ensartado"}
+        </button>
+        <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
+          Reiniciar
+        </button>
+      </div>
+    </div>
+  );
+
+  const ensartadoForm = (
+    <div className="card">
+      <div className="row" style={{ justifyContent: "space-between", marginBottom: 4, flexWrap: "wrap" }}>
+        <h4 style={{ margin: 0 }}>Paso 2 · Ensartado</h4>
+        <span className="muted small">
+          {turno === "matutino" ? "Matutino" : "Vespertino"} · {new Date(`${fecha}T12:00:00`).toLocaleDateString("es-MX")} ·{" "}
+          {personas} pers.
+        </span>
+      </div>
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Elige el mango y el color de cerda para armar cada pincel producido.
+      </p>
+
+      <div className="row" style={{ alignItems: "end", flexWrap: "wrap" }}>
+        <label style={{ flex: 1, minWidth: 240 }}>
+          Mango
+          <select
+            value={mangoId ?? ""}
+            onChange={(e) => {
+              setMangoId(e.target.value ? Number(e.target.value) : null);
+              setCerdaColorId(null);
+            }}
+          >
+            <option value="">Elige un mango…</option>
+            {ensartado?.mangos.map((m) => (
+              <option key={m.variantId} value={m.variantId}>
+                {m.sku} · {m.etiqueta}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={{ width: 180 }}>
+          Color de cerda
+          <select
+            value={cerdaColorId ?? ""}
+            disabled={mangoId === null}
+            onChange={(e) => setCerdaColorId(e.target.value ? Number(e.target.value) : null)}
+          >
+            <option value="">Elige el color…</option>
+            {mangoId !== null &&
+              coloresDeMango(mangoId).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.valor}
+                </option>
+              ))}
+          </select>
+        </label>
+        <label style={{ width: 110 }}>
+          Cantidad
+          <input type="number" min="1" step="1" value={cantidadPincel} onChange={(e) => setCantidadPincel(e.target.value)} />
+        </label>
+        <button
+          type="button"
+          className="btn primary"
+          style={{ flex: 0 }}
+          disabled={mangoId === null || cerdaColorId === null}
+          onClick={agregarPincel}
+        >
+          Agregar
+        </button>
+      </div>
+
+      <h5 style={{ marginTop: 16, marginBottom: 4 }}>Pinceles capturados ({ensartadoLines.length})</h5>
+      {ensartadoLines.length === 0 ? (
+        <p className="muted small">Aún no agregas pinceles.</p>
+      ) : (
+        <ul className="step-list">
+          {ensartadoLines.map((l) => (
+            <li key={l.key}>
+              <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+                <span>
+                  <span className="badge normal">Ensartado</span> <strong>{l.pincelNombre}</strong> · {l.color}
+                  <div className="small muted">
+                    Mango: {l.mango} · {l.pincelSku}
+                  </div>
+                </span>
+                <span className="row" style={{ flex: 0, gap: 8, alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={l.cantidad}
+                    onChange={(e) => cambiarCantidadPincel(l.key, e.target.value)}
+                    style={{ width: 90 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 0 }}
+                    onClick={() => setEnsartadoLines(ensartadoLines.filter((x) => x.key !== l.key))}
+                  >
+                    Quitar
+                  </button>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <form onSubmit={guardar}>
         <div className="row" style={{ marginTop: 8 }}>
           <button className="btn primary block" disabled={guardando}>
             {guardando ? "Guardando…" : "Finalizar reporte"}
           </button>
-          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={limpiarForm}>
-            Reiniciar
+          <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setFase("captura")}>
+            Atrás
           </button>
         </div>
       </form>
@@ -395,7 +617,7 @@ export default function ReportesPage() {
         )}
       </div>
 
-      {tab === "reporte" && (fase === "setup" ? setupForm : capturaForm)}
+      {tab === "reporte" && (fase === "setup" ? setupForm : fase === "captura" ? capturaForm : ensartadoForm)}
       {tab === "stats" && esGestion && (
         <StatsProduccion onError={(msg) => setError(msg)} />
       )}

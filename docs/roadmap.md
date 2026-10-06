@@ -31,6 +31,16 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Paso 2 "Ensartado" en el reporte de producción (2026-10-06):** el wizard de `/reportes` ahora
+  continúa tras los cepillos de Nylon con un **Paso 2 Ensartado** (mango + color de cerda +
+  cantidad, repetible). Nuevo `GET /reportes/ensartado` (`reportes.service.ensartado`): cruza las
+  variantes de **Pincel** (`PIN`) con las de **Mango** (`VAST`) por los atributos compartidos
+  (Altura/Agujero/Ceja/Tamaño rosca) y devuelve `mangos`, `colores` y `combinaciones`
+  mango+color→pincel. Al guardar/aplicar, cada pincel agrega una línea `final` (sección
+  `ensartado`, entra a "Recibo de Producción") y una línea `consumo` agregada del **mango**
+  (descuenta stock); la **cerda se maneja manual**. Sin migración. Endpoint sólo lectura; no crea
+  catálogo.
+
 - **Bandeja de aceptación retirada de `/reportes` (2026-10-06):** se eliminó la pestaña **Bandeja**
   (listar pendientes/aplicados/cancelados, aceptar/aplicar, modificar y cancelar) de
   `app/reportes/page.tsx`. La página queda con **Reporte del día** (captura por pasos) y
