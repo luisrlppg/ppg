@@ -11,6 +11,8 @@ COPY apps/web ./apps/web
 RUN pnpm install --filter @ppg/web --filter @ppg/shared
 
 FROM deps AS build
+ARG API_TARGET=http://localhost:3001
+ENV API_TARGET=$API_TARGET
 RUN pnpm --filter @ppg/shared build && pnpm --filter @ppg/web build
 
 FROM node:22-alpine AS runtime

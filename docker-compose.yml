@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Perfil "full": despliegue completo (api + web + caddy).
+  # Perfil "full": despliegue completo (api + web; web es la entrada única).
   # Dev local: basta con `docker compose up -d postgres`.
   api:
     build:
@@ -29,6 +29,9 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       COOKIE_NAME: ppg_session
       API_PORT: 3001
+    ports:
+      # Acceso directo a la API (depuración). Puerto host configurable con API_HOST_PORT.
+      - "${API_HOST_PORT:-3001}:3001"
     profiles: ["full"]
     depends_on:
       postgres:
@@ -38,25 +41,22 @@ services:
       - ./docs/backups:/app/docs/backups
     restart: unless-stopped
 
+  # Entrada única del stack: publica la web y proxya /api/* al servicio `api`.
   web:
     build:
       context: .
       dockerfile: infra/web.Dockerfile
-    profiles: ["full"]
-    depends_on:
-      - api
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:2-alpine
+      args:
+        API_TARGET: http://api:3001
+    environment:
+      # Horneado en build (rewrites de Next); se repite en runtime por claridad.
+      API_TARGET: http://api:3001
     ports:
-      - "80:80"
-    volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Entrada del stack. Puerto host configurable con WEB_HOST_PORT.
+      - "${WEB_HOST_PORT:-8090}:3000"
     profiles: ["full"]
     depends_on:
       - api
-      - web
     restart: unless-stopped
 
   # Perfil "tools": siembra inicial manual (migra + puebla usuarios/catálogo).

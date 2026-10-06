@@ -48,7 +48,7 @@ apps/erp/
 ├── packages/
 │   ├── db/             # Schema Prisma + migraciones (dueño: apps/api)
 │   └── shared/         # Tipos TS, constantes, validadores
-└── infra/              # docker-compose (postgres, api, web, caddy/nginx), backups
+└── infra/              # docker-compose (postgres, api, web), backups
 ```
 
 **Regla de oro**: la DB central es *individual*, no pertenece a ninguna app; pero solo `apps/api` la lee/escribe. Todo lo demás consume API.
@@ -420,7 +420,7 @@ distintos según el tipo:
 
 | Entrega | Contenido | Estado |
 |---|---|---|
-| **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web + caddy), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
+| **E0** | Fundaciones: monorepo (pnpm), docker-compose (postgres + api + web), Prisma base, auth (users/roles), esqueleto de proceso | ✅ entregado |
 | **E1** | Inventario completo: schema v1 (§4, incl. ubicaciones), API, web, uom, monitor + notificaciones (event-driven, sin timer), ~~registrar ensamble~~ (retirado 2026-10-02) | ✅ entregado |
 | **E2** | Ventas + Fabricación: clientes, venta mínima, desglose BOM multi-nivel, necesidades de fabricación (por mínimo y por ventas) y alta de producción. **Flujo venta→confirmación→desglose→despacho verificado end-to-end (2026-08-31; modelo sin OF desde 2026-10-05)** | ✅ entregado |
 | **Tienda (futura)** | Storefront público: `/api/public` + (futuro) `apps/storefront`. **Ya está operativa la tubería completa**: `GET /public/productos`, `getPasos` (variantes publicadas), pedido invitado (`origen=web`, precio recalculado en servidor, consulta por número), y tienda guiada integrada en `apps/web/tienda/[productId]`. Falta la app `apps/storefront` separada + pasarela de pago + **imágenes** de opciones (hoy placeholders) + **precios** en la UI (ocultos a propósito). | 🟡 tubería + tienda guiada operativas |
@@ -432,7 +432,7 @@ distintos según el tipo:
 ## 11. Requerimientos no funcionales
 
 - LAN + Docker Compose sobre Linux; dominio/servicio local.
-- Reverse proxy (caddy/nginx) como capa única de entrada.
+- La web es la capa única de entrada: publica el puerto host del stack y proxya `/api/*` hacia la API (sin reverse proxy externo).
 - Backup automatizado de PostgreSQL.
 - Auth con sesión (JWT httpOnly sobre cookie); distintos alcances por rol.
 - SSE con auto-reconnect y keepalive (pantallas TV, desde E4).

@@ -23,7 +23,7 @@ packages/
   shared/     # Tipos/constantes compartidos (@ppg/shared; incluye `formatCantidad`)
 scripts/      # Scripts de utilidad, migración Odoo y toolkit de catálogo
 docs/         # Documentación (este mapa vive en la raíz)
-infra/        # Dockerfiles + Caddyfile (perfil full)
+infra/        # Dockerfiles (perfil full)
 ```
 
 - **Roles/guards:** `admin`, `operador`. La app está **protegida por defecto**: `JwtAuthGuard` + `RolesGuard`

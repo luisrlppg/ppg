@@ -21,7 +21,7 @@ apps/
 packages/
   db/         # Prisma schema + seed (@ppg/db)
   shared/     # Tipos/constantes compartidos (@ppg/shared)
-infra/        # Dockerfiles + Caddyfile (perfil full)
+infra/        # Dockerfiles (perfil full)
 ```
 
 ## Requisitos
@@ -81,10 +81,12 @@ POSTGRES_PORT=5433 docker compose --profile full up --build -d
 docker compose --profile tools run --rm seed
 ```
 
-`caddy` en el puerto **80** expone `/api/*` → api y el resto → web.
+La **web** es la entrada única del stack: publica el puerto host `WEB_HOST_PORT`
+(default **8090**) y proxya `/api/*` → `api:3001`. La API también se publica en
+`API_HOST_PORT` (default **3001**) solo para acceso directo/depuración.
 
 - La API **aplica las migraciones automáticamente** al arrancar (`infra/api-entrypoint.sh`).
-- Entra en `http://localhost` con `admin` / `admin123` (tras el seed).
+- Entra en `http://localhost:8090` con `admin` / `admin123` (tras el seed).
 - **Respaldos** funcionan dentro del stack (la UI `docs/backups` se monta en el contenedor y la
   imagen incluye el cliente PostgreSQL 18).
 - Revisa estado/logs con `docker compose --profile full ps` y `docker compose --profile full logs -f`.
