@@ -92,9 +92,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   **Respaldos** (`/backups`). El estado de cada sección se persiste en `ppg.sidebar.section.<id>` y la
   sección de la ruta activa se auto-abre; el botón **Ajustes** del footer se retiró. Se **eliminó la
   página** `app/monitor/page.tsx` (su vista ya vive en Inventario/Fabricación) y la tarjeta homónima del
-  dashboard; el stat "Productos con bajo stock" ahora apunta a `/inventario`. El **backend de monitoreo
-  y notificación permanece intacto** (`apps/api/src/monitor/`, disparadores de stock y
-  `GET /monitor/stock-bajo` que sigue consumiendo el dashboard).
+  dashboard. El **backend de monitoreo y notificación permanece intacto**
+  (`apps/api/src/monitor/`, disparadores de stock); el dashboard ya no consume
+  `GET /monitor/stock-bajo` (el módulo queda solo como backend de notificaciones).
 
 - **Fabricación sin OF: panel de necesidades + alta de producción (2026-10-05):** se **eliminó por
   completo** la entidad de orden de fabricación (`ManufacturingOrder`/`ManufacturingOrderLine` y enums

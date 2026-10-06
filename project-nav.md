@@ -86,7 +86,7 @@ Registrados en `app.module.ts`.
 
 ### 2.5 Necesidades de fabricación → `fabricacion/`
 - `fabricacion.controller.ts` · `fabricacion.service.ts`:
-  - **`necesidades`** (`GET /fabricacion/necesidades`): faltantes vivos en dos listas: `porMinimo` (fabricables bajo stock objetivo; `objetivo = max>0?max:min`) y `porVentas` (explosión neta **sobre lo pendiente** de las ventas **abiertas confirmadas** con pool compartido de stock, incluye ensambles como ítem *Armar*), más `porComprar` (no fabricables). Cada `NecesidadItem` incluye `productoId` + `valoracion` (atributos de la variante) para el buscador/filtro del panel.
+  - **`necesidades`** (`GET /fabricacion/necesidades`): faltantes vivos en dos listas: `porMinimo` (fabricables bajo stock mínimo; `stockActual < stockMin`) y `porVentas` (explosión neta **sobre lo pendiente** de las ventas **abiertas confirmadas** con pool compartido de stock, incluye ensambles como ítem *Armar*), más `porComprar` (no fabricables). Cada `NecesidadItem` incluye `productoId` + `valoracion` (atributos de la variante) para el buscador/filtro del panel.
   - **`registrarProduccion`** (`POST /fabricacion/produccion {variantId, cantidad}`): solo hojas fabricables (0–1 componente); rechaza ensambles. Delega en `reportes.registrarProduccionInterna` → reporte interno aplicado + stock a **"Recibo de Producción"**, pendiente de ubicar en `/ubicaciones`.
   - `faltantes` (pendientes de compra agregados desde `resumen.comprar`).
 - `fabricacion.module.ts` inyecta `ReportesService` (`ReportesModule` exporta el provider).
@@ -115,8 +115,8 @@ Registrados en `app.module.ts`.
 - `monitor.controller.ts` (73) · `monitor.service.ts` (240): `listarBajo` 66 · **`afterStockChange`** (dispara sólo al pasar a bajo) 104 · `checkAll` 165 · `enviarAlerta` 192 · `enviarPrueba` 208.
 - `monitor.notificadores.ts` (76): `sendTelegram` / `sendCallMeBot` / `sendEmail`.
 - **Página web retirada (2026-10-05):** `app/monitor/page.tsx` se eliminó (la vista vive ahora en
-  Inventario/Fabricación). El módulo backend y los disparadores de stock siguen vigentes; el
-  dashboard aún consume `GET /monitor/stock-bajo` para el conteo de bajo stock.
+  Inventario/Fabricación). El módulo backend y los disparadores de stock siguen vigentes como
+  backend de notificaciones; el dashboard ya no consume `GET /monitor/stock-bajo`.
 
 ### 2.9 Clientes / partners → `clientes/`
 - `clientes.controller.ts` (87) · `clientes.service.ts` (137): `list`/`get`/`create`/`update`/`deactivate` + `importar` (CSV).
@@ -174,7 +174,7 @@ y `AppShell` (excepto tienda y login).
 
 | Página | Archivo | Líneas | Funcionalidad |
 |---|---|---|---|
-| Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, necesidades de fabricación, pendientes de compra, bajo stock) + tarjetas de módulos |
+| Inicio (dashboard) | `app/page.tsx` | 89 | pendientes (ventas abiertas, necesidades de fabricación, pendientes de compra) + tarjetas de módulos |
 | Lista productos | `app/productos/page.tsx` | 402 | grid/tabla + alta en modal; sin botón eliminar (el borrado vive en el detalle del producto) |
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |

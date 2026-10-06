@@ -207,7 +207,7 @@ export default function FabricacionPage() {
       </button>
       {minimoOpen && (
         <>
-          <p className="muted small" style={{ marginTop: 0 }}>Variantes fabricables por debajo de su stock objetivo.</p>
+          <p className="muted small" style={{ marginTop: 0 }}>Variantes fabricables por debajo de su stock mínimo.</p>
           <div className="card" style={{ padding: 0 }}>
             <TablaNecesidades
               items={porMinimo}

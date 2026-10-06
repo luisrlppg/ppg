@@ -155,7 +155,7 @@ precio de venta; el margen que muestra es solo referencia.
   enums `TipoOF`/`OrigenOF`/`EstadoOF` se retiraron; migración
   `20261005154000_remove_manufacturing_order`). La planificación dejó de ser un documento persistente.
 - **Panel de necesidades** (`GET /fabricacion/necesidades`): dos listas separadas.
-  - `porMinimo`: fabricables con `stock < objetivo` (`objetivo = stockMax>0 ? stockMax : stockMin`).
+  - `porMinimo`: fabricables con `stock < stockMin` (necesidad = `stockMin - stock`).
   - `porVentas`: explosión neta multi-nivel de las ventas **abiertas confirmadas** (`planificacion.desglosar`
     con pool compartido de stock), calculada **sobre lo pendiente** (`cantidad - qtyDelivered`): las líneas
     entregadas no aportan demanda y las parcialidades piden solo el resto. Incluye ensambles como ítem

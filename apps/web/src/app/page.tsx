@@ -7,7 +7,7 @@ import PageHeader from "@/components/ui/page-header";
 import { api } from "@/lib/api";
 import { HOME_BY_ROLE } from "@ppg/shared";
 import { useAuth } from "@/lib/preferences";
-import type { NecesidadesResp, StockBajo } from "@/lib/types";
+import type { NecesidadesResp } from "@/lib/types";
 
 const MODULES = [
   { href: "/ventas", title: "Ventas", desc: "Órdenes (locales y web), confirmación con desglose/neteo y despacho por línea." },
@@ -21,7 +21,6 @@ interface Pendientes {
   ventasAbiertas: number;
   necesidades: number;
   faltantes: number;
-  bajoStock: number;
 }
 
 export default function Home() {
@@ -30,17 +29,15 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const [ventas, necesidades, faltantes, bajo] = await Promise.all([
+      const [ventas, necesidades, faltantes] = await Promise.all([
         api<unknown[]>("/ventas?estado=abierta").catch(() => []),
         api<NecesidadesResp>("/fabricacion/necesidades").catch(() => null),
         api<unknown[]>("/fabricacion/faltantes").catch(() => []),
-        api<StockBajo[]>("/monitor/stock-bajo").catch(() => []),
       ]);
       setPend({
         ventasAbiertas: ventas.length,
         necesidades: (necesidades?.porMinimo.length ?? 0) + (necesidades?.porVentas.length ?? 0),
         faltantes: faltantes.length,
-        bajoStock: bajo.length,
       });
     })();
   }, []);
@@ -49,7 +46,6 @@ export default function Home() {
     { href: "/ventas", value: pend?.ventasAbiertas ?? 0, label: "Ventas abiertas", alert: (pend?.ventasAbiertas ?? 0) > 0 },
     { href: "/fabricacion", value: pend?.necesidades ?? 0, label: "Necesidades de fabricación", alert: (pend?.necesidades ?? 0) > 0 },
     { href: "/fabricacion", value: pend?.faltantes ?? 0, label: "Pendientes de compra", alert: (pend?.faltantes ?? 0) > 0 },
-    { href: "/inventario", value: pend?.bajoStock ?? 0, label: "Productos con bajo stock", alert: (pend?.bajoStock ?? 0) > 0 },
   ];
 
   return (

@@ -42,7 +42,7 @@ export class FabricacionService {
   // ------------------------------------------------ Panel de necesidades
   /**
    * Faltantes vivos para el panel de Fabricación: por mínimo (fabricables bajo
-   * stock objetivo) y por ventas (explosión neta BOM de las ventas abiertas
+   * stock mínimo) y por ventas (explosión neta BOM de las ventas abiertas
    * confirmadas, con pool compartido de stock). Incluye ensambles como ítems
    * "a armar". `porComprar` son los no fabricables faltantes.
    */
@@ -68,7 +68,7 @@ export class FabricacionService {
       const actual = v.stockLevels.reduce((a, l) => a + dec(l.qty), 0);
       const min = dec(v.stockMin);
       const max = dec(v.stockMax);
-      const objetivo = max > 0 ? max : min;
+      const objetivo = min;
       if (actual >= objetivo) continue;
       const tipo = v.product.components.length > 1 ? "ensamble" : "fabricacion";
       out.push({
