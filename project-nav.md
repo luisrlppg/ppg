@@ -68,10 +68,10 @@ Registrados en `app.module.ts`.
 ### 2.3 Reportes de producción → `reportes/`
 - `reportes.controller.ts` (127) — rutas `/api/reportes...`
 - `reportes.service.ts`, zonas:
-  - `cepillosNylon` (datos del wizard: producto `CNI` + `grid` de ejes/variantes) · `list` · `ultimo` (prefill) · `get` · `crear` · `editar` (`list`/`ultimo` excluyen reportes `interno`)
-  - **`aplicar`** (mueve stock final/consumo; **ya no cierra la OF**) · `cancelar` · `lotes` (incluye reportes internos) · `ubicar`
+  - `cepillosNylon` (datos del wizard: producto `CNI` + `grid` de ejes/variantes) · `list` · `ultimo` (prefill) · `get` · `crear` · `editar` (`list`/`ultimo` excluyen reportes `interno`) · **`registrarProduccionInterna`** (reporte interno aplicado + stock a "Recibo de Producción"; lo usa Fabricación)
+  - **`aplicar`** (mueve stock final/consumo; **ya no cierra la OF**) · `cancelar` · `lotes` (bandeja de ubicación: líneas `final` de reportes aplicados, con `origen`, `productoId` y `valoracion`) · `ubicar` · `porUbicar` (conteo por origen para el globo del sidebar)
   - `stats` y `exportar` delegan en módulos externos (excluyen reportes `interno`)
-  - Ruta del wizard: `GET /reportes/cepillos-nylon` (roles `admin`/`operador`; estática antes de `:id`)
+  - Rutas estáticas: `GET /reportes/cepillos-nylon` y `GET /reportes/por-ubicar` (roles `admin`/`operador`; antes de `:id`)
 - `reportes.constants.ts` (11): `TURNOS`, `SECCIONES`, `HORAS_TURNO`.
 - `reportes.stats.ts` (72): métricas de productividad. `reportes.export.ts` (55): CSV.
 
@@ -87,10 +87,11 @@ Registrados en `app.module.ts`.
 ### 2.5 Necesidades de fabricación → `fabricacion/`
 - `fabricacion.controller.ts` · `fabricacion.service.ts`:
   - **`necesidades`** (`GET /fabricacion/necesidades`): faltantes vivos en dos listas: `porMinimo` (fabricables bajo stock objetivo; `objetivo = max>0?max:min`) y `porVentas` (explosión neta **sobre lo pendiente** de las ventas **abiertas confirmadas** con pool compartido de stock, incluye ensambles como ítem *Armar*), más `porComprar` (no fabricables). Cada `NecesidadItem` incluye `productoId` + `valoracion` (atributos de la variante) para el buscador/filtro del panel.
-  - **`registrarProduccion`** (`POST /fabricacion/produccion {variantId, cantidad, locationId}`): entrada de stock (motivo `produccion`) a la ubicación elegida + monitor. Solo hojas fabricables (0–1 componente); rechaza ensambles.
+  - **`registrarProduccion`** (`POST /fabricacion/produccion {variantId, cantidad}`): solo hojas fabricables (0–1 componente); rechaza ensambles. Delega en `reportes.registrarProduccionInterna` → reporte interno aplicado + stock a **"Recibo de Producción"**, pendiente de ubicar en `/ubicaciones`.
   - `faltantes` (pendientes de compra agregados desde `resumen.comprar`).
+- `fabricacion.module.ts` inyecta `ReportesService` (`ReportesModule` exporta el provider).
 - `planificacion.service.ts`: `desglosar(tx, demandas)` (explosión neta multi-nivel con pool de stock; devuelve `lineas` agregadas + `arbol` de nodos `DesgloseNodo` por raíz; la usan ventas y necesidades) y `consumirEnsamble(tx, variantId, cantidad, ref, userId)` (consume componentes de un ensamble contra pedido al despachar).
-- **No hay entidad OF** (retirada 2026-10-05): la producción se registra como stock y los ensambles se consumen al despachar.
+- **No hay entidad OF** (retirada 2026-10-05): la producción se registra como stock+reporte interno y los ensambles se consumen al despachar.
 
 ### 2.6 Catálogos (atributos / categorías / empaques) → `catalogos/`
 - `catalogos.controller.ts` (296) — `@Controller("catalogos")` (`JwtAuthGuard`+`RolesGuard`): **lectura** para
@@ -178,9 +179,10 @@ y `AppShell` (excepto tienda y login).
 | Detalle/edición producto | `app/productos/[id]/page.tsx` | — | datos base · atributos inline · ejes · grid · variantes ("Materializar combinación") · BOM · **pasos guiados (wizard)**. Editor inline compacto; heredados solo lectura. La fila navega a la página de variante |
 | Página de variante | `app/productos/[id]/variantes/[vid]/page.tsx` | 262 | `ExistenciaDe` (`GET /inventario/existencia/:vid`): nombre/precio/mín/máx/notas/publicado/crítico/activo, atributos, existencia, empaques y movimientos |
 | Ventas | `app/ventas/page.tsx` | 516 | lista/detalle/confirmar/despachar/**imprimir**; en el detalle el **desglose de componentes** es **siempre visible** y se agrupa en **árbol por producto vendido**: cada línea vendida es el nodo raíz (badge *Vendido*) con toggle para plegar/desplegar sus componentes (arrancan **desplegados**), que se listan aplanados con sangría por profundidad; muestra necesita/stock/falta + estado (Fabricar/Ensamblar/Comprar) calculado **sobre lo pendiente**, y si la línea está `entregado` la raíz se marca **Entregado** sin cantidades (`—`); alta en modal (`Modal` + `components/ventas/nueva-venta.tsx` 370): wizard de 3 pasos (Cliente → Producto → Revisión) con stepper y acciones fijas; el paso 2 es una **lista filtrable de productos** (clic abre modal según el producto): `modal-config-variante.tsx` (wizard, productos con pasos) o `modal-seleccion-variante.tsx` (productos sin pasos: `<select>` por eje desde `GET /productos/:id/grid`, sólo valores materializados; fallback a lista plana); alta de cliente inline (`components/clientes/cliente-form-modal.tsx`). Documento de venta en PDF: `components/ventas/documento-venta.tsx` (overlay que **regenera el PDF** con `pdf().toBlob()` de `@react-pdf/renderer` al cambiar el contenido y lo muestra en un `<iframe>`; botón "Descargar PDF", toggle IVA 16%, imágenes precargadas a dataURL con fallback a iniciales) y layout en `components/ventas/documento-venta-pdf.tsx` (`DocumentoPDF`; muestra el desglose de atributos de la variante desde `valoracion` y columnas numéricas centradas) |
-| Fabricación (necesidades) | `app/fabricacion/page.tsx` | 305 | **Por ventas** primero, luego **Por mínimo** (colapsable, arranca cerrado) —fabricables faltantes; ensambles como *Armar* solo lectura— + **Pendientes de compra**; **buscador de producto + filtro por atributos** compartido con Inventario (`useFiltroAtributos` + `BuscadorAtributos`), aplicado a las tres listas; botón **Ingresar producción** (`GET /inventario/ubicaciones` → `POST /fabricacion/produccion`) con paso extra para elegir ubicación |
+| Fabricación (necesidades) | `app/fabricacion/page.tsx` | — | **Por ventas** primero, luego **Por mínimo** (colapsable, arranca cerrado) —fabricables faltantes; ensambles como *Armar* solo lectura— + **Pendientes de compra**; **buscador de producto + filtro por atributos** compartido con Inventario (`useFiltroAtributos` + `BuscadorAtributos`), aplicado a las tres listas; botón **Ingresar producción** (modal: cantidad → `POST /fabricacion/produccion`); el stock entra a "Recibo de Producción" y queda **pendiente de ubicar** en `/ubicaciones` |
+| Ubicaciones | `app/ubicaciones/page.tsx` | — | **bandeja de ubicación**: todo lo producido (por **reporte de producción** aplicado y por **Fabricación**) listo para asignar compartimento; `GET /reportes/lotes`, dos secciones por `origen`, filtro de atributos compartido, `POST /reportes/lotes/:id/ubicar`; muestra **quién lo registró** (`usuario`) |
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
-| Reportes de producción | `app/reportes/page.tsx` | — | **captura por pasos**: setup (toggle Matutino/Vespertino, fecha, personas, "Comenzar") → wizard *Producción de cepillos de Nylon* (máquina → forma → color → cantidad, repetible) → finalizar deja el reporte **pendiente** para bandeja/aplicar; bandeja · ubicar lotes; stats en `components/reportes/stats-produccion.tsx` (150) |
+| Reportes de producción | `app/reportes/page.tsx` | — | **captura por pasos**: setup (toggle Matutino/Vespertino, fecha, personas, "Comenzar") → wizard *Producción de cepillos de Nylon* (máquina → forma → color → cantidad, repetible) → finalizar deja el reporte **pendiente**; **bandeja** (aceptar/aplicar/cancelar); stats en `components/reportes/stats-produccion.tsx` (150). El ubicar lotes vive ahora en `/ubicaciones` |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin` (guardia en la página); en el menú vive en la sección **Administración** |
 | Usuarios | `app/usuarios/page.tsx` | — | CRUD de cuentas (sólo `admin`): alta (usuario/nombre/contraseña/rol), edición de nombre/rol/activo, cambio de contraseña y activar/desactivar. No permite auto-desactivarse ni quitarse el rol admin |
@@ -189,14 +191,15 @@ y `AppShell` (excepto tienda y login).
 | Respaldos | `app/backups/page.tsx` | — | crear punto de retorno / listar / descargar / restaurar / eliminar / subir `.dump`·`.sql` (sólo admin); en el menú vive en la sección **Ajustes** |
 | Storefront guiado | `app/tienda/[productId]/page.tsx` | — | público, sin AppShell; paneles por `panel`, cascada server-side, resolver+crear al confirmar |
 | Login | `app/login/page.tsx` | 66 | pantalla de login |
-| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), con **secciones colapsables** de encabezado (**Administración** [admin] → Usuarios/Costos; **Ajustes** → Ajustes/Respaldos [admin]; estado en `ppg.sidebar.section.<id>`, se auto-abre la sección de la ruta activa). `useAuth()` del `PreferencesProvider` global, logout |
+| Shell | `components/app-shell.tsx` | — | layout auth-gated: **menú lateral** colapsable (persistido en `ppg.sidebar.collapsed`), con **secciones colapsables** de encabezado (**Administración** [admin] → Usuarios/Costos; **Ajustes** → Ajustes/Respaldos [admin]; estado en `ppg.sidebar.section.<id>`, se auto-abre la sección de la ruta activa). La entrada **Bandeja** (`/ubicaciones`) muestra un **globo contador** (`GET /reportes/por-ubicar`, refresco por `pathname`/`POR_UBICAR_EVENT`/30 s). `useAuth()` del `PreferencesProvider` global, logout |
 
 ### 3.2 Librerías compartidas (`apps/web/src/lib/`)
 - `api.ts` (31) — `api<T>(path, init)`: prepende `/api`, cookies, errores → `ApiError`.
 - `types.ts` (408) — **todos** los tipos de dominio; añade aquí los tipos nuevos de forma centralizada.
 - `pasos-cache.ts` — cachea 30 s `getPasos` por productId; `getPasosConSeleccion` (POST) para la cascada.
 - `pasos-wizard.ts` — lógica compartida del wizard (paneles por `panel`, auto-selección, resolver).
-- `filtro-atributos.ts` — hook `useFiltroAtributos(items)` (buscador de producto + filtro por atributos presentes, compartido por Inventario y Fabricación); tipo `ItemFiltrable`/`FiltroAtributos`.
+- `filtro-atributos.ts` — hook `useFiltroAtributos(items)` (buscador de producto + filtro por atributos presentes, compartido por Inventario y Fabricación/Ubicaciones); tipo `ItemFiltrable`/`FiltroAtributos`.
+- `por-ubicar.ts` — evento global `POR_UBICAR_EVENT` + `refrescarPorUbicar()` para refrescar el **globo contador** del sidebar cuando cambia la bandeja de ubicación.
 - `csv.ts` (14) — `descargarCSV(nombre, filas)` con BOM para Excel.
 - `local-store.ts` (81) — preferencias de UI en `localStorage` (`ppg.*`).
 - `preferences.tsx` — `PreferencesProvider` (montado en `app/layout.tsx`, raíz) que hace el `GET /auth/me` y expone `useAuth`/`usePreferences`/`useFormatCantidad` (separador de miles por usuario, persistido en BD). **Debe quedar por encima del shell y las páginas**: el contexto sólo fluye hacia abajo.
@@ -220,8 +223,9 @@ Reutilízalos en vez de inventar clases nuevas:
 | Despachar línea / consumo de stock (ensambles consumen componentes) | `ventas.service.ts` (`despacharLinea`) + `planificacion.service.ts` (`consumirEnsamble`) |
 | Documento de venta PDF (IVA, imagen) | `components/ventas/documento-venta.tsx` (overlay/descarga) · `components/ventas/documento-venta-pdf.tsx` (layout `@react-pdf/renderer`) · `app/ventas/page.tsx` (overlay `imprimirVenta`) · `ventas.service.get` (`imagen`) |
 | Reporte de producción / aplicar / wizard de cepillos | `reportes.service.ts` (`aplicar`, `cepillosNylon`) · `app/reportes/page.tsx` |
+| Bandeja de ubicación (producto `Final` a compartimento; origen + usuario) | `reportes.service.ts` (`lotes`, `ubicar`, `porUbicar`, `registrarProduccionInterna`) · `app/ubicaciones/page.tsx` · `components/app-shell.tsx` (globo contador) |
 | Panel de Fabricación: mínimos, ventas y alta de producción | `fabricacion.service.ts` (`necesidades`, `registrarProduccion`) · `app/fabricacion/page.tsx` |
-| Buscador de producto + filtro por atributos (Inventario y Fabricación) | `lib/filtro-atributos.ts` (`useFiltroAtributos`) · `components/ui/buscador-atributos.tsx` · `app/inventario/page.tsx` · `app/fabricacion/page.tsx` |
+| Buscador de producto + filtro por atributos (Inventario, Fabricación y Ubicaciones) | `lib/filtro-atributos.ts` (`useFiltroAtributos`) · `components/ui/buscador-atributos.tsx` · `app/inventario/page.tsx` · `app/fabricacion/page.tsx` · `app/ubicaciones/page.tsx` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |
 | Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`, `resolverConfiguracion`) · `public.controller.ts` · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` (con pasos) · `components/ventas/modal-seleccion-variante.tsx` (selector por eje con `<select>`, sin pasos) · `lib/pasos-wizard.ts` |

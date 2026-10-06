@@ -88,6 +88,12 @@ export class ReportesController {
   }
 
   @Roles("admin", "operador")
+  @Get("por-ubicar")
+  porUbicar() {
+    return this.reportes.porUbicar();
+  }
+
+  @Roles("admin", "operador")
   @Get(":id")
   get(@Param("id", ParseIntPipe) id: number) {
     return this.reportes.get(id);

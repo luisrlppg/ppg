@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
+import { POR_UBICAR_EVENT } from "@/lib/por-ubicar";
 import { useAuth } from "@/lib/preferences";
+import type { PorUbicarCount } from "@/lib/types";
 
 interface NavItem {
   href: string;
@@ -26,6 +28,7 @@ const LINKS: NavItem[] = [
   { href: "/reportes", label: "Reportes", icon: "📋" },
   { href: "/ventas", label: "Ventas", icon: "🧾" },
   { href: "/fabricacion", label: "Fabricación", icon: "🏭" },
+  { href: "/ubicaciones", label: "Bandeja", icon: "📍" },
   { href: "/productos", label: "Productos", icon: "📦", match: ["/productos", "/catalogos"] },
   { href: "/inventario", label: "Inventario", icon: "📊" },
   { href: "/clientes", label: "Clientes", icon: "👥" },
@@ -71,7 +74,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<string, boolean>>({});
+  const [porUbicar, setPorUbicar] = useState(0);
   const pathname = usePathname();
+
+  const cargarPorUbicar = useCallback(async () => {
+    try {
+      const { total } = await api<PorUbicarCount>("/reportes/por-ubicar");
+      setPorUbicar(total);
+    } catch {
+      /* sin sesión o error: se ignora */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    cargarPorUbicar();
+    const t = setInterval(cargarPorUbicar, 30000);
+    window.addEventListener(POR_UBICAR_EVENT, cargarPorUbicar);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener(POR_UBICAR_EVENT, cargarPorUbicar);
+    };
+  }, [user, cargarPorUbicar]);
+
+  useEffect(() => {
+    if (user) cargarPorUbicar();
+  }, [pathname, user, cargarPorUbicar]);
 
   useEffect(() => {
     const saved = localStorage.getItem("ppg.sidebar.collapsed");
@@ -133,12 +161,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   function renderLink(item: NavItem) {
     const active = esActivo(item.href, item.match, pathname);
+    const badge = item.href === "/ubicaciones" ? porUbicar : 0;
     return (
       <Link key={item.href} href={item.href} className={active ? "active" : ""} title={item.label}>
         <span className="icon" aria-hidden="true">
           {item.icon}
         </span>
         <span className="label">{item.label}</span>
+        {badge > 0 && <span className="nav-count" aria-label={`${badge} pendientes de ubicar`}>{badge > 99 ? "99+" : badge}</span>}
       </Link>
     );
   }

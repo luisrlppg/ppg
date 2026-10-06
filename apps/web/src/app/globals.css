@@ -388,9 +388,38 @@ select:focus {
   font-size: 1.05rem;
 }
 
+.sidebar-links .nav-count {
+  margin-left: auto;
+  flex: none;
+  background: #c8102e;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.sidebar-links a.active .nav-count {
+  background: #fff;
+  color: var(--brand);
+}
+
 .app-layout.collapsed .sidebar-links a {
+  position: relative;
   justify-content: center;
   padding: 10px 0;
+}
+
+.app-layout.collapsed .sidebar-links .nav-count {
+  position: absolute;
+  top: 3px;
+  right: 12px;
+  min-width: 16px;
+  padding: 1px 4px;
+  font-size: 0.62rem;
 }
 
 .app-layout.collapsed .sidebar-links .label {

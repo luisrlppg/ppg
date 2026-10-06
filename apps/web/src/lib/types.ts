@@ -416,17 +416,29 @@ export interface ReporteDetalle {
   lines: ReporteLinea[];
 }
 
+export type OrigenLote = "reporte" | "fabricacion";
+
 export interface LoteUbicar {
   lineaId: number;
   reporte: string;
+  origen: OrigenLote;
+  usuario: string | null;
   variantId: number;
   sku: string;
   nombre: string;
+  productoId: number;
   producto: string;
   uom: string;
+  valoracion: { attribute: string; valor: string }[];
   aplicado: number;
   ubicado: number;
   pendiente: number;
+}
+
+export interface PorUbicarCount {
+  total: number;
+  reporte: number;
+  fabricacion: number;
 }
 
 export interface StatsSeccion {

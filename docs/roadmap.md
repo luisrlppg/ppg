@@ -31,6 +31,17 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 ## Trabajo reciente (contexto)
 
+- **Bandeja de ubicación unificada en `/ubicaciones` (2026-10-06):** todo lo producido termina en
+  **"Recibo de Producción"** pendiente de ubicar y se gestiona en una **página nueva del sidebar**
+  (`app/ubicaciones/page.tsx`), separada en secciones **Por reporte de producción** y **Por fabricación**
+  (campo `origen` de `reportes.lotes`). `fabricacion.registrarProduccion` ya no pide ubicación: delega en
+  `reportes.registrarProduccionInterna`, que crea un `ProductionReport` **interno aplicado**
+  (`interno: true`, sección `fabricacion`) con línea `final` y deja el stock en "Recibo de Producción".
+  La bandeja muestra **quién lo registró** (`usuario` del reporte) y el sidebar lleva un **globo contador**
+  (`GET /reportes/por-ubicar`, refrescado por `POR_UBICAR_EVENT`/`pathname`/30 s). Se **quitó la pestaña
+  "Ubicar"** de `/reportes` (su página ahora solo captura + bandeja de aceptación) y el paso de elegir
+  ubicación en Fabricación. Sin migración.
+
 - **Captura del reporte diario por pasos — wizard de cepillos de Nylon (2026-10-06):** se reescribió el
   formulario de `app/reportes/page.tsx` en dos fases. **Setup**: toggle **Matutino/Vespertino**
   (se retiró Nocturno de la UI), selector de fecha, input de personas y un único botón **Comenzar**;

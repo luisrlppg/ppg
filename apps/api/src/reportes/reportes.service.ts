@@ -60,6 +60,69 @@ export class ReportesService {
     return { productId: p.id, nombre: p.nombre, ...grid };
   }
 
+  // ------------------------------------- Ingreso de producción a Recibo
+  /**
+   * Ingresa producción que no viene de un reporte de turno (p. ej. Fabricación):
+   * crea un reporte interno ya aplicado con una línea final y deja el stock en
+   * "Recibo de Producción" pendiente de ubicar. No alimenta métricas E3.
+   */
+  async registrarProduccionInterna(input: { variantId: number; cantidad: number }, userId?: number) {
+    const cantidad = dec(input.cantidad);
+    if (!(cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
+    const recibo = await this.prisma.location.findFirst({ where: { nombre: "Recibo de Producción" } });
+    if (!recibo) throw new BadRequestException("Falta la ubicación 'Recibo de Producción'");
+
+    const id = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.productionReport.create({
+        data: {
+          numero: placeholderNumero(),
+          turno: this.turnoActual(),
+          personas: 1,
+          estado: "aplicado",
+          aplicadoAt: new Date(),
+          interno: true,
+          notas: "Producción manual (Fabricación)",
+          userId,
+        },
+      });
+      const numero = `RPT-${String(created.id).padStart(4, "0")}`;
+      await tx.productionReport.update({ where: { id: created.id }, data: { numero } });
+      await tx.productionReportLine.create({
+        data: {
+          reportId: created.id,
+          variantId: input.variantId,
+          seccion: "fabricacion",
+          tipo: "final",
+          ok: cantidad,
+          qtyAplicada: cantidad,
+        },
+      });
+      await tx.stockLevel.upsert({
+        where: { variantId_locationId: { variantId: input.variantId, locationId: recibo.id } },
+        update: { qty: { increment: cantidad } },
+        create: { variantId: input.variantId, locationId: recibo.id, qty: cantidad },
+      });
+      await tx.stockMove.create({
+        data: {
+          variantId: input.variantId,
+          locationId: recibo.id,
+          qty: cantidad,
+          motivo: "produccion",
+          ref: numero,
+          userId,
+        },
+      });
+      return created.id;
+    });
+
+    await this.monitor.afterStockChange(input.variantId);
+    return this.get(id);
+  }
+
+  private turnoActual(): Turno {
+    return new Date().getHours() < 14 ? "matutino" : "vespertino";
+  }
+
   // ---------------------------------------------------------------- Lista
   async list(query: { search?: string; estado?: string; turno?: string; fecha?: string }) {
     const estados = ["pendiente", "aplicado", "cancelado"] as const;
@@ -307,24 +370,56 @@ export class ReportesService {
       where: { tipo: "final", report: { estado: "aplicado" } },
       orderBy: { id: "asc" },
       include: {
-        variant: { include: { product: { select: { nombre: true, uom: true } } } },
-        report: { select: { numero: true } },
+        variant: {
+          include: {
+            product: { select: { nombre: true, uom: true } },
+            variantAttributes: { include: { attribute: true, value: true } },
+          },
+        },
+        report: { select: { numero: true, interno: true, userId: true } },
       },
     });
+    const userIds = [...new Set(lines.map((l) => l.report.userId).filter((id): id is number => id != null))];
+    const usuarios = userIds.length
+      ? await this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, nombre: true } })
+      : [];
+    const nombrePorUsuario = new Map(usuarios.map((u) => [u.id, u.nombre]));
     return lines
       .map((l) => ({
         lineaId: l.id,
         reporte: l.report.numero,
+        origen: l.report.interno ? "fabricacion" : "reporte",
+        usuario: l.report.userId != null ? nombrePorUsuario.get(l.report.userId) ?? null : null,
         variantId: l.variantId,
         sku: l.variant.sku,
         nombre: l.variant.nombre,
+        productoId: l.variant.productId,
         producto: l.variant.product.nombre,
         uom: l.variant.product.uom,
+        valoracion: l.variant.variantAttributes
+          .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+          .sort((a, b) => a.attribute.localeCompare(b.attribute)),
         aplicado: dec(l.qtyAplicada),
         ubicado: dec(l.qtyUbicada),
         pendiente: dec(l.qtyAplicada) - dec(l.qtyUbicada),
       }))
       .filter((l) => l.pendiente > 0);
+  }
+
+  /** Conteo de lotes pendientes de ubicar, separado por origen. */
+  async porUbicar() {
+    const rows = await this.prisma.productionReportLine.findMany({
+      where: { tipo: "final", report: { estado: "aplicado" } },
+      select: { qtyAplicada: true, qtyUbicada: true, report: { select: { interno: true } } },
+    });
+    let reporte = 0;
+    let fabricacion = 0;
+    for (const l of rows) {
+      if (dec(l.qtyAplicada) - dec(l.qtyUbicada) <= 0) continue;
+      if (l.report.interno) fabricacion += 1;
+      else reporte += 1;
+    }
+    return { total: reporte + fabricacion, reporte, fabricacion };
   }
 
   // --------------------------------------------------------- Ubicar lote

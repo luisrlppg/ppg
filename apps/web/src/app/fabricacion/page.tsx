@@ -151,7 +151,7 @@ export default function FabricacionPage() {
     <AppShell>
       <PageHeader
         title="Fabricación"
-        subtitle="Faltantes por ventas y por stock mínimo. Registra la producción conforme llegue a la ubicación que elijas."
+        subtitle="Faltantes por ventas y por stock mínimo. Al registrar producción, entra a 'Recibo de Producción' y queda pendiente de ubicar."
       />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
@@ -234,7 +234,7 @@ export default function FabricacionPage() {
         />
       </div>
 
-      {ingreso && paso === 1 && (
+      {ingreso && (
         <Modal title="Ingresar producción" onClose={() => setIngreso(null)} size="sm">
           <p className="muted small" style={{ marginTop: 0 }}>
             <strong>{ingreso.producto}</strong> · {ingreso.nombre} ({ingreso.sku})
@@ -253,36 +253,12 @@ export default function FabricacionPage() {
               autoFocus
             />
           </label>
+          <p className="muted small">Entra a “Recibo de Producción” y queda pendiente de ubicar.</p>
           <div className="row" style={{ justifyContent: "flex-end" }}>
             <button type="button" className="btn ghost" onClick={() => setIngreso(null)}>
               Cancelar
             </button>
-            <button type="button" className="btn primary" disabled={!(Number(cantidad) > 0)} onClick={() => setPaso(2)}>
-              Continuar
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {ingreso && paso === 2 && (
-        <Modal title="Ubicación de la producción" onClose={() => setIngreso(null)} size="sm">
-          <p className="muted small" style={{ marginTop: 0 }}>
-            Registrar <strong>{formatCantidad(Number(cantidad))} {ingreso.uom}</strong> de {ingreso.producto} · {ingreso.nombre}
-          </p>
-          <label>
-            Ubicación destino
-            <select value={locationId} onChange={(e) => setLocationId(e.target.value)} autoFocus>
-              <option value="">Selecciona una ubicación…</option>
-              {ubicaciones.map((u) => (
-                <option key={u.id} value={u.id}>{u.nombre}{u.tipo === "temporal" ? " (temporal)" : ""}</option>
-              ))}
-            </select>
-          </label>
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <button type="button" className="btn ghost" onClick={() => setPaso(1)}>
-              Atrás
-            </button>
-            <button type="button" className="btn primary" disabled={cargando || !locationId} onClick={registrar}>
+            <button type="button" className="btn primary" disabled={cargando || !(Number(cantidad) > 0)} onClick={registrar}>
               {cargando ? "Registrando…" : "Registrar producción"}
             </button>
           </div>

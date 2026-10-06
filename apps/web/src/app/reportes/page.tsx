@@ -6,17 +6,16 @@ import PageHeader from "@/components/ui/page-header";
 import Segmented from "@/components/ui/segmented";
 import StatsProduccion from "@/components/reportes/stats-produccion";
 import { api } from "@/lib/api";
+import { refrescarPorUbicar } from "@/lib/por-ubicar";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { PublicUser } from "@ppg/shared";
 import type {
   CepillosNylonGrid,
-  LoteUbicar,
   Reporte,
   ReporteDetalle,
   SeccionReporte,
   TipoLineaReporte,
   Turno,
-  Ubicacion,
 } from "@/lib/types";
 
 type TurnoCaptura = Extract<Turno, "matutino" | "vespertino">;
@@ -70,7 +69,7 @@ interface LineaForm {
   color: string;
 }
 
-type Tab = "reporte" | "bandeja" | "ubicar" | "stats";
+type Tab = "reporte" | "bandeja" | "stats";
 
 export default function ReportesPage() {
   const formatCantidad = useFormatCantidad();
@@ -329,6 +328,7 @@ export default function ReportesPage() {
       const res = await api<{ ok: boolean; canales: string[] }>(`/reportes/${id}/aplicar`, { method: "POST", body: "{}" });
       setMsg(`Reporte aceptado y aplicado al inventario${res.canales.length ? " · notificado: " + res.canales.join(", ") : "."}`);
       cargarBandeja();
+      refrescarPorUbicar();
       if (selId !== null) {
         const d = await api<ReporteDetalle>(`/reportes/${selId}`);
         setDetalle(d);
@@ -349,63 +349,6 @@ export default function ReportesPage() {
       setMsg("Reporte cancelado.");
       cargarBandeja();
       setSelId(null);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  // ------------------------------------------------------------------ Ubicar
-  const [lotes, setLotes] = useState<LoteUbicar[]>([]);
-  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
-  const [asig, setAsig] = useState<Record<number, { locationId: string; cantidad: string }>>({});
-
-  const cargarLotes = useCallback(async () => {
-    try {
-      setLotes(await api<LoteUbicar[]>("/reportes/lotes"));
-      if (ubicaciones.length === 0) {
-        const u = (await api<Ubicacion[]>("/inventario/ubicaciones")).filter((x) => x.tipo === "almacen");
-        setUbicaciones(u);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (tab === "ubicar") cargarLotes();
-  }, [tab, cargarLotes]);
-
-  function setAsigLote(lineaId: number, campo: "locationId" | "cantidad", valor: string) {
-    setAsig((a) => ({ ...a, [lineaId]: { locationId: a[lineaId]?.locationId ?? "", cantidad: a[lineaId]?.cantidad ?? "", [campo]: valor } }));
-  }
-
-  async function ubicarLote(l: LoteUbicar) {
-    const a = asig[l.lineaId];
-    if (!a?.locationId) {
-      setError("Elige un compartimento para el lote.");
-      return;
-    }
-    const cantidad = Number(a.cantidad || l.pendiente);
-    if (!(cantidad > 0)) {
-      setError("Cantidad inválida.");
-      return;
-    }
-    setCargando(true);
-    setError("");
-    try {
-      await api(`/reportes/lotes/${l.lineaId}/ubicar`, {
-        method: "POST",
-        body: JSON.stringify({ cantidad, locationId: Number(a.locationId) }),
-      });
-      setMsg(`Lote de ${l.producto} ${l.nombre} ubicado.`);
-      setAsig((s) => {
-        const { [l.lineaId]: _omit, ...rest } = s;
-        return rest;
-      });
-      cargarLotes();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -679,51 +622,6 @@ export default function ReportesPage() {
     </div>
   );
 
-  const contentUbicar = (
-    <div className="card">
-      <h4 style={{ marginTop: 0 }}>Ubicar lotes del Recibo de Producción</h4>
-      <p className="muted small">
-        La encargada asigna a qué compartimento va cada lote. La cantidad ya viene prellenada: no se vuelve a tipear.
-      </p>
-      {lotes.length === 0 && <p className="muted">Nada por ubicar. Los productos terminados de reportes aceptados llegan aquí.</p>}
-      <ul className="step-list">
-        {lotes.map((l) => {
-          const a = asig[l.lineaId];
-          return (
-            <li key={l.lineaId} style={{ background: "#fafafa", borderRadius: 8, padding: "8px 12px" }}>
-              <div className="row" style={{ justifyContent: "space-between" }}>
-                <span>
-                  <strong>{l.producto}</strong> {l.nombre} ({l.sku}) · {formatCantidad(l.pendiente)} {l.uom}
-                  <div className="small muted">del reporte {l.reporte}</div>
-                </span>
-              </div>
-              <div className="row" style={{ alignItems: "end", marginTop: 6 }}>
-                <label style={{ flex: 1.4 }}>
-                  Compartimento
-                  <select value={a?.locationId ?? ""} onChange={(e) => setAsigLote(l.lineaId, "locationId", e.target.value)}>
-                    <option value="">— Elegir —</option>
-                    {ubicaciones.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label style={{ width: 110 }}>
-                  Cantidad
-                  <input type="number" step="0.001" min="0.001" max={l.pendiente} value={a?.cantidad ?? String(l.pendiente)} onChange={(e) => setAsigLote(l.lineaId, "cantidad", e.target.value)} />
-                </label>
-                <button className="btn primary" style={{ flex: 0 }} disabled={cargando} onClick={() => ubicarLote(l)}>
-                  Ubicar
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-
   return (
     <AppShell>
       <PageHeader
@@ -745,9 +643,6 @@ export default function ReportesPage() {
             >
               Bandeja {bandeja.filter((r) => r.estado === "pendiente").length > 0 && `(${bandeja.filter((r) => r.estado === "pendiente").length})`}
             </button>
-            <button className={`btn ${tab === "ubicar" ? "primary" : "ghost"}`} onClick={() => { setTab("ubicar"); setError(""); setMsg(""); }}>
-              Ubicar
-            </button>
             <button className={`btn ${tab === "stats" ? "primary" : "ghost"}`} onClick={() => { setTab("stats"); setError(""); setMsg(""); }}>
               Estadísticas
             </button>
@@ -757,7 +652,6 @@ export default function ReportesPage() {
 
       {tab === "reporte" && (fase === "setup" ? setupForm : capturaForm)}
       {tab === "bandeja" && esGestion && contentBandeja}
-      {tab === "ubicar" && esGestion && contentUbicar}
       {tab === "stats" && esGestion && (
         <StatsProduccion onError={(msg) => setError(msg)} />
       )}

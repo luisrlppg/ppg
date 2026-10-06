@@ -161,9 +161,12 @@ precio de venta; el margen que muestra es solo referencia.
     entregadas no aportan demanda y las parcialidades piden solo el resto. Incluye ensambles como ítem
     *Armar* y marca los pedidos que aportan.
   - `porComprar`: no fabricables faltantes (informativo; no hay OC).
-- **Alta de producción** (`POST /fabricacion/produccion {variantId, cantidad, locationId}`): solo hojas
-  fabricables (0–1 componente). Registra `StockMove` con `motivo produccion` en la ubicación elegida y
-  dispara el monitor. **No** crea `ProductionReport` (por eso no alimenta métricas E3).
+- **Alta de producción** (`POST /fabricacion/produccion {variantId, cantidad}`): solo hojas fabricables
+  (0–1 componente). Delega en `reportes.registrarProduccionInterna`: crea un `ProductionReport`
+  **interno aplicado** (`interno: true`, sección `fabricacion`, línea `final` con `qtyAplicada`) y deja el
+  stock en **"Recibo de Producción"** (`StockMove` motivo `produccion`), disparando el monitor. Ese
+  reporte **no** alimenta métricas E3 (excluido por `interno`) y aparece en la **bandeja de ubicación**
+  (`/reportes/lotes`) junto con las líneas `final` de los reportes de turno ya aplicados.
 - **Ensamble (2+ componentes)**: se arma **contra pedido**, no acumula stock. Al despachar la línea
   (`ventas.despacharLinea`) se consumen sus componentes exactos (`planificacion.consumirEnsamble`,
   `motivo consumo`); se valida stock de cada componente.

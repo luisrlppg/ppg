@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
-import { InventarioService } from "../inventario/inventario.service";
+import { ReportesService } from "../reportes/reportes.service";
 import { PlanificacionService } from "./planificacion.service";
 import type { ResumenItem } from "../ventas/ventas.service";
 
@@ -36,7 +36,7 @@ export class FabricacionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly planificacion: PlanificacionService,
-    private readonly inventario: InventarioService,
+    private readonly reportes: ReportesService,
   ) {}
 
   // ------------------------------------------------ Panel de necesidades
@@ -168,10 +168,11 @@ export class FabricacionService {
   }
 
   /**
-   * Registra producción de una hoja fabricable: entrada de stock en la ubicación
-   * elegida (motivo `produccion`) y dispara el monitor. No crea reportes.
+   * Registra producción de una hoja fabricable. El stock entra a "Recibo de
+   * Producción" y queda pendiente de ubicar (bandeja `reportes.lotes`), igual
+   * que los productos de un reporte de turno. Dispara el monitor.
    */
-  async registrarProduccion(data: { variantId: number; cantidad: number; locationId: number }, userId?: number) {
+  async registrarProduccion(data: { variantId: number; cantidad: number }, userId?: number) {
     if (!(data.cantidad > 0)) throw new BadRequestException("La cantidad debe ser mayor a 0");
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: data.variantId },
@@ -184,14 +185,7 @@ export class FabricacionService {
     if (variant.product.components.length > 1) {
       throw new BadRequestException(`"${variant.nombre}" es un ensamble (se arma contra pedido); no se ingresa a stock.`);
     }
-    return this.inventario.movimiento({
-      variantId: data.variantId,
-      locationId: data.locationId,
-      motivo: "produccion",
-      cantidad: data.cantidad,
-      ref: "Producción manual",
-      userId,
-    });
+    return this.reportes.registrarProduccionInterna({ variantId: data.variantId, cantidad: data.cantidad }, userId);
   }
 
   /** Pendientes de compra agregados: suma los faltantes "comprar" de todas las

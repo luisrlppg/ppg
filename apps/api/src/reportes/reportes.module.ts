@@ -9,5 +9,6 @@ import { ReportesService } from "./reportes.service";
   imports: [AuthModule, PrismaModule, MonitorModule],
   controllers: [ReportesController],
   providers: [ReportesService],
+  exports: [ReportesService],
 })
 export class ReportesModule {}

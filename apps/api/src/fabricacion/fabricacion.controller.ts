@@ -8,7 +8,6 @@ import { FabricacionService } from "./fabricacion.service";
 class ProduccionDto {
   @IsInt() variantId!: number;
   @IsNumber() @Min(0.0001) cantidad!: number;
-  @IsInt() locationId!: number;
 }
 
 @Controller("fabricacion")
@@ -32,7 +31,7 @@ export class FabricacionController {
   @Post("produccion")
   registrarProduccion(@Body() dto: ProduccionDto, @Req() req: { user: { id: number } }) {
     return this.fabricacion.registrarProduccion(
-      { variantId: dto.variantId, cantidad: dto.cantidad, locationId: dto.locationId },
+      { variantId: dto.variantId, cantidad: dto.cantidad },
       req.user.id,
     );
   }

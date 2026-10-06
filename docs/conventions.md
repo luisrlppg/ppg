@@ -60,8 +60,11 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     2026-10-05). `ventas.confirmar` solo calcula/guarda el desglose; el panel de Fabricación lista las
     **necesidades** (`fabricacion.necesidades`: por mínimo + por ventas —esta sobre lo pendiente
     `cantidad - qtyDelivered`—, con pool compartido de stock) y
-    registra producción como **entrada de stock** (`POST /fabricacion/produccion`, motivo `produccion`, a
-    la ubicación elegida), sin crear reportes. Los **ensambles** (2+ componentes) se arman contra pedido:
+    registra producción (`POST /fabricacion/produccion`) vía `reportes.registrarProduccionInterna`: crea
+    un `ProductionReport` **interno aplicado** (`interno: true`, sección `fabricacion`) y deja el stock en
+    **"Recibo de Producción"** pendiente de ubicar, igual que un reporte de turno. No alimenta métricas E3.
+    La bandeja de ubicación es la página `/ubicaciones` (`reportes.lotes`/`reportes.ubicar`, con
+    `origen` reporte/fabricación). Los **ensambles** (2+ componentes) se arman contra pedido:
     no se inventarían y `ventas.despacharLinea` **consume sus componentes** (`planificacion.consumirEnsamble`).
     Al tocar el BOM, `SeccionProduccion` o `ProductionReport`, genera la migración (`--create-only`) y aplica
     con `pnpm db:deploy`.
