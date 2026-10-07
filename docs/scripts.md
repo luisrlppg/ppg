@@ -6,6 +6,9 @@ Para datos/migración Odoo, ver la sección al final.
 
 ## Seed y demo
 
+- `packages/db/prisma/seed.ts` — **bootstrap de auth**: roles (`admin`/`operador`), usuario admin
+  (desde `ADMIN_*`) y `monitorState`. **No siembra catálogo**: eso vive en el seed declarativo
+  (`scripts/catalog/seed/`, ver [`catalog-ops.md`](./catalog-ops.md)).
 - `seed-products.ts` — **legacy** (usa nombres de atributo viejos; el seed vigente es `cat:seed`,
   ver [`catalog-ops.md`](./catalog-ops.md)): configura estructura BOM + `ProductAttributeLine` + `ProductPasso`.
 - `seed-demo.ts` — siembra variantes reales + stock para probar el flujo E3 (reportes/producción);
@@ -32,7 +35,23 @@ Punto de retorno rápido de la BD (datos reales). Ver [`development.md`](./devel
 - `docs/backups/` está en `.gitignore`.
 - **UI:** `apps/web/src/app/backups/page.tsx` + `apps/api/src/backups/` (módulo NestJS, sólo `admin`)
   hacen lo mismo desde el navegador (crear/descargar/subir/restaurar/eliminar); el restore de la UI
-  también corre `db:deploy` + `prisma generate` al terminar.
+  corre `db:deploy` + `prisma generate` al terminar, crea un **respaldo previo automático** y
+  **rechaza dumps con migraciones desconocidas** por el código (con rollback al respaldo previo).
+
+## Despliegue a producción — `scripts/deploy.sh`
+
+Gestor del stack `full` en el servidor de producción. Lee `.env.production` (o `.env`).
+Ver el runbook en [`development.md`](./development.md#despliegue-a-producción-docker-compose).
+
+- `update` — `git pull --ff-only` + `docker compose build` + `up -d` + espera salud + `migrate status`.
+  Exporta `GIT_SHA`/`BUILD_TIME` para trazabilidad (visibles en `/api/health` y la UI de Respaldos).
+- `status` — contenedores + migraciones aplicadas/pendientes.
+- `logs [servicio]` — sigue logs.
+- `backup [nombre]` — `pg_dump -Fc` dentro del contenedor postgres → `docs/backups/`.
+- `restore [archivo] [--yes]` — respaldo previo, `DROP SCHEMA` + `psql --single-transaction` atómico,
+  `migrate deploy` y `up -d`.
+- `down` — detiene el stack (conserva el volumen `pgdata`).
+- Alias: `pnpm deploy:prod` · `deploy:status` · `deploy:backup` · `deploy:restore`.
 
 ## Reorganizaciones one-off (histórico)
 

@@ -254,6 +254,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
 | Respaldos de la BD (punto de retorno) | `apps/api/src/backups/` · `app/backups/page.tsx` (UI) · `scripts/ppg.sh` (`backup`/`restore`) |
+| Despliegue a producción (stack full) | `scripts/deploy.sh` · `docker-compose.yml` · `.env.production.example` · runbook `docs/development.md` (§ Despliegue a producción) |
 | Login / roles / JWT / guards globales | `apps/api/src/auth/` (`decorators/public.decorator.ts`, `guards/`) |
 | Cuentas de usuario (CRUD admin) | `apps/api/src/usuarios/` · `app/usuarios/page.tsx` |
 | Tipos shared | `apps/web/src/lib/types.ts` |

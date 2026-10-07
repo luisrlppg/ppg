@@ -10,14 +10,11 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, decidir si se
    limpian del crosswalk los 4 SKUs `VST` eliminados por `reorg-vastago.ts` —ver
-   [`odoo-pendientes.csv`](./odoo-pendientes.csv)—, `db:seed` desalineado vs `cat:seed`).
+   [`odoo-pendientes.csv`](./odoo-pendientes.csv)).
 4. **Órdenes de compra (OC):** no existe entidad persistente. Hoy lo "comprable" va al listado
    `resumen.comprar` / Pendientes de compra (sin documento). Falta un módulo `PurchaseOrder`
    (modelo + API + UI) que consuma `Product.comprable`. Fase siguiente tras E3.
-5. **Seed de catálogo:** `cat:seed`/`catalog.yaml` ya declara `fabricable`/`comprable` y
-   `variant.costoCompra` (motor extendido 2026-10-07). Sigue pendiente alinear o retirar la parte de
-   catálogo de `pnpm db:seed` (`seed.ts` usa nombres viejos).
-6. **Costos (v1) — integración pendiente:** el módulo de costo estándar (`/costos`, `ProductCost`)
+5. **Costos (v1) — integración pendiente:** el módulo de costo estándar (`/costos`, `ProductCost`)
    arrancó **separado** del ERP: captura manual, sin historial ni merma y **sin** escribir el precio
    de venta. Falta, cuando se decida: (a) ligar el costo a la página de precios/margen real,
    (b) materiales automáticos desde el BOM, (c) merma, (d) historial/versionado, (e) costo por
@@ -32,6 +29,16 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 - `common/util.ts`: helpers mezclados, candidato a separar.
 
 ## Trabajo reciente (contexto)
+
+- **Despliegue dev → producción automatizado (2026-10-07):** `scripts/deploy.sh` (`update`/`status`/
+  `logs`/`backup`/`restore`/`down`; alias `pnpm deploy:*`) hace `git pull` + `build` + `up` +
+  `migrate status` y exporta `GIT_SHA`/`BUILD_TIME`. Compose endurecido: credenciales de Postgres
+  parametrizadas (`POSTGRES_*`), `DATABASE_URL` compuesta, healthcheck de `api` (`/api/health`),
+  `docs/backups` montado en postgres para `pg_restore`. Nuevo `.env.production.example`.
+  `GET /api/health` y la UI **Respaldos** muestran commit + última migración. Restore más seguro:
+  respaldo previo automático, verificación de compatibilidad de migraciones y rollback.
+  `db:seed` quedó **auth-only** (roles/usuarios/monitor); el catálogo es solo `cat:seed`/`cat:stock`
+  (regenerado, dry-run 0 cambios).
 
 - **Pigmentos en inventario (2026-10-07):** producto **`Pigmento`** (`PIG`, **comprable**, `uom kg`)
   con 4 ejes (`Resina de Pigmento` PP/PE·PVC, `Tipo de Pigmento` Polvo·Masterbatch, `Color de

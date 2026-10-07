@@ -6,7 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/preferences";
-import type { BackupFile } from "@/lib/types";
+import type { BackupFile, HealthInfo } from "@/lib/types";
 
 function humano(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -17,6 +17,7 @@ function humano(bytes: number): string {
 export default function BackupsPage() {
   const { user } = useAuth();
   const [archivos, setArchivos] = useState<BackupFile[]>([]);
+  const [salud, setSalud] = useState<HealthInfo | null>(null);
   const [nombre, setNombre] = useState("");
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
@@ -32,6 +33,9 @@ export default function BackupsPage() {
 
   useEffect(() => {
     cargar().catch((e) => setError((e as Error).message));
+    api<HealthInfo>("/health")
+      .then(setSalud)
+      .catch(() => undefined);
   }, [cargar]);
 
   async function crear() {
@@ -59,8 +63,15 @@ export default function BackupsPage() {
     setError("");
     setMsg("");
     try {
-      await api(`/backups/${encodeURIComponent(aRestaurar.nombre)}/restaurar`, { method: "POST" });
-      setMsg(`Base de datos restaurada desde ${aRestaurar.nombre}. Migraciones aplicadas.`);
+      const res = await api<{ respaldoPrevio: string | null; migracion: string | null }>(
+        `/backups/${encodeURIComponent(aRestaurar.nombre)}/restaurar`,
+        { method: "POST" },
+      );
+      setMsg(
+        `Base de datos restaurada desde ${aRestaurar.nombre}.` +
+          (res.migracion ? ` Última migración: ${res.migracion}.` : "") +
+          (res.respaldoPrevio ? ` Respaldo previo: ${res.respaldoPrevio}.` : ""),
+      );
       setARestaurar(null);
     } catch (e) {
       setError((e as Error).message);
@@ -165,6 +176,23 @@ export default function BackupsPage() {
           </button>
         </div>
       </div>
+
+      {salud && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Versión de este servidor</h3>
+          <p className="small muted" style={{ margin: 0 }}>
+            Commit <code>{salud.commit ?? "desconocido"}</code>
+            {salud.buildTime ? (
+              <> · build {new Date(salud.buildTime).toLocaleString("es-MX")}</>
+            ) : null}
+            {salud.migracion ? (
+              <> · última migración <code>{salud.migracion}</code></>
+            ) : (
+              <> · sin migraciones aplicadas</>
+            )}
+          </p>
+        </div>
+      )}
 
       <div className="card" style={{ padding: 0 }}>
         <h3 style={{ margin: 16 }}>Respaldos ({archivos.length})</h3>

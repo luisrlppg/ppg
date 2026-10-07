@@ -1,18 +1,21 @@
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:${POSTGRES_VERSION:-18}-alpine
     environment:
-      POSTGRES_USER: ppg
-      POSTGRES_PASSWORD: ppg
-      POSTGRES_DB: ppg
+      POSTGRES_USER: ${POSTGRES_USER:-ppg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ppg}
+      POSTGRES_DB: ${POSTGRES_DB:-ppg}
     ports:
       # Configurable para no chocar con un PostgreSQL nativo (ej. POSTGRES_PORT=5433).
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       # En PostgreSQL 18+ el volumen va en /var/lib/postgresql (no .../data).
       - pgdata:/var/lib/postgresql
+      # Respaldos compartidos con el host, disponibles DENTRO de postgres para
+      # pg_dump/pg_restore/psql (scripts/deploy.sh restore).
+      - ./docs/backups:/backups:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ppg -d ppg"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ppg} -d ${POSTGRES_DB:-ppg}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,12 +26,17 @@ services:
     build:
       context: .
       dockerfile: infra/api.Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     environment:
-      DATABASE_URL: postgresql://ppg:ppg@postgres:5432/ppg?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ppg}:${POSTGRES_PASSWORD:-ppg}@postgres:5432/${POSTGRES_DB:-ppg}?schema=public
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       COOKIE_NAME: ppg_session
       API_PORT: 3001
+      GIT_SHA: ${GIT_SHA:-unknown}
+      BUILD_TIME: ${BUILD_TIME:-unknown}
     ports:
       # Acceso directo a la API (depuración). Puerto host configurable con API_HOST_PORT.
       - "${API_HOST_PORT:-3001}:3001"
@@ -39,6 +47,12 @@ services:
     volumes:
       # Respaldos compartidos con el host para la UI (crear/listar/restaurar).
       - ./docs/backups:/app/docs/backups
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     restart: unless-stopped
 
   # Entrada única del stack: publica la web y proxya /api/* al servicio `api`.
@@ -56,11 +70,14 @@ services:
       - "${WEB_HOST_PORT:-8090}:3000"
     profiles: ["full"]
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
-  # Perfil "tools": siembra inicial manual (migra + puebla usuarios/catálogo).
-  # No arranca con "full". Uso: docker compose --profile tools run --rm seed
+  # Perfil "tools": bootstrap manual de autenticación (migra + siembra roles/usuarios).
+  # El catálogo ya NO vive aquí: usa el seed declarativo (`pnpm cat:seed`) o un
+  # respaldo completo (UI Respaldos / scripts/deploy.sh restore).
+  # Uso: docker compose --profile tools run --rm seed
   seed:
     build:
       context: .
@@ -70,7 +87,7 @@ services:
       - -lc
       - cd packages/db && node node_modules/prisma/build/index.js migrate deploy && node node_modules/tsx/dist/cli.mjs prisma/seed.ts
     environment:
-      DATABASE_URL: postgresql://ppg:ppg@postgres:5432/ppg?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ppg}:${POSTGRES_PASSWORD:-ppg}@postgres:5432/${POSTGRES_DB:-ppg}?schema=public
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}

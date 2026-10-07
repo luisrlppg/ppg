@@ -26,6 +26,7 @@ Qué actualizar según el cambio:
 - Reglas/patrones → `docs/conventions.md`
 - Modelo de datos / migraciones → `docs/data-model.md` / `docs/development.md`
 - Scripts/comandos → `docs/scripts.md`
+- Despliegue/producción → `README.md` + `docs/development.md` (+ `docs/scripts.md` si cambian comandos)
 - Trabajo hecho/pendiente → `docs/roadmap.md`
 
 ## Índice de documentación
@@ -66,5 +67,9 @@ Qué actualizar según el cambio:
   one-off. Tras ediciones manuales en la UI: `pnpm cat:export-seed`.
 - **Migración / reconciliación Odoo:** `docs/scripts.md` (sección Odoo) + `docs/data-model.md`.
 - **Reglas de negocio / requisitos:** `REQUIREMENTS.md` (+ `docs/plan-btvpe.md` para BTVPE).
+- **Despliegue / producción:** `scripts/deploy.sh` + `docker-compose.yml` + `.env.production.example`;
+  runbook en `README.md` y `docs/development.md` (sección *Despliegue a producción*). Regla: el
+  esquema viaja por `migrate deploy` (automático al arrancar); fase 1 (prod nuevo) carga datos con un
+  dump por la UI **Respaldos**, fase 2 (prod viva) solo migraciones.
 - **Bugs de flujo ventas→desglose/fabricación o producción:** `project-nav.md` §2.2 (`ventas.confirmar`),
   §2.5 (`fabricacion`/`planificacion`) y §2.3 (`reportes.aplicar`); contexto en `docs/roadmap.md`.

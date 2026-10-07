@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient, Uom } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -7,6 +7,15 @@ function env(name: string, fallback: string): string {
   return process.env[name] || fallback;
 }
 
+/**
+ * Bootstrap de autenticación y estado de la app.
+ *
+ * El CATÁLOGO (categorías, ubicaciones, productos, atributos, variantes, BOM,
+ * pasos, empaques y stock) NO vive aquí: se define en el seed declarativo
+ * (`scripts/catalog/seed/catalog.yaml` + `stock.yaml`, vía `pnpm cat:seed` /
+ * `pnpm cat:stock`) o se carga con un respaldo completo. Así una sola fuente
+ * de verdad evita el desalineamiento histórico entre `db:seed` y `cat:seed`.
+ */
 async function main() {
   // --- Roles y usuarios (E0) ---
   const ROLES = ["admin", "operador"] as const;
@@ -49,137 +58,6 @@ async function main() {
     });
   }
 
-  // --- Ubicaciones (E1) ---
-  const ubicaciones = [
-    { nombre: "Almacén principal", tipo: "almacen" as const },
-    { nombre: "Recibo de Producción", tipo: "temporal" as const },
-    { nombre: "Compartimento 1", tipo: "almacen" as const },
-    { nombre: "Compartimento 2", tipo: "almacen" as const },
-    { nombre: "Compartimento 3", tipo: "almacen" as const },
-  ];
-  for (const u of ubicaciones) {
-    await prisma.location.upsert({
-      where: { nombre: u.nombre },
-      update: {},
-      create: u,
-    });
-  }
-
-  // --- Categorías y empaques de arranque (E1) ---
-  const categorias = ["Cepillos", "Vástagos", "Taparroscas", "Pinceles", "Cerda", "Empaques", "Envases"];
-  for (const nombre of categorias) {
-    await prisma.category.upsert({ where: { nombre }, update: {}, create: { nombre } });
-  }
-
-  // --- Productos base (E3) ---
-  // Vástago: producto base sin BOM. Cerda: consumible por kg.
-  // Pincel: ensamble (Vástago + Cerda). Taparrosca: ensamble (Pincel + Vástago).
-  const productosBase: Array<{ nombre: string; sku: string; categoria: string; uom: Uom; basePrice: number; hasVariants: boolean }> = [
-    // Taparrosca con pincel (existente, renombrar Vástago → Mango)
-    { nombre: "Mango", sku: "VAST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
-    { nombre: "Cerda", sku: "CERD", categoria: "Cerda", uom: Uom.kg, basePrice: 80, hasVariants: false },
-    { nombre: "Pincel", sku: "PIN", categoria: "Pinceles", uom: Uom.pieza, basePrice: 20, hasVariants: true },
-    { nombre: "Taparrosca", sku: "TPR", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 0, hasVariants: false },
-    { nombre: "Taparrosca con Pincel", sku: "TP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 40, hasVariants: true },
-    // BTVPE: componentes
-    { nombre: "Botella", sku: "BOT", categoria: "Envases", uom: Uom.pieza, basePrice: 8, hasVariants: true },
-    { nombre: "Vástago", sku: "VST", categoria: "Vástagos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
-    { nombre: "Sobretapa", sku: "STP", categoria: "Taparroscas", uom: Uom.pieza, basePrice: 3, hasVariants: false },
-    { nombre: "Escurridor", sku: "ESC", categoria: "Envases", uom: Uom.pieza, basePrice: 2, hasVariants: false },
-    { nombre: "Cepillo Silicon", sku: "CSI", categoria: "Cepillos", uom: Uom.pieza, basePrice: 6, hasVariants: false },
-    { nombre: "Cepillo Nylon", sku: "CNI", categoria: "Cepillos", uom: Uom.pieza, basePrice: 5, hasVariants: false },
-    { nombre: "Delineador", sku: "DPL", categoria: "Cepillos", uom: Uom.pieza, basePrice: 4, hasVariants: false },
-    { nombre: "Tratamiento Noche", sku: "TRN", categoria: "Cepillos", uom: Uom.pieza, basePrice: 4, hasVariants: false },
-    { nombre: "Lip Gloss", sku: "LGL", categoria: "Cepillos", uom: Uom.pieza, basePrice: 6, hasVariants: false },
-    // BTVPE: productos vendidos
-    { nombre: "Rimel Silicon", sku: "BTVPE-S", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
-    { nombre: "Rimel Nylon", sku: "BTVPE-N", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
-    { nombre: "Delineador", sku: "BTVPE-D", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
-    { nombre: "Tratamiento de Noche", sku: "BTVPE-TN", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
-    { nombre: "Lip Gloss", sku: "BTVPE-LG", categoria: "Envases", uom: Uom.pieza, basePrice: 50, hasVariants: true },
-  ];
-  for (const p of productosBase) {
-    const category = await prisma.category.findUnique({ where: { nombre: p.categoria } });
-    await prisma.product.upsert({
-      where: { skuBase: p.sku },
-      update: {
-        nombre: p.nombre,
-        categoryId: category?.id ?? null,
-        uom: p.uom,
-        basePrice: p.basePrice,
-        hasVariants: p.hasVariants,
-      },
-      create: {
-        nombre: p.nombre,
-        skuBase: p.sku,
-        categoryId: category?.id ?? null,
-        uom: p.uom,
-        basePrice: p.basePrice,
-        hasVariants: p.hasVariants,
-      },
-    });
-  }
-
-  const empaques = ["Caja de almacén", "Bolsa individual"];
-  for (const nombre of empaques) {
-    await prisma.packaging.upsert({ where: { nombre }, update: {}, create: { nombre } });
-  }
-
-  // --- Atributos y valores (E1 + E3) ---
-  // Atributos del seed original (globales)
-  const oldAttributes: Record<string, string[]> = {
-    "Tipo de cepillo": ["Recto", "Espiral", "Bala", "Balita", "Pino", "Cacahuate", "Globo"],
-    "Color de cerda": ["Negro", "Blanco", "Rojo", "Azul", "Verde", "Amarillo", "Transparente"],
-    "Tamaño de vástago": ["3mm", "4.5mm", "6mm", "7mm", "8mm"],
-  };
-  for (const [nombre, valores] of Object.entries(oldAttributes)) {
-    const attribute = await prisma.attribute.upsert({
-      where: { nombre },
-      update: {},
-      create: { nombre },
-    });
-    for (const valor of valores) {
-      await prisma.attributeValue.upsert({
-        where: { attributeId_valor: { attributeId: attribute.id, valor } },
-        update: {},
-        create: { attributeId: attribute.id, valor },
-      });
-    }
-  }
-
-  // --- Atributos nuevos para Taparrosca (E3) ---
-  const newAttributes: Record<string, { values: string[]; uom?: string }> = {
-    "Tamaño rosca": { values: ["10mm", "13mm", "15mm"] },
-    "Altura vastago": { values: ["10mm", "12mm", "13mm", "15mm", "18mm", "20mm", "30mm", "35mm"] },
-    "Agujero vastago": { values: ["Plano", "Normal"] },
-    "Forma tapa": { values: ["Hexagonal", "Bala", "Rebeca", "Yadis"] },
-    "Color tapa": { values: ["Negro", "Blanco", "Transparente", "Personalizado"] },
-    // BTVPE: atributos de selección
-    "Botella": { values: ["10mL", "15mL", "30mL"] },
-    "Forma": { values: ["Recto", "Espiral", "Pino", "Cacahuate", "Globo", "Balita", "Redondo"] },
-    "Diámetro": { values: ["3mm", "4mm", "5mm", "6mm", "7mm", "8mm"] },
-    // BTVPE: atributos de color por componente (Opción X)
-    "Color Botella": { values: ["Negro", "Transparente", "Blanco"] },
-    "Color Vástago": { values: ["Negro", "Transparente", "Blanco"] },
-    "Color Sobretapa": { values: ["Negro", "Transparente", "Blanco"] },
-    "Color Escurridor": { values: ["Negro", "Transparente", "Blanco"] },
-    "Color Cepillo": { values: ["Negro", "Transparente", "Blanco"] },
-  };
-  for (const [nombre, config] of Object.entries(newAttributes)) {
-    const attribute = await prisma.attribute.upsert({
-      where: { nombre },
-      update: {},
-      create: { nombre },
-    });
-    for (const valor of config.values) {
-      await prisma.attributeValue.upsert({
-        where: { attributeId_valor: { attributeId: attribute.id, valor } },
-        update: {},
-        create: { attributeId: attribute.id, valor },
-      });
-    }
-  }
-
   // --- Estado del monitor (E1): fila singleton ---
   await prisma.monitorState.upsert({
     where: { id: 1 },
@@ -187,17 +65,7 @@ async function main() {
     create: { id: 1, state: { lastLowStockIds: [], lastCheck: null } },
   });
 
-  // --- Clientes (E2) ---
-  const partners = [
-    { nombre: "Juguería El Tesoro", telefono: "55 1234 5678", direccion: "Av. Hidalgo 12, Cd. de México", email: "compras@eltesoro.mx" },
-    { nombre: "Dulcería La Michoacana", telefono: "55 8765 4321", direccion: "Calle Allende 34, Morelia", email: "pedidos@lamichoacana.mx" },
-  ];
-  for (const p of partners) {
-    const exists = await prisma.partner.findFirst({ where: { nombre: p.nombre } });
-    if (!exists) await prisma.partner.create({ data: p });
-  }
-
-  console.log("Seed listo: auth + catálogos + ubicaciones + clientes + atributos.");
+  console.log("Seed listo: roles + usuarios + estado del monitor (catálogo aparte: pnpm cat:seed).");
 }
 
 main()

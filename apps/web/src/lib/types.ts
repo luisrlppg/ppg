@@ -540,6 +540,15 @@ export interface BackupFile {
   formato: "custom" | "sql";
 }
 
+export interface HealthInfo {
+  status: string;
+  service: string;
+  time: string;
+  commit: string | null;
+  buildTime: string | null;
+  migracion: string | null;
+}
+
 export interface StatsReporte {
   desde: string;
   hasta: string;

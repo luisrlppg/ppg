@@ -77,7 +77,9 @@ y acceso al daemon (grupo `docker` o `sudo`). Postgres del stack = **`postgres:1
 # Si tu PostgreSQL nativo ya usa el 5432, publica el de compose en otro puerto:
 POSTGRES_PORT=5433 docker compose --profile full up --build -d
 
-# Primera vez: siembra usuarios/catálogo (migra + puebla). No arranca con "full".
+# Primera vez: siembra roles + usuarios (migra + puebla auth). No arranca con "full".
+# El catálogo NO se siembra aquí: se carga con un respaldo completo (UI Respaldos /
+# scripts/deploy.sh restore) o con el seed declarativo `pnpm cat:seed`.
 docker compose --profile tools run --rm seed
 ```
 
@@ -89,7 +91,49 @@ La **web** es la entrada única del stack: publica el puerto host `WEB_HOST_PORT
 - Entra en `http://localhost:8090` con `admin` / `admin123` (tras el seed).
 - **Respaldos** funcionan dentro del stack (la UI `docs/backups` se monta en el contenedor y la
   imagen incluye el cliente PostgreSQL 18).
+- La UI **Respaldos** muestra el commit/migración de este servidor (compara dev vs prod antes de
+  restaurar).
 - Revisa estado/logs con `docker compose --profile full ps` y `docker compose --profile full logs -f`.
+
+### Promover dev → producción (servidor nuevo)
+
+Hay dos carriles: el **esquema** siempre viaja automático (rebuild + `migrate deploy`), y los
+**datos** según la fase.
+
+**Fase 1 — producción aún no vive (clon literal de dev):**
+
+```bash
+# DEV: UI Respaldos → Crear (ej. "pre-prod") → Descargar .dump
+
+# PROD (una sola vez, con el repo clonado):
+cp .env.production.example .env.production   # edita secretos/puertos
+./scripts/deploy.sh update                   # git pull + build + up + migraciones
+
+# Carga los datos de dev: UI Respaldos (prod) → Subir .dump → Restaurar
+#   (o por CLI: ./scripts/deploy.sh restore docs/backups/<archivo>.dump)
+```
+
+El restore es **atómico**, crea un **respaldo previo automático** y verifica que el dump no traiga
+migraciones que el código desconozca (si es más nuevo, pide actualizar el servidor primero).
+
+**Fase 2 — producción ya opera (solo esquema):** nunca restaures un dump; actualiza con
+`./scripts/deploy.sh update` (la API aplica las migraciones pendientes). Los cambios de catálogo se
+promueven con ops/seed declarativo (`pnpm cat:seed`), no sobrescribiendo.
+
+### Gestor de despliegue `scripts/deploy.sh`
+
+```bash
+./scripts/deploy.sh update            # git pull + build + up + estado de migraciones
+./scripts/deploy.sh status            # contenedores + migraciones aplicadas/pendientes
+./scripts/deploy.sh logs [servicio]   # sigue logs
+./scripts/deploy.sh backup [nombre]   # pg_dump -Fc -> docs/backups/
+./scripts/deploy.sh restore [archivo] [--yes]
+./scripts/deploy.sh down              # detiene el stack (conserva datos)
+```
+
+Lee `.env.production` si existe (o `.env`); alias en `package.json`: `pnpm deploy:prod`,
+`deploy:status`, `deploy:backup`, `deploy:restore`.
+
 
 ### Cargar los datos del Postgres local en el stack
 

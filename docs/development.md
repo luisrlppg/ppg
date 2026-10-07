@@ -20,8 +20,10 @@ pnpm dev                    # levanta api (3001) + web (3000) con hot-reload en 
 pnpm dev:api / dev:web      # levantar sólo uno
 pnpm --filter @ppg/api build
 pnpm db:deploy              # APLICAR migraciones SIN interactividad (usar SIEMPRE en shell no-TTY/CI)
-pnpm db:seed                # auth + catálogos + ubicaciones + clientes + atributos + productos base
+pnpm db:seed                # auth: roles + usuarios (admin/operador) + estado del monitor
 pnpm db:seed:products       # BOM + ejes + passos del storefront (requiere productos ya sembrados)
+pnpm cat:seed               # catálogo declarativo (catalog.yaml; dry-run; --apply para escribir)
+pnpm cat:stock              # stock de apertura (stock.yaml; dry-run; --apply para escribir)
 pnpm db:studio              # visor de datos Prisma
 pnpm db:backup [nombre]     # punto de retorno de la BD -> docs/backups/
 pnpm db:restore [archivo]   # restaura un respaldo (el más reciente si se omite)
@@ -90,6 +92,30 @@ Alias `ppg` (en `~/.bashrc`). Único gestor de api+web: `start|stop|restart|relo
 - `docker`: levanta `docker compose` con **`postgres:18-alpine`** (el host lo publica según
   `POSTGRES_PORT` de `.env`, default 5432).
 - Elige con `ppg db <native|docker>`; queda en `.env`.
+
+## Despliegue a producción (Docker Compose)
+
+El código viaja por `git pull` + rebuild en el servidor; el **esquema** se aplica solo
+(`infra/api-entrypoint.sh` corre `migrate deploy` al arrancar). Los **datos** siguen dos carriles:
+
+- **Fase 1 (prod aún no vive):** clon literal de dev. Dev descarga un dump por la UI de
+  **Respaldos**; en prod se sube y restaura (o `scripts/deploy.sh restore`). El restore es atómico,
+  crea un **respaldo previo automático** y **rechaza dumps con migraciones más nuevas** que el
+  código desplegado (hay que actualizar primero).
+- **Fase 2 (prod viva):** nunca se restaura un dump; solo `deploy.sh update`. Los cambios de
+  catálogo se promueven con ops/seed declarativo (`cat:seed`), que es idempotente.
+
+```bash
+cp .env.production.example .env.production   # secretos/puertos (no reutilizar los de dev)
+./scripts/deploy.sh update                   # git pull + build + up + estado de migraciones
+./scripts/deploy.sh status                   # contenedores + migraciones aplicadas/pendientes
+./scripts/deploy.sh restore docs/backups/<archivo>.dump [--yes]
+```
+
+Variables clave de `.env.production`: `POSTGRES_USER/PASSWORD/DB`, `JWT_SECRET`, `WEB_HOST_PORT`,
+`API_HOST_PORT`, `ADMIN_*`. El compose compone `DATABASE_URL` desde las credenciales de Postgres.
+La página **Respaldos** muestra el commit y la última migración del servidor (útil para comparar
+dev vs prod antes de restaurar). Detalle del flujo en [`../README.md`](../README.md).
 
 ## Flujo estándar de cambio
 

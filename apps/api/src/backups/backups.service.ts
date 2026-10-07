@@ -12,6 +12,7 @@ import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import type { Readable } from "node:stream";
 import { promisify } from "node:util";
+import { PrismaService } from "../prisma/prisma.service";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,7 +38,10 @@ export class BackupsService {
   private readonly logger = new Logger(BackupsService.name);
   private readonly dir: string;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.dir = join(this.repoRoot(), "docs", "backups");
   }
 
@@ -175,17 +179,52 @@ export class BackupsService {
     );
   }
 
-  async restaurar(nombre: string): Promise<{ ok: true; archivo: string; formato: "custom" | "sql" }> {
-    const target = this.resolveFile(nombre);
+  /** Migraciones que existen en el código (carpetas versionadas). */
+  private async migracionesLocales(): Promise<Set<string>> {
+    const dir = join(this.repoRoot(), "packages", "db", "prisma", "migrations");
+    const entries = await readdir(dir, { withFileTypes: true });
+    return new Set(entries.filter((e) => e.isDirectory()).map((e) => e.name));
+  }
+
+  /** Migraciones ya aplicadas en la BD destino (historial de Prisma). */
+  private async migracionesAplicadas(): Promise<string[]> {
     try {
-      await stat(target);
+      const rows = await this.prisma.$queryRaw<{ migration_name: string }[]>`
+        SELECT migration_name FROM "_prisma_migrations"
+        WHERE finished_at IS NOT NULL
+        ORDER BY finished_at ASC
+      `;
+      return rows.map((r) => r.migration_name);
     } catch {
-      throw new NotFoundException(`No existe el respaldo ${nombre}`);
+      // El respaldo puede no traer la tabla de historial (SQL plano / BD nueva).
+      return [];
     }
+  }
 
-    const esCustom = nombre.endsWith(".dump");
-    this.logger.warn(`Restaurando respaldo ${nombre}`);
+  private async migracionActual(): Promise<string | null> {
+    const aplicadas = await this.migracionesAplicadas();
+    return aplicadas[aplicadas.length - 1] ?? null;
+  }
 
+  /**
+   * Evita dejar la BD con un esquema que el código no entiende: si el respaldo
+   * trae migraciones que esta imagen no conoce, el admin debe actualizar
+   * código/imagen (git pull + rebuild) antes de restaurarlo.
+   */
+  private async verificarCompatibilidad(): Promise<void> {
+    const locales = await this.migracionesLocales();
+    const aplicadas = await this.migracionesAplicadas();
+    const desconocidas = aplicadas.filter((m) => !locales.has(m));
+    if (desconocidas.length > 0) {
+      throw new InternalServerErrorException(
+        `El respaldo usa migraciones que este código desconoce (${desconocidas.join(", ")}). ` +
+          "Actualiza el servidor (git pull + docker compose build) y vuelve a intentarlo.",
+      );
+    }
+  }
+
+  /** Vuelca un archivo de respaldo sobre la BD recreando el schema `public`. */
+  private async aplicarArchivo(target: string, esCustom: boolean, nombre: string): Promise<void> {
     if (esCustom) {
       // `pg_restore --file -` genera el SQL; se aplica atómicamente por psql.
       const pg = this.lanzar("pg_restore", [
@@ -202,12 +241,63 @@ export class BackupsService {
     } else {
       await this.aplicarAtomico(createReadStream(target), null, nombre);
     }
+  }
 
-    // Deja la BD al día con el esquema del repo (evita quedar desactualizada).
-    this.logger.log("Aplicando migraciones pendientes…");
-    await this.migrar();
+  async restaurar(nombre: string): Promise<{
+    ok: true;
+    archivo: string;
+    formato: "custom" | "sql";
+    respaldoPrevio: string | null;
+    migracion: string | null;
+  }> {
+    const target = this.resolveFile(nombre);
+    try {
+      await stat(target);
+    } catch {
+      throw new NotFoundException(`No existe el respaldo ${nombre}`);
+    }
 
-    return { ok: true, archivo: nombre, formato: esCustom ? "custom" : "sql" };
+    const esCustom = nombre.endsWith(".dump");
+    this.logger.warn(`Restaurando respaldo ${nombre}`);
+
+    // Punto de retorno automático: si algo falla, prod no se queda sin datos.
+    let previo: BackupFile | null = null;
+    try {
+      previo = await this.crear("pre-restore");
+      this.logger.log(`Respaldo previo creado: ${previo.nombre}`);
+    } catch (e) {
+      this.logger.warn(`No se pudo crear respaldo previo: ${(e as Error).message}`);
+    }
+
+    try {
+      await this.aplicarArchivo(target, esCustom, nombre);
+      await this.verificarCompatibilidad();
+      this.logger.log("Aplicando migraciones pendientes…");
+      await this.migrar();
+      const migracion = await this.migracionActual();
+      return {
+        ok: true,
+        archivo: nombre,
+        formato: esCustom ? "custom" : "sql",
+        respaldoPrevio: previo?.nombre ?? null,
+        migracion,
+      };
+    } catch (e) {
+      // Rollback: reintenta con el respaldo previo para no dejar la BD a medias.
+      if (previo) {
+        this.logger.error(`Restauración de ${nombre} falló; revirtiendo al respaldo previo ${previo.nombre}…`);
+        try {
+          await this.aplicarArchivo(join(this.dir, previo.nombre), true, previo.nombre);
+          await this.migrar();
+          this.logger.log("Rollback completado.");
+        } catch (re) {
+          this.logger.error(`Falló el rollback con ${previo.nombre}: ${(re as Error).message}`);
+        }
+      }
+      throw e instanceof InternalServerErrorException
+        ? e
+        : new InternalServerErrorException(`Falló la restauración de ${nombre}: ${(e as Error).message}`);
+    }
   }
 
   async guardarSubido(nombreOriginal: string, data: Buffer): Promise<BackupFile> {
