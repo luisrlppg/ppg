@@ -6,7 +6,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos. Ya extraídos
    `reportes/page.tsx` (1003→100) a `components/reportes/` y `productos/[id]/page.tsx` (1148→183) a
-   `components/productos/detalle/`. Quedan: `inventario/page.tsx` (627), `ventas/page.tsx` (579),
+   `components/productos/detalle/`. Quedan: `inventario/page.tsx` (602), `ventas/page.tsx` (579),
    `fabricacion/page.tsx` (364). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, decidir si se
@@ -36,6 +36,13 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 > **Ventana rodante:** al añadir un hito arriba, mueve el más antiguo a `git log`. Este log no crece
 > indefinidamente. Detalle de cambios previos: `git log --oneline`.
+
+- **Gestión de ubicaciones + borrado de usuarios (2026-10-07):** en **Inventario**, botón
+  **Ubicaciones** (sólo `admin`) → `components/inventario/ubicaciones-modal.tsx`: crear, renombrar y
+  eliminar (sólo si no tiene existencias). Se retiró el selector de `tipo` de la UI (las nuevas son
+  `almacen`); nuevo `DELETE /inventario/ubicaciones/:id`. En **Usuarios**, borrado **duro**
+  (`DELETE /usuarios/:id`) autorizado con `SUPER_ADMIN_PASSWORD` del entorno; no permite auto-borrado
+  ni eliminar el último `admin`.
 
 - **Presupuesto de docs/código + modularización web (2026-10-07):** se fijaron reglas en
   `AGENTS.md`/`conventions.md`: docs de área **≤150 líneas** (tomos de referencia por sección),

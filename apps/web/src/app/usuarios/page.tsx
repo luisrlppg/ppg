@@ -130,6 +130,31 @@ export default function UsuariosPage() {
     }
   }
 
+  // ----------------------------------------------------------------- Eliminar
+  const [porEliminar, setPorEliminar] = useState<Usuario | null>(null);
+  const [superPass, setSuperPass] = useState("");
+  const [eliminando, setEliminando] = useState(false);
+
+  async function eliminar() {
+    if (!porEliminar) return;
+    setEliminando(true);
+    setError("");
+    try {
+      await api(`/usuarios/${porEliminar.id}`, {
+        method: "DELETE",
+        body: JSON.stringify({ superPassword: superPass }),
+      });
+      setMsg(`Usuario "${porEliminar.nombre}" eliminado.`);
+      setPorEliminar(null);
+      setSuperPass("");
+      await cargar();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setEliminando(false);
+    }
+  }
+
   if (user && user.role !== "admin") {
     return (
       <AppShell>
@@ -216,7 +241,20 @@ export default function UsuariosPage() {
                       >
                         Activar
                       </button>
-                    )}
+                    )}{" "}
+                    <button
+                      type="button"
+                      className="btn danger sm"
+                      disabled={u.id === user?.id}
+                      title={u.id === user?.id ? "No puedes eliminar tu propia cuenta" : undefined}
+                      onClick={() => {
+                        setPorEliminar(u);
+                        setSuperPass("");
+                        setError("");
+                      }}
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -327,6 +365,37 @@ export default function UsuariosPage() {
               value={nuevaPass}
               onChange={(e) => setNuevaPass(e.target.value)}
               placeholder="Mínimo 4 caracteres"
+            />
+          </label>
+        </Modal>
+      )}
+
+      {porEliminar && (
+        <Modal
+          title={`Eliminar usuario · ${porEliminar.nombre}`}
+          size="sm"
+          onClose={() => { setPorEliminar(null); setSuperPass(""); }}
+          footer={
+            <>
+              <button type="button" className="btn ghost" onClick={() => { setPorEliminar(null); setSuperPass(""); }}>
+                Cancelar
+              </button>
+              <button type="button" className="btn danger" disabled={eliminando || !superPass} onClick={eliminar}>
+                {eliminando ? "Eliminando…" : "Eliminar"}
+              </button>
+            </>
+          }
+        >
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Esta acción es permanente y no se puede deshacer. Escribe el <strong>super admin password</strong> para confirmar.
+          </p>
+          <label>
+            Super admin password
+            <input
+              type="password"
+              value={superPass}
+              onChange={(e) => setSuperPass(e.target.value)}
+              autoFocus
             />
           </label>
         </Modal>

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -32,6 +33,10 @@ class PasswordDto {
   @IsString() @MinLength(4) password!: string;
 }
 
+class EliminarUsuarioDto {
+  @IsString() @IsNotEmpty() superPassword!: string;
+}
+
 @Controller("usuarios")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("admin")
@@ -60,5 +65,14 @@ export class UsuariosController {
   @Patch(":id/password")
   setPassword(@Param("id", ParseIntPipe) id: number, @Body() dto: PasswordDto) {
     return this.usuarios.setPassword(id, dto.password);
+  }
+
+  @Delete(":id")
+  remove(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: EliminarUsuarioDto,
+    @Req() req: { user: { id: number } },
+  ) {
+    return this.usuarios.eliminar(id, dto.superPassword, req.user.id);
   }
 }

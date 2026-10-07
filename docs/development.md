@@ -117,8 +117,8 @@ cp .env.production.example .env.production   # secretos/puertos (no reutilizar l
 > `update` que solo cambia código no reinstala dependencias ni recompila todo; solo se rehace la
 > imagen afectada. Requiere BuildKit (Docker moderno; `docker compose build` lo usa por defecto).
 
-Variables clave de `.env.production`: `POSTGRES_USER/PASSWORD/DB`, `JWT_SECRET`, `WEB_HOST_PORT`,
-`API_HOST_PORT`, `ADMIN_*`. El compose compone `DATABASE_URL` desde las credenciales de Postgres.
+Variables clave de `.env.production`: `POSTGRES_USER/PASSWORD/DB`, `JWT_SECRET`, `SUPER_ADMIN_PASSWORD`,
+`WEB_HOST_PORT`, `API_HOST_PORT`, `ADMIN_*`. El compose compone `DATABASE_URL` desde las credenciales de Postgres.
 La página **Respaldos** muestra el commit y la última migración del servidor (útil para comparar
 dev vs prod antes de restaurar). Detalle del flujo en [`../README.md`](../README.md).
 

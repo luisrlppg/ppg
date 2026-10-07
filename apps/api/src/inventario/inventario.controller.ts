@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Param,
@@ -44,7 +45,6 @@ class MoverDto {
 
 class UbicacionDto {
   @IsString() @IsNotEmpty() nombre!: string;
-  @IsOptional() @IsString() tipo?: string;
 }
 
 class MinMaxDto {
@@ -78,13 +78,19 @@ export class InventarioController {
   @Roles("admin")
   @Post("ubicaciones")
   crearUbicacion(@Body() dto: UbicacionDto) {
-    return this.inventario.crearUbicacion(dto.nombre, dto.tipo ?? "almacen");
+    return this.inventario.crearUbicacion(dto.nombre);
   }
 
   @Roles("admin")
   @Patch("ubicaciones/:id")
   editarUbicacion(@Param("id", ParseIntPipe) id: number, @Body() dto: Partial<UbicacionDto>) {
     return this.inventario.editarUbicacion(id, dto);
+  }
+
+  @Roles("admin")
+  @Delete("ubicaciones/:id")
+  eliminarUbicacion(@Param("id", ParseIntPipe) id: number) {
+    return this.inventario.eliminarUbicacion(id);
   }
 
   @Roles("admin", "operador")

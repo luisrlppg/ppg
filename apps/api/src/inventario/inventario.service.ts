@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { MotivoStock } from "@ppg/db";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { MotivoStock, Prisma } from "@ppg/db";
 import { dec } from "../common/util";
 import { PrismaService } from "../prisma/prisma.service";
 import { MonitorService } from "../monitor/monitor.service";
@@ -16,22 +16,48 @@ export class InventarioService {
     return this.prisma.location.findMany({ orderBy: { id: "asc" } });
   }
 
-  crearUbicacion(nombre: string, tipo: string) {
-    return this.prisma.location.create({
-      data: { nombre: nombre.trim(), tipo: tipo === "temporal" ? "temporal" : "almacen" },
-    });
+  async crearUbicacion(nombre: string) {
+    try {
+      return await this.prisma.location.create({ data: { nombre: nombre.trim() } });
+    } catch (e) {
+      throw this.nombreDuplicado(e);
+    }
   }
 
-  async editarUbicacion(id: number, data: { nombre?: string; tipo?: string }) {
+  async editarUbicacion(id: number, data: { nombre?: string }) {
     const exists = await this.prisma.location.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException("Ubicación no encontrada");
-    return this.prisma.location.update({
-      where: { id },
-      data: {
-        ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
-        ...(data.tipo !== undefined ? { tipo: data.tipo === "temporal" ? "temporal" : "almacen" } : {}),
-      },
+    if (data.nombre === undefined) return exists;
+    try {
+      return await this.prisma.location.update({ where: { id }, data: { nombre: data.nombre.trim() } });
+    } catch (e) {
+      throw this.nombreDuplicado(e);
+    }
+  }
+
+  /** Una ubicación sólo se elimina si es de tipo almacén y no tiene existencias. */
+  async eliminarUbicacion(id: number) {
+    const location = await this.prisma.location.findUnique({ where: { id } });
+    if (!location) throw new NotFoundException("Ubicación no encontrada");
+    if (location.tipo !== "almacen") {
+      throw new BadRequestException("No se puede eliminar una ubicación del sistema.");
+    }
+    const conStock = await this.prisma.stockLevel.count({ where: { locationId: id, qty: { not: 0 } } });
+    if (conStock > 0) {
+      throw new BadRequestException("No se puede eliminar: la ubicación tiene existencias.");
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.stockLevel.deleteMany({ where: { locationId: id } });
+      await tx.location.delete({ where: { id } });
     });
+    return { ok: true };
+  }
+
+  private nombreDuplicado(e: unknown) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return new ConflictException("Ya existe una ubicación con ese nombre.");
+    }
+    return e;
   }
 
   // -------------------------------------------------------------- Existencia

@@ -9,10 +9,11 @@ import Segmented from "@/components/ui/segmented";
 import StickyBar from "@/components/ui/sticky-bar";
 import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
+import UbicacionesModal from "@/components/inventario/ubicaciones-modal";
 import { api } from "@/lib/api";
 import { descargarCSV } from "@/lib/csv";
 import { useFiltroAtributos } from "@/lib/filtro-atributos";
-import { useFormatCantidad } from "@/lib/preferences";
+import { useAuth, useFormatCantidad } from "@/lib/preferences";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
 type Accion = "entrada" | "salida" | "mover";
@@ -20,6 +21,8 @@ type Vista = "ubicacion" | "variante" | "variante-minmax";
 
 export default function InventarioPage() {
   const formatCantidad = useFormatCantidad();
+  const { user } = useAuth();
+  const esAdmin = user?.role === "admin";
   const [exist, setExist] = useState<Existencia[]>([]);
   const [locs, setLocs] = useState<Ubicacion[]>([]);
   const [movs, setMovs] = useState<Movimiento[]>([]);
@@ -163,21 +166,6 @@ export default function InventarioPage() {
 
   // ---------------------------------------------------------- Nueva ubicación
   const [showUbi, setShowUbi] = useState(false);
-  const [ubiNombre, setUbiNombre] = useState("");
-  const [ubiTipo, setUbiTipo] = useState("almacen");
-
-  async function crearUbicacion(e: React.FormEvent) {
-    e.preventDefault();
-    if (!ubiNombre.trim()) return;
-    try {
-      await api("/inventario/ubicaciones", { method: "POST", body: JSON.stringify({ nombre: ubiNombre.trim(), tipo: ubiTipo }) });
-      setShowUbi(false);
-      setUbiNombre("");
-      notify(null, "Ubicación creada.");
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
 
   const seleccion = exist.find((x) => x.variantId === selId);
   const disponible = seleccion?.porUbicacion[Number(ubiId)]?.qty ?? 0;
@@ -241,9 +229,11 @@ export default function InventarioPage() {
             <button className="btn secondary sm" onClick={exportar}>
               Exportar CSV
             </button>
-            <button className="btn ghost sm" onClick={() => setShowUbi(true)}>
-              + Ubicación
-            </button>
+            {esAdmin && (
+              <button className="btn ghost sm" onClick={() => setShowUbi(true)}>
+                Ubicaciones
+              </button>
+            )}
           </>
         }
       />
@@ -598,29 +588,14 @@ export default function InventarioPage() {
         </Modal>
       )}
 
-      {/* --- Modal: nueva ubicación --- */}
+      {/* --- Modal: gestión de ubicaciones --- */}
       {showUbi && (
-        <Modal title="Nueva ubicación" onClose={() => setShowUbi(false)} size="sm">
-          <form onSubmit={crearUbicacion}>
-            <label>
-              Nombre
-              <input value={ubiNombre} onChange={(e) => setUbiNombre(e.target.value)} placeholder="ej. Almacén 2, Piso producción" required autoFocus />
-            </label>
-            <label>
-              Tipo
-              <select value={ubiTipo} onChange={(e) => setUbiTipo(e.target.value)}>
-                <option value="almacen">Almacén</option>
-                <option value="temporal">Temporal</option>
-              </select>
-            </label>
-            <div className="row" style={{ justifyContent: "flex-end" }}>
-              <button type="button" className="btn ghost" onClick={() => setShowUbi(false)}>
-                Cancelar
-              </button>
-              <button className="btn primary">Crear ubicación</button>
-            </div>
-          </form>
-        </Modal>
+        <UbicacionesModal
+          ubicaciones={locs}
+          exist={exist}
+          onCambio={cargar}
+          onCerrar={() => setShowUbi(false)}
+        />
       )}
     </AppShell>
   );

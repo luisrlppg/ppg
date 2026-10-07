@@ -132,7 +132,8 @@ promueven con ops/seed declarativo (`pnpm cat:seed`), no sobrescribiendo.
 ```
 
 Lee `.env.production` si existe (o `.env`); alias en `package.json`: `pnpm deploy:prod`,
-`deploy:status`, `deploy:backup`, `deploy:restore`.
+`deploy:status`, `deploy:backup`, `deploy:restore`. El borrado de usuarios (vista **Usuarios**)
+se autoriza con `SUPER_ADMIN_PASSWORD` (defínela en `.env` / `.env.production`).
 
 
 ### Cargar los datos del Postgres local en el stack

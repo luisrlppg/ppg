@@ -34,6 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       COOKIE_NAME: ppg_session
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
       API_PORT: 3001
       GIT_SHA: ${GIT_SHA:-unknown}
       BUILD_TIME: ${BUILD_TIME:-unknown}

@@ -1,5 +1,7 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
+import { timingSafeEqual } from "crypto";
 import { ROLES, type Role } from "@ppg/shared";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -22,7 +24,10 @@ function validarRol(role: string): Role {
 
 @Injectable()
 export class UsuariosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async list() {
     const rows = await this.prisma.user.findMany({
@@ -104,5 +109,36 @@ export class UsuariosService {
       data: { passwordHash: await bcrypt.hash(password, 10) },
     });
     return { ok: true };
+  }
+
+  /** Borrado duro, autorizado con el `SUPER_ADMIN_PASSWORD` del entorno. */
+  async eliminar(id: number, superPassword: string, currentUserId: number) {
+    const esperado = this.config.get<string>("SUPER_ADMIN_PASSWORD");
+    if (!esperado) {
+      throw new BadRequestException("La eliminación de usuarios no está habilitada (falta SUPER_ADMIN_PASSWORD).");
+    }
+    if (!this.passwordValida(superPassword, esperado)) {
+      throw new UnauthorizedException("Super admin password incorrecto");
+    }
+    if (id === currentUserId) {
+      throw new BadRequestException("No puedes eliminar tu propia cuenta");
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id }, include: { role: true } });
+    if (!user) throw new NotFoundException("Usuario no encontrado");
+
+    if (user.role.name === "admin") {
+      const admins = await this.prisma.user.count({ where: { role: { name: "admin" } } });
+      if (admins <= 1) throw new BadRequestException("No puedes eliminar el último administrador");
+    }
+
+    await this.prisma.user.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  private passwordValida(ingresado: string, esperado: string): boolean {
+    const a = Buffer.from(ingresado ?? "");
+    const b = Buffer.from(esperado);
+    return a.length === b.length && timingSafeEqual(a, b);
   }
 }
