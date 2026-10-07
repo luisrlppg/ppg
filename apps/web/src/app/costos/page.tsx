@@ -30,6 +30,13 @@ interface MaterialForm {
   costoUnitario: string;
 }
 
+interface VarianteForm {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  costoCompra: string;
+}
+
 export default function CostosPage() {
   const { user } = useAuth();
   const [filas, setFilas] = useState<CostoFila[]>([]);
@@ -63,6 +70,7 @@ export default function CostosPage() {
   const [costoEmpaque, setCostoEmpaque] = useState("");
   const [notas, setNotas] = useState("");
   const [materiales, setMateriales] = useState<MaterialForm[]>([]);
+  const [variantes, setVariantes] = useState<VarianteForm[]>([]);
 
   function aplicarReceta(d: CostoDetalle) {
     const r = d.receta;
@@ -81,6 +89,14 @@ export default function CostosPage() {
         nombre: m.nombre,
         cantidad: String(m.cantidad),
         costoUnitario: String(m.costoUnitario),
+      })),
+    );
+    setVariantes(
+      (d.variantes ?? []).map((v) => ({
+        variantId: v.variantId,
+        sku: v.sku,
+        nombre: v.nombre,
+        costoCompra: v.costoCompra === null ? "" : String(v.costoCompra),
       })),
     );
   }
@@ -148,6 +164,10 @@ export default function CostosPage() {
               costoUnitario: num(m.costoUnitario),
               orden: i,
             })),
+          variantes: variantes.map((v) => ({
+            variantId: v.variantId,
+            costoCompra: v.costoCompra === "" ? null : num(v.costoCompra),
+          })),
         }),
       });
       cerrar();
@@ -177,6 +197,10 @@ export default function CostosPage() {
 
   function setMaterial(i: number, campo: keyof MaterialForm, valor: string) {
     setMateriales((prev) => prev.map((m, j) => (j === i ? { ...m, [campo]: valor } : m)));
+  }
+
+  function setVariante(i: number, valor: string) {
+    setVariantes((prev) => prev.map((v, j) => (j === i ? { ...v, costoCompra: valor } : v)));
   }
 
   if (user && user.role !== "admin") {
@@ -382,6 +406,42 @@ export default function CostosPage() {
               </label>
               <div />
             </div>
+
+            {variantes.length > 0 && (
+              <>
+                <h4 style={{ marginBottom: 4, marginTop: 16 }}>Costo de compra por variante</h4>
+                <p className="muted small" style={{ marginTop: 0 }}>
+                  Para comprables con varias presentaciones (p. ej. pigmentos por color). Vacío = sin costo capturado.
+                </p>
+                <table className="table" style={{ marginTop: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Variante</th>
+                      <th>SKU</th>
+                      <th style={{ width: 160 }}>Costo de compra</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variantes.map((v, i) => (
+                      <tr key={v.variantId}>
+                        <td>{v.nombre}</td>
+                        <td className="muted-2 small">{v.sku}</td>
+                        <td>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={v.costoCompra}
+                            onChange={(e) => setVariante(i, e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
 
             {/* Mano de obra */}
             <h4 style={{ marginBottom: 4, marginTop: 16 }}>Mano de obra</h4>

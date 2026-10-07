@@ -8,19 +8,21 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
    `productos/[id]/page.tsx` (954), `inventario/page.tsx` (779), `reportes/page.tsx` (wizard),
    `ventas/page.tsx` (516), `fabricacion/page.tsx` (254). La API ya quedó mayormente modularizada.
 2. **WSL2** — completar setup de dev en Linux.
-3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, crosswalk con
-   SKUs inexistentes, `db:seed` desalineado vs `cat:seed`).
+3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, decidir si se
+   limpian del crosswalk los 4 SKUs `VST` eliminados por `reorg-vastago.ts` —ver
+   [`odoo-pendientes.csv`](./odoo-pendientes.csv)—, `db:seed` desalineado vs `cat:seed`).
 4. **Órdenes de compra (OC):** no existe entidad persistente. Hoy lo "comprable" va al listado
    `resumen.comprar` / Pendientes de compra (sin documento). Falta un módulo `PurchaseOrder`
    (modelo + API + UI) que consuma `Product.comprable`. Fase siguiente tras E3.
-5. **Seed de catálogo y flags de suministro:** `Product.fabricable`/`comprable` se editan en la UI
-   pero `scripts/catalog/` (engine + `catalog.yaml`) aún **no** los declara → al re-seedear quedan en
-   `false`. Pendiente extender las ops de catálogo.
+5. **Seed de catálogo:** `cat:seed`/`catalog.yaml` ya declara `fabricable`/`comprable` y
+   `variant.costoCompra` (motor extendido 2026-10-07). Sigue pendiente alinear o retirar la parte de
+   catálogo de `pnpm db:seed` (`seed.ts` usa nombres viejos).
 6. **Costos (v1) — integración pendiente:** el módulo de costo estándar (`/costos`, `ProductCost`)
    arrancó **separado** del ERP: captura manual, sin historial ni merma y **sin** escribir el precio
    de venta. Falta, cuando se decida: (a) ligar el costo a la página de precios/margen real,
    (b) materiales automáticos desde el BOM, (c) merma, (d) historial/versionado, (e) costo por
-   variante y (f) catálogo de tarifas reutilizables. Ver §8.7 de `REQUIREMENTS.md`.
+   variante (**parcial:** `ProductVariant.costoCompra` ya existe para comprables/pigmentos) y
+   (f) catálogo de tarifas reutilizables. Ver §8.7 de `REQUIREMENTS.md`.
 
 ## Candidatos a refactor transversal
 
@@ -30,6 +32,27 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 - `common/util.ts`: helpers mezclados, candidato a separar.
 
 ## Trabajo reciente (contexto)
+
+- **Pigmentos en inventario (2026-10-07):** producto **`Pigmento`** (`PIG`, **comprable**, `uom kg`)
+  con 4 ejes (`Resina de Pigmento` PP/PE·PVC, `Tipo de Pigmento` Polvo·Masterbatch, `Color de
+  Pigmento`, `Fabricante de Pigmento`) y los **30** pigmentos diferidos de Odoo materializados con
+  `Resina`+`Color` (SKU `PIG-<PP|PE|PVC>-<código>`). Ops `scripts/catalog/ops/pigmentos.yaml`.
+  Se agregó **costo de compra por variante** (`ProductVariant.costoCompra`, migración
+  `20261007130000_variant_costo_compra`; editable en `/costos`). El motor de catálogo ahora declara
+  `fabricable`/`comprable` (`product.define`) y `costoCompra` (`variant.define`), y `catalog.yaml`
+  se regeneró. Pendiente: `Tipo`/`Fabricante` de las 30 y BOM consumible.
+
+- **Inventario histórico aislado (2026-10-07):** nueva tabla `InventarioHistorico` (+
+  `InventarioHistoricoAtributo`) para registrar existencias de productos **descontinuados** y
+  **subensambles** sin contaminar el inventario vivo: NO se relaciona con `ProductVariant`/`StockLevel`,
+  así que no entra a `stock_actual`, mín/máx, Fabricación, Ventas, Reportes ni monitor. Módulo
+  `apps/api/src/inventario-historico/` (CRUD + `POST /importar` CSV, escritura sólo `admin`) y página
+  `/inventario-historico` (buscador, filtro `tipo` + familia/atributos vía `BuscadorAtributos`,
+  import/export CSV). Carga inicial `docs/inventario-historico-inicial.csv` (61 filas, 272.284 u:
+  10 descontinuados + 51 subensambles Odoo). Migración `20261007120000_inventario_historico`.
+  **Asistente de atributos:** al elegir familia (`GET /productos`) el formulario carga sus ejes
+  `propios` (`GET /catalogos/atributos/producto/:id`) con valores sugeridos (texto libre + `datalist`)
+  y reemplaza las filas; sin familia se capturan a mano. Sólo frontend, sin cambios de API/schema.
 
 - **Prioridad manual de fabricación por niveles (2026-10-05):** `ProductVariant` ganó
   `prioridad` (`enum Prioridad` `alta`/`media`/`baja`, default `baja`; migración
@@ -316,6 +339,12 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   `Botella 1580 (Color: transparente)`. `Tapa con Pincel` no lleva mín/máx (por regla).
 - **Ensamble de inventario retirado (2026-10-02):** `inventario.ensamble.ts` / `POST /inventario/ensamble`
   eliminado; "Ensamble" queda sólo como tipo de OF. El enum `MotivoStock.ensamble` se conserva para histórico.
+- **Pendientes Odoo consolidados (2026-10-07):** [`docs/odoo-pendientes.csv`](./odoo-pendientes.csv)
+  reúne todo lo que no quedó 1:1 en PPG: 4 SKUs de Vástago eliminados por `reorg-vastago.ts` con su
+  stock Odoo descartado, 47 líneas de subensambles (inventario, por diseño), 2 `sin_mapear`, 2
+  `solo_odoo` (Cerda/Pincel), mín/máx pendientes (`Botella 1580`), pendientes de catálogo y
+  **30 pigmentos diferidos** (17 `Pigmento PP/PE` + 13 `Pigmento PVC`, `accion=diferido` en
+  `mapping-odoo.csv`; sólo `pp 1992 MASTER ROSA` traía stock, 25 Units).
 
 ## Verificaciones end-to-end
 

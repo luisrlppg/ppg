@@ -19,6 +19,10 @@ El catálogo se cambia con **ops declarativas** y se reproduce con el **seed**:
 - Atributos **propios vs heredados** (de componentes del BOM).
 - **`ProductVariant.notas`** — texto libre **interno** por variante (p. ej. medidas del cepillo).
   No es eje ni se expone en la tienda.
+- **`ProductVariant.costoCompra`** — costo de adquisición **por variante** (`Decimal?`), para
+  comprables con costo distinto por presentación (hoy **pigmentos** por color/código). Es
+  independiente de `ProductCost` (que es por producto); se captura en `/costos` (sólo `admin`).
+  El seed lo preserva (`variant.define.costoCompra`).
 - **`ProductVariant.prioridad`** — prioridad **manual** de fabricación por variante (`Prioridad`:
   `alta`/`media`/`baja`, default `baja`). Es global (aplica a por mínimo y por ventas) y la edita
   solo `admin` inline en `/fabricacion` (`PATCH /fabricacion/variantes/:id/prioridad`). No la
@@ -55,6 +59,11 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 - **Sobretapa** (id 8, `STP`) · **Escurridor** (id 9, `ESC`) · **Cepillo Silicon** (id 10, `CSI`) ·
   **Cepillo Nylon** (id 11, `CNI`).
 - **PVC** (id 86, `PVC`) — uom `kg`.
+- **Pigmento** (`PIG`, 2026-10-07) — materia prima **comprable** (`uom kg`, `fabricable=false`,
+  `vendible=false`); 4 ejes: `Resina de Pigmento` (`PP/PE`, `PVC`), `Tipo de Pigmento`
+  (`Polvo`, `Masterbatch`), `Color de Pigmento` y `Fabricante de Pigmento`. Alta con los 30 pigmentos
+  diferidos de Odoo (sólo `Resina`+`Color`; `Tipo`/`Fabricante` pendientes de captura). Costo de
+  compra **por variante**. Ops: `scripts/catalog/ops/pigmentos.yaml`.
 - **BTVPE — Tamaño de Botella (2026-10-04):** el componente **Botella** tiene el eje
   `Tamaño de Botella` (`Mini` 10mm/48mm, `Alta` 10mm/80mm, `Chica` 15mm/60mm, `Grande` 15mm/80mm),
   derivado de `Tamaño rosca` + `Altura de Botella`. Reemplaza al extinto `Capacidad de Botella`
@@ -89,7 +98,8 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 `Color de Sobretapa`, `Color de Escurridor`, `Color de Taparrosca`, `Color de Tapon`,
 `Color de Palillo`, `Color de Cepillo Nylon`,
 `Color de Cepillo Silicon`, `Color de Cerda de Pincel`, `Color de Cerda de Cepillo`,
-`Color de PVC`, `Tipo de Vastago`, `Tipo de Botella`,
+`Color de PVC`, `Color de Pigmento`, `Fabricante de Pigmento`, `Resina de Pigmento`,
+`Tipo de Pigmento`, `Tipo de Vastago`, `Tipo de Botella`,
 `Tipo de Sobretapa`, `Tipo de Punta`, `Forma de Taparrosca`,
 `Forma de Sobretapa`, `Forma de cepillo nylon`, `Forma de cepillo silicon`,
 `Agujero de Escurridor`, `Agujero de Mango`, `Tamaño de Caja de Cartón`, `Capacidad de Botella`.
@@ -118,7 +128,9 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 ## Costos (v1)
 
 Costo **estándar por producto** (no por variante), capturado a mano. Arranca **separado** del
-precio de venta; el margen que muestra es solo referencia.
+precio de venta; el margen que muestra es solo referencia. **Excepción:** los comprables con
+costo distinto por presentación (pigmentos) usan `ProductVariant.costoCompra`; `/costos` los
+edita en una tabla "Costo de compra por variante".
 
 - **`ProductCost`** (1:1 con `Product`): `costoCompra` (comprables), `horasManoObra` +
   `tarifaManoObra`, `horasMaquina` + `tarifaMaquina`, `costoMolde` + `piezasMolde` (amortización
@@ -180,6 +192,24 @@ precio de venta; el margen que muestra es solo referencia.
   `motivo consumo`); se valida stock de cada componente.
 - El flujo de reportes de producción (`/reportes`, `ProductionReport`) sigue existiendo y es independiente
   de fabricación; `ProductionReport.interno` se conserva por histórico.
+
+## Inventario histórico (2026-10-07)
+
+Registro **aislado** de existencias de productos reales que ya no se fabrican (descontinuados) y de
+subensambles con stock. Sirve de "lo que tenemos guardado" sin contaminar el inventario vivo.
+
+- **`InventarioHistorico`**: `nombre`, `sku?`, `tipo` (`descontinuado` | `subensamble`),
+  `cantidad`, `ubicacion` (texto libre), `notas?`, `familiaProductoId?` (FK opcional a `Product`,
+  `onDelete: SetNull`; sólo para agrupar/sugerir/filtrar), timestamps.
+- **`InventarioHistoricoAtributo`** (hijos): `nombre`, `valor` (libres; se pueden dejar en blanco).
+  Permiten filtrar por atributos sin depender del catálogo.
+- **Aislamiento:** NO se relaciona con `ProductVariant`/`StockLevel`, así que `stock_actual`
+  (`SUM(StockLevel.qty)`), mín/máx, Fabricación, Ventas, Reportes y el monitor **nunca** lo ven.
+- **API/UI:** `apps/api/src/inventario-historico/` + `app/inventario-historico/page.tsx`
+  (CRUD + import/export CSV; escritura sólo `admin`). El import CSV **infiere `familiaProductoId`**
+  por prefijo de SKU y parsea atributos de `Atributo=Valor;…`.
+- **Carga inicial:** `docs/inventario-historico-inicial.csv` (10 descontinuados + 51 subensambles Odoo).
+  Ver `odoo-pendientes.csv` para el detalle de lo no migrado 1:1.
 
 ## Reglas de negocio relevantes
 

@@ -75,6 +75,8 @@ async function main() {
       ...(Number(p.basePrice) !== 0 ? { basePrice: Number(p.basePrice) } : {}),
       ...(p.hasVariants ? { hasVariants: true } : {}),
       ...(p.vendible ? { vendible: true } : {}),
+      ...(p.fabricable ? { fabricable: true } : {}),
+      ...(p.comprable ? { comprable: true } : {}),
       ...(p.imagen ? { imagen: p.imagen } : {}),
       ...(!p.activo ? { activo: false } : {}),
     });
@@ -128,6 +130,7 @@ async function main() {
         ...(v.nombre !== p.nombre ? { nombre: v.nombre } : {}),
         attrs: Object.fromEntries(v.variantAttributes.map((va) => [va.attribute.nombre, va.value.valor])),
         ...(v.price !== null ? { price: Number(v.price) } : {}),
+        ...(v.costoCompra !== null ? { costoCompra: Number(v.costoCompra) } : {}),
         ...(Number(v.stockMin) !== 0 ? { min: Number(v.stockMin) } : {}),
         ...(Number(v.stockMax) !== 0 ? { max: Number(v.stockMax) } : {}),
         ...(v.longLead ? { longLead: true } : {}),

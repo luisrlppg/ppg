@@ -363,6 +363,7 @@ export class ProductosService {
     return v.map((r) => ({
       ...r,
       price: r.price === null ? null : dec(r.price),
+      costoCompra: r.costoCompra === null ? null : dec(r.costoCompra),
       stockMin: dec(r.stockMin),
       stockMax: dec(r.stockMax),
       stockActual: ProductosService.stockTotals(r.stockLevels).total,
@@ -402,7 +403,7 @@ export class ProductosService {
     }));
   }
 
-  async createVariant(productId: number, data: { nombre: string; sku: string; price?: number | null }) {
+  async createVariant(productId: number, data: { nombre: string; sku: string; price?: number | null; costoCompra?: number | null }) {
     const sku = data.sku.trim();
     if (!sku) throw new BadRequestException("sku es obligatorio");
     const dup = await this.prisma.productVariant.findUnique({ where: { sku } });
@@ -413,13 +414,14 @@ export class ProductosService {
         nombre: data.nombre,
         sku,
         price: data.price === undefined || data.price === null ? null : data.price,
+        costoCompra: data.costoCompra === undefined || data.costoCompra === null ? null : data.costoCompra,
       },
     });
     await this.inheritPackagingsToVariant(productId, variant.id);
     return variant;
   }
 
-  async updateVariant(variantId: number, data: Partial<{ nombre: string; stockMin: number; stockMax: number; longLead: boolean; activo: boolean; imagen: string | null; notas: string | null }>) {
+  async updateVariant(variantId: number, data: Partial<{ nombre: string; costoCompra: number | null; stockMin: number; stockMax: number; longLead: boolean; activo: boolean; imagen: string | null; notas: string | null }>) {
     return this.prisma.productVariant.update({
       where: { id: variantId },
       data: { ...data },

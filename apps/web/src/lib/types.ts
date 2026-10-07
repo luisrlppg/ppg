@@ -61,6 +61,7 @@ export interface Variante {
   nombre: string;
   sku: string;
   price: number | null;
+  costoCompra?: number | null;
   stockMin: number;
   stockMax: number;
   longLead: boolean;
@@ -602,6 +603,13 @@ export interface CostoReceta {
   materiales: CostoMaterial[];
 }
 
+export interface CostoVariante {
+  variantId: number;
+  sku: string;
+  nombre: string;
+  costoCompra: number | null;
+}
+
 export interface CostoDetalle extends CostoDesglose, CostoMargen {
   productId: number;
   nombre: string;
@@ -611,4 +619,25 @@ export interface CostoDetalle extends CostoDesglose, CostoMargen {
   comprable: boolean;
   tieneReceta: boolean;
   receta: CostoReceta;
+  variantes: CostoVariante[];
+}
+
+export interface InventarioHistoricoAtributo {
+  nombre: string;
+  valor: string;
+}
+
+export interface InventarioHistoricoItem {
+  id: number;
+  nombre: string;
+  sku: string | null;
+  tipo: string;
+  cantidad: number;
+  ubicacion: string;
+  notas: string | null;
+  familiaProductoId: number | null;
+  familia: string | null;
+  atributos: InventarioHistoricoAtributo[];
+  createdAt: string;
+  updatedAt: string;
 }

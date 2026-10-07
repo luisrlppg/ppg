@@ -25,6 +25,7 @@ export interface CostoInput {
   costoEmpaque?: number;
   notas?: string | null;
   materiales?: MaterialInput[];
+  variantes?: { variantId: number; costoCompra?: number | null }[];
 }
 
 interface CostoRow {
@@ -154,7 +155,7 @@ export class CostosService {
     const p = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
-        variants: { select: { price: true, activo: true } },
+        variants: { select: { id: true, sku: true, nombre: true, costoCompra: true, price: true, activo: true }, orderBy: { nombre: "asc" } },
         cost: { include: { materiales: { orderBy: { orden: "asc" } } } },
       },
     });
@@ -190,6 +191,12 @@ export class CostosService {
             orden: m.orden,
           })) ?? [],
       },
+      variantes: p.variants.map((v) => ({
+        variantId: v.id,
+        sku: v.sku,
+        nombre: v.nombre,
+        costoCompra: v.costoCompra === null ? null : dec(v.costoCompra),
+      })),
       desglose,
       ...this.conMargen(ref, desglose.total),
     };
@@ -234,6 +241,12 @@ export class CostosService {
             costoUnitario: m.costoUnitario ?? 0,
             orden: m.orden ?? i,
           })),
+        });
+      }
+      for (const v of data.variantes ?? []) {
+        await tx.productVariant.updateMany({
+          where: { id: v.variantId, productId },
+          data: { costoCompra: v.costoCompra },
         });
       }
     });

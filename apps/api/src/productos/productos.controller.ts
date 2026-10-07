@@ -77,10 +77,12 @@ class VarianteDto {
   @IsString() @IsNotEmpty() nombre!: string;
   @IsString() @IsNotEmpty() sku!: string;
   @IsOptional() @IsNumber() price?: number | null;
+  @IsOptional() @IsNumber() costoCompra?: number | null;
 }
 
 class UpdateVarianteDto {
   @IsOptional() @IsString() nombre?: string;
+  @IsOptional() @IsNumber() costoCompra?: number | null;
   @IsOptional() @IsNumber() stockMin?: number;
   @IsOptional() @IsNumber() stockMax?: number;
   @IsOptional() @IsBoolean() longLead?: boolean;

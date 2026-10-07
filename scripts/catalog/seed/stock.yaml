@@ -337,7 +337,7 @@ ops:
   - op: stock.set
     sku: BOT-0011
     location: O3
-    qty: 836
+    qty: 735
   - op: stock.set
     sku: BOT-0023
     location: O4
@@ -461,7 +461,7 @@ ops:
   - op: stock.set
     sku: VST-0016
     location: L2
-    qty: 27000
+    qty: 26899
   - op: stock.set
     sku: VST-0019
     location: D1
@@ -701,7 +701,7 @@ ops:
   - op: stock.set
     sku: STP-0010
     location: E2
-    qty: 12470
+    qty: 12369
   - op: stock.set
     sku: ESC-0008
     location: Principal
@@ -725,7 +725,7 @@ ops:
   - op: stock.set
     sku: DPL-00001
     location: Principal
-    qty: 55614
+    qty: 55513
   - op: stock.set
     sku: VST-0005
     location: Principal
@@ -813,7 +813,7 @@ ops:
   - op: stock.set
     sku: ESC-0006
     location: Principal
-    qty: 28037
+    qty: 27936
   - op: stock.set
     sku: TPR-0008
     location: G2
@@ -1090,3 +1090,7 @@ ops:
     sku: PIN-0012
     location: Principal
     qty: 60000
+  - op: stock.set
+    sku: VST-0016
+    location: Recibo de Producción
+    qty: 2

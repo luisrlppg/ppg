@@ -23,6 +23,8 @@ ops:
   - op: category.ensure
     nombre: Palillos
   - op: category.ensure
+    nombre: Pigmentos
+  - op: category.ensure
     nombre: Pinceles
   - op: category.ensure
     nombre: Puntas
@@ -147,6 +149,7 @@ ops:
     category: Mangos
     basePrice: 5
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Cerda
     sku: CERD
@@ -154,71 +157,83 @@ ops:
     category: Cerda
     basePrice: 80
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Pincel
     sku: PIN
     category: Pinceles
     basePrice: 20
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Taparrosca
     sku: TPR
     category: Taparroscas
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Botella
     sku: BOT
     category: Botellas
     basePrice: 8
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Vastago
     sku: VST
     category: Vástagos
     basePrice: 5
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Sobretapa
     sku: STP
     category: Sobretapas
     basePrice: 3
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Escurridor
     sku: ESC
     category: Escurridores
     basePrice: 2
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Cepillo Silicon
     sku: CSI
     category: Cepillos
     basePrice: 6
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Cepillo Nylon
     sku: CNI
     category: Cepillos
     basePrice: 5
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Punta Delineador
     sku: DPL
     category: Cepillos
     basePrice: 4
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Punta Tratamiento
     sku: TRN
     category: Cepillos
     basePrice: 4
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Punta Lip Gloss
     sku: LGL
     category: Cepillos
     basePrice: 6
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Rimel Silicon
     sku: BTVPE-S
@@ -226,6 +241,7 @@ ops:
     basePrice: 50
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Rimel Nylon
     sku: BTVPE-N
@@ -233,6 +249,7 @@ ops:
     basePrice: 50
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Delineador
     sku: BTVPE-D
@@ -240,6 +257,7 @@ ops:
     basePrice: 50
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Tratamiento de Noche
     sku: BTVPE-TN
@@ -247,6 +265,7 @@ ops:
     basePrice: 50
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Lip Gloss
     sku: BTVPE-LG
@@ -254,72 +273,88 @@ ops:
     basePrice: 50
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Alambre Acero Inoxidable
     sku: P0001
     category: Alambre
+    comprable: true
   - op: product.define
     nombre: Alambre Ensartado
     sku: P0002
     category: Alambre
+    comprable: true
   - op: product.define
     nombre: Alambre Kola Loka
     sku: P0003
     category: Alambre
+    comprable: true
   - op: product.define
     nombre: Bolsa Botella
     sku: P0004
     category: Empaques
+    comprable: true
   - op: product.define
     nombre: Bolsa Celofan
     sku: P0005
     category: Empaques
+    comprable: true
   - op: product.define
     nombre: Bolsa Hermetica
     sku: P0006
     category: Empaques
+    comprable: true
   - op: product.define
     nombre: Bolsa Jumbo
     sku: P0007
     category: Empaques
+    comprable: true
   - op: product.define
     nombre: Caja Cartón
     sku: P0008
     category: Empaques
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Esterato
     sku: P0009
     uom: kg
     category: Otros
+    comprable: true
   - op: product.define
     nombre: Fleje
     sku: P0010
     category: Otros
+    comprable: true
   - op: product.define
     nombre: Galleta
     sku: P0011
     category: Otros
+    fabricable: true
   - op: product.define
     nombre: Grapas
     sku: P0012
     category: Otros
+    comprable: true
   - op: product.define
     nombre: Opresor
     sku: P0013
     category: Otros
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Palillo Sin Cepillo
     sku: P0014
     category: Palillos
     hasVariants: true
+    fabricable: true
   - op: product.define
     nombre: Polietileno
     sku: P0015
     uom: kg
     category: Otros
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Pulcera
     sku: P0016
@@ -331,40 +366,55 @@ ops:
     category: Taparroscas
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Tapa de Carrete
     sku: P0020
     category: Taparroscas
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: Tapon
     sku: P0021
     category: Tapones
     hasVariants: true
     vendible: true
+    fabricable: true
   - op: product.define
     nombre: PVC
     sku: PVC
     uom: kg
     category: Otros
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Palillo Citologico Sin Cepillo
     sku: P0032
     category: Palillos
     hasVariants: true
+    comprable: true
   - op: product.define
     nombre: Palillo con Cepillo
     sku: P0033
     category: Palillos
     hasVariants: true
     vendible: true
+    fabricable: true
+    comprable: true
   - op: product.define
     nombre: Palillo Citologico con Cepillo
     sku: P0034
     category: Palillos
     hasVariants: true
     vendible: true
+    fabricable: true
+  - op: product.define
+    nombre: Pigmento
+    sku: PIG
+    uom: kg
+    category: Pigmentos
+    hasVariants: true
+    comprable: true
   - op: attr.ensure
     name: Agujero de Escurridor
     values:
@@ -473,6 +523,10 @@ ops:
       - Negro
       - Transparente
   - op: attr.ensure
+    name: Color de Opresor
+    values:
+      - Negro
+  - op: attr.ensure
     name: Color de Palillo
     values:
       - Amarillo
@@ -488,6 +542,29 @@ ops:
     name: Color de Palillo Citologico
     values:
       - Blanco
+  - op: attr.ensure
+    name: Color de Pigmento
+    values:
+      - Café chocolate
+      - Hueso de mamey
+      - Morado hipoalergénico
+      - Rosa silicon
+      - Lila
+      - Negro
+      - Master rosa
+      - Gris
+      - Master naranja RoHS
+      - Rosa
+      - Azul nacar
+      - Master café
+      - Master 9201
+      - Blanco
+      - Verde
+      - Morado
+      - Rosa 8 en 1
+      - Beige
+      - Azul
+      - Rosa hueso de mamey
   - op: attr.ensure
     name: Color de PVC
     values:
@@ -568,6 +645,9 @@ ops:
       - Alta
       - Baja
   - op: attr.ensure
+    name: Fabricante de Pigmento
+    values: []
+  - op: attr.ensure
     name: Forma de cepillo nylon
     values:
       - Pino
@@ -646,6 +726,11 @@ ops:
       - Silicon chico
       - Silicon grande
   - op: attr.ensure
+    name: Resina de Pigmento
+    values:
+      - PP/PE
+      - PVC
+  - op: attr.ensure
     name: Tamaño de Botella
     values:
       - Chica
@@ -672,6 +757,11 @@ ops:
       - Delineador
       - Mini
       - Normal
+  - op: attr.ensure
+    name: Tipo de Pigmento
+    values:
+      - Polvo
+      - Masterbatch
   - op: attr.ensure
     name: Tipo de Punta
     values:
@@ -1077,6 +1167,10 @@ ops:
     attribute: Tamaño de Caja de Cartón
     sortOrder: 0
   - op: attr.assignAxis
+    product: Opresor
+    attribute: Color de Opresor
+    sortOrder: 0
+  - op: attr.assignAxis
     product: Palillo Sin Cepillo
     attribute: Color de Palillo
     sortOrder: 0
@@ -1144,6 +1238,34 @@ ops:
     product: Palillo Citologico con Cepillo
     attribute: Forma de cepillo nylon
     sortOrder: 2
+  - op: attr.assignAxis
+    product: Pigmento
+    attribute: Resina de Pigmento
+    sortOrder: 1
+  - op: attr.assignAxis
+    product: Pigmento
+    attribute: Tipo de Pigmento
+    sortOrder: 2
+  - op: attr.assignAxis
+    product: Pigmento
+    attribute: Color de Pigmento
+    sortOrder: 3
+  - op: attr.assignAxis
+    product: Pigmento
+    attribute: Fabricante de Pigmento
+    sortOrder: 4
+  - op: attr.restrictValues
+    product: Pigmento
+    attribute: Resina de Pigmento
+    values:
+      - PP/PE
+      - PVC
+  - op: attr.restrictValues
+    product: Pigmento
+    attribute: Tipo de Pigmento
+    values:
+      - Polvo
+      - Masterbatch
   - op: bom.set
     product: Rimel Silicon
     components:
@@ -1462,32 +1584,32 @@ ops:
     product: Taparrosca con Pincel
     steps:
       - sortOrder: 1
-        panel: 1
+        panel: 0
         pregunta: Selecciona la rosca
         attribute: Tamaño rosca
         variantProduct: Taparrosca
       - sortOrder: 2
-        panel: 2
+        panel: 0
         pregunta: Selecciona la tapa
         attribute: Forma de Taparrosca
         variantProduct: Taparrosca
       - sortOrder: 3
-        panel: 3
+        panel: 0
         pregunta: Selecciona el color de la taparrosca
         attribute: Color de Taparrosca
         variantProduct: Taparrosca
       - sortOrder: 4
-        panel: 4
+        panel: 0
         pregunta: Selecciona una altura de mango
         attribute: Altura de Mango
         variantProduct: Pincel
       - sortOrder: 5
-        panel: 5
+        panel: 0
         pregunta: Selecciona el agujero
         attribute: Agujero de Mango
         variantProduct: Pincel
       - sortOrder: 6
-        panel: 6
+        panel: 0
         pregunta: Selecciona el color de cerda
         attribute: Color de Cerda de Pincel
         variantProduct: Pincel
@@ -3625,6 +3747,19 @@ ops:
     attrs:
       Tipo de Punta: Punta lip gloss tipo hoja
   - op: variant.define
+    sku: BTVPE-D-chica-negro-15mm-60mm-negro-normal-negro-negro
+    product: Delineador
+    nombre: Chica Negro 15mm 60mm Negro Normal Negro Negro
+    attrs:
+      Tamaño de Botella: Chica
+      Color de Botella: Negro
+      Tamaño rosca: 15mm
+      Altura de Vastago: 60mm
+      Color de Vastago: Negro
+      Forma de Sobretapa: Normal
+      Color de Sobretapa: Negro
+      Color de Escurridor: Negro
+  - op: variant.define
     sku: P0001-0001
     product: Alambre Acero Inoxidable
     attrs: {}
@@ -3686,6 +3821,12 @@ ops:
     attrs: {}
     min: 1
     max: 2
+  - op: variant.define
+    sku: P0013-negro
+    product: Opresor
+    nombre: Negro
+    attrs:
+      Color de Opresor: Negro
   - op: variant.define
     sku: P0014-0007
     product: Palillo Sin Cepillo
@@ -4042,3 +4183,221 @@ ops:
       Color de Palillo: Amarillo
       Color de Cerda de Cepillo: Transparente
       Forma de cepillo nylon: Balita
+  - op: variant.define
+    sku: P0034-blanco-transparente-citologico
+    product: Palillo Citologico con Cepillo
+    nombre: Blanco Transparente Citologico
+    attrs:
+      Color de Palillo Citologico: Blanco
+      Color de Cerda de Cepillo: Transparente
+      Forma de cepillo nylon: Citologico
+  - op: variant.define
+    sku: PIG-PE-51400
+    product: Pigmento
+    nombre: PE 51400 café chocolate
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Café chocolate
+  - op: variant.define
+    sku: PIG-PE-51449
+    product: Pigmento
+    nombre: PE 51449 Hueso De mamey
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Hueso de mamey
+  - op: variant.define
+    sku: PIG-PE-51463
+    product: Pigmento
+    nombre: PE 51463 Morado Hipo Alergenico
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Morado hipoalergénico
+  - op: variant.define
+    sku: PIG-PE-51469
+    product: Pigmento
+    nombre: PE 51469 Rosa silicon
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Rosa silicon
+  - op: variant.define
+    sku: PIG-PE-51540
+    product: Pigmento
+    nombre: PE 51540 Lila
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Lila
+  - op: variant.define
+    sku: PIG-PP-15N400
+    product: Pigmento
+    nombre: PP 15N400 Negro
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Negro
+  - op: variant.define
+    sku: PIG-PP-1992
+    product: Pigmento
+    nombre: pp 1992 MASTER ROSA
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Master rosa
+  - op: variant.define
+    sku: PIG-PP-2170
+    product: Pigmento
+    nombre: PP 2170 gris
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Gris
+  - op: variant.define
+    sku: PIG-PP-52622
+    product: Pigmento
+    nombre: PP 52622 Master Naranja RoHS
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Master naranja RoHS
+  - op: variant.define
+    sku: PIG-PP-708
+    product: Pigmento
+    nombre: PP 708 Rosa
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Rosa
+  - op: variant.define
+    sku: PIG-PP-7270
+    product: Pigmento
+    nombre: PP 7270 rosa
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Rosa
+  - op: variant.define
+    sku: PIG-PP-8269
+    product: Pigmento
+    nombre: PP 8269 azul Nacar
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Azul nacar
+  - op: variant.define
+    sku: PIG-PP-9155
+    product: Pigmento
+    nombre: PP 9155 Master café
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Master café
+  - op: variant.define
+    sku: PIG-PP-9161
+    product: Pigmento
+    nombre: PP 9161 Master 9201
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Master 9201
+  - op: variant.define
+    sku: PIG-PP-AP-7002
+    product: Pigmento
+    nombre: PP Ap 7002 Blanco
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Blanco
+  - op: variant.define
+    sku: PIG-PP-T5G-1878
+    product: Pigmento
+    nombre: PP T5G 1878 Verde
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Verde
+  - op: variant.define
+    sku: PIG-PP-T5R-2183
+    product: Pigmento
+    nombre: PP T5R 2183 Rosa
+    attrs:
+      Resina de Pigmento: PP/PE
+      Color de Pigmento: Rosa
+  - op: variant.define
+    sku: PIG-PVC-0707
+    product: Pigmento
+    nombre: PVC rosa 0707
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Rosa
+  - op: variant.define
+    sku: PIG-PVC-10644
+    product: Pigmento
+    nombre: PVC 10644 Morado
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Morado
+  - op: variant.define
+    sku: PIG-PVC-1348
+    product: Pigmento
+    nombre: PVC 1348 Rosa
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Rosa
+  - op: variant.define
+    sku: PIG-PVC-1491
+    product: Pigmento
+    nombre: PVC beige 1491
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Beige
+  - op: variant.define
+    sku: PIG-PVC-1794
+    product: Pigmento
+    nombre: PVC azul 1794
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Azul
+  - op: variant.define
+    sku: PIG-PVC-46981
+    product: Pigmento
+    nombre: PVC negro 46981
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Negro
+  - op: variant.define
+    sku: PIG-PVC-51468
+    product: Pigmento
+    nombre: PVC rosa silicon 51468
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Rosa silicon
+  - op: variant.define
+    sku: PIG-PVC-5160
+    product: Pigmento
+    nombre: PVC lila 5160
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Lila
+  - op: variant.define
+    sku: PIG-PVC-51607
+    product: Pigmento
+    nombre: PVC lila 51607
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Lila
+  - op: variant.define
+    sku: PIG-PVC-5171
+    product: Pigmento
+    nombre: PVC rosa hueso de mamey 5171
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Rosa hueso de mamey
+  - op: variant.define
+    sku: PIG-PVC-52377
+    product: Pigmento
+    nombre: PVC 52377 rosa 8 en 1
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Rosa 8 en 1
+  - op: variant.define
+    sku: PIG-PVC-52811
+    product: Pigmento
+    nombre: PVC 52811 Beige
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Beige
+  - op: variant.define
+    sku: PIG-PVC-9396
+    product: Pigmento
+    nombre: PVC beige 9396
+    attrs:
+      Resina de Pigmento: PVC
+      Color de Pigmento: Beige

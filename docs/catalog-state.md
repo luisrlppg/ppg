@@ -33,6 +33,12 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 - **Taparrosca:** `Tipo de Taparrosca` se fusionó en `Forma de Taparrosca` (gana Forma);
   `Mini yadis` → `Yadis`.
 - **Pincel** hereda `Ceja` y `Agujero de Mango` de **Mango** por `(Tamaño rosca, Altura de Mango)`.
+- **Pigmentos (2026-10-07):** producto **`Pigmento`** (`PIG`, **comprable**, `uom kg`) con 4 ejes
+  (`Resina de Pigmento` PP/PE·PVC, `Tipo de Pigmento` Polvo·Masterbatch, `Color de Pigmento`,
+  `Fabricante de Pigmento`) y los **30** pigmentos diferidos de Odoo materializados con
+  `Resina`+`Color` (SKU `PIG-<PP|PE|PVC>-<código>`). Costo de compra **por variante**
+  (`ProductVariant.costoCompra`, editable en `/costos`). Ops:
+  `scripts/catalog/ops/pigmentos.yaml`.
 - Histórico de los reorgs: `docs/scripts.md` (§ reorganizaciones one-off).
 
 ## Valores canónicos (atributos tocados)
@@ -47,15 +53,23 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 
 - **Taparrosca:** 12 variantes sin `Forma de Taparrosca` (captura manual).
 - **Pincel `PIN-0011`** (15/28): sin Mango equivalente → `Ceja`/`Agujero de Mango` pendientes.
-- **Crosswalk** `mapeo-odoo-ppg.csv`: 4 SKUs inexistentes (`VST-0014`, `VST-0021`, `VST-0022`,
-  `VST-0023`) → `cat:odoo-diff` los reporta; limpiar el crosswalk.
+- **Crosswalk** `mapeo-odoo-ppg.csv`: `VST-0014`, `VST-0021`, `VST-0022`, `VST-0023` **no son
+  obsoletos**: se migraron y luego `reorg-vastago.ts` los eliminó a propósito (Tipo
+  Externo/Casquillo/Sin rosca). Su existencia física quedó registrada en el **inventario histórico**
+  (`docs/inventario-historico-inicial.csv` → `/inventario-historico`, junto con `TPR-0016` y los
+  cepillos `Reciclado/Desconocido`), **fuera** del inventario vivo. `cat:odoo-diff` los seguirá
+  reportando como `sin_variante`; decidir si se limpian del crosswalk o quedan como histórico.
+  Consolidado en [`odoo-pendientes.csv`](./odoo-pendientes.csv).
 - **`pnpm db:seed` desalineado:** usa nombres viejos (`Altura vastago`, `Forma tapa`…).
   `cat:seed` es el seed bueno del catálogo; decidir si se alinea `seed.ts` o se retira de ahí la
   parte de atributos/productos para no duplicar.
+- **Pigmentos:** falta capturar `Tipo` (Polvo/Masterbatch) y `Fabricante` de las 30 variantes; el
+  `Color` puede repetirse entre variantes hasta que `Fabricante` las desambigüe. Stock inicial
+  pendiente (`pp 1992 MASTER ROSA` traía 25 Units en Odoo y no se cargó).
 
 ## Capturar cambios manuales
 
 Si editas valores de variantes en la UI, quedan en la BD pero **no** en el repo. Para no perderlos
 al recrear la base, corre **`pnpm cat:export-seed`** y commitea `scripts/catalog/seed/catalog.yaml`.
 
-*Última actualización: 2026-10-05.*
+*Última actualización: 2026-10-07.*

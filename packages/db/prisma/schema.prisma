@@ -128,6 +128,7 @@ model Product {
   components      ProductComponent[]    @relation("ComponentParent") // BOM de este producto
   componentOf     ProductComponent[]    @relation("ComponentChild") // dónde se usa este producto
   cost            ProductCost?
+  inventarioHistorico InventarioHistorico[] @relation("InventarioHistoricoFamilia") // familia de referencia (histórico)
 
   @@index([categoryId])
 }
@@ -139,6 +140,7 @@ model ProductVariant {
   nombre           String
   sku              String              @unique
   price            Decimal?            // override si difiere del base (neto, sin IVA)
+  costoCompra      Decimal?            // costo de adquisición por variante (comprables; p. ej. pigmentos)
   stockMin         Decimal             @default(0)
   stockMax         Decimal             @default(0)
   longLead         Boolean             @default(false)
@@ -541,6 +543,43 @@ model ProductionReportLine {
 // ---------------------------------------------------------------------------
 // Estado del monitor de stock (solo avisar productos NUEVOS que caen a bajo stock)
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Inventario histórico (productos descontinuados / subensambles con existencia)
+// AISLADO a propósito: NO se relaciona con ProductVariant/StockLevel, por lo que
+// no entra a stock_actual, mín/máx, fabricación, ventas, reportes ni monitor.
+// ---------------------------------------------------------------------------
+
+model InventarioHistorico {
+  id                Int      @id @default(autoincrement())
+  nombre            String
+  sku               String?
+  tipo              String   @default("descontinuado") // descontinuado | subensamble
+  cantidad          Decimal  @default(0)
+  ubicacion         String
+  notas             String?
+  familiaProductoId Int? // familia del catálogo, sólo para sugerir/filtrar atributos
+  familiaProducto   Product? @relation("InventarioHistoricoFamilia", fields: [familiaProductoId], references: [id], onDelete: SetNull)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  atributos InventarioHistoricoAtributo[]
+
+  @@index([ubicacion])
+  @@index([tipo])
+  @@index([familiaProductoId])
+}
+
+model InventarioHistoricoAtributo {
+  id     Int                 @id @default(autoincrement())
+  itemId Int
+  item   InventarioHistorico @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  nombre String
+  valor  String
+
+  @@unique([itemId, nombre])
+  @@index([nombre])
+}
 
 model MonitorState {
   id        Int      @id @default(1) // singleton

@@ -77,6 +77,18 @@ Todas soportan `--dry`/`--apply`.
 - `odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**:
   `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `odoo-migration-plan.ts` — plan de migración.
+- [`docs/odoo-pendientes.csv`](../docs/odoo-pendientes.csv) — **registro consolidado** de lo que no
+  quedó 1:1 en PPG (crosswalk eliminado, subensambles/sin mapear/solo Odoo de inventario, mín/máx
+  pendientes, pendientes de catálogo y **pigmentos**, hoy `migrado`). Se arma a partir de
+  `odoo-diff-report.csv`, `odoo-inventario-diferencias.csv`, `min-max-{pendientes,omitidos}.csv`,
+  `mapping-odoo.csv` (pigmentos, `accion=diferido`) y `catalog-state.md`.
+  Los pigmentos (`PE`/`PP`/`PVC`) se dejaron fuera de alcance a propósito: `reconcile-stock.ts` los
+  excluye, así que no aparecen en `odoo-inventario-diferencias.csv`; se migraron aparte a un solo
+  producto `Pigmento` (ops `scripts/catalog/ops/pigmentos.yaml`; ver `catalog-state.md`).
+- [`docs/inventario-historico-inicial.csv`](../docs/inventario-historico-inicial.csv) — carga inicial
+  del **inventario histórico** (existencias de descontinuados + subensambles Odoo, aisladas del
+  inventario vivo). Se importa desde `/inventario-historico` (`POST /inventario-historico/importar`).
+  10 descontinuados + 51 subensambles = 61 filas / 272.284 u.
 
 ## Toolkit de catálogo (actual) — `scripts/catalog/`
 

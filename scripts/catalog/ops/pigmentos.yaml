@@ -1,0 +1,87 @@
+version: 1
+name: pigmentos
+description: >
+  Alta del producto Pigmento (comprable, uom kg) con 4 ejes: Resina (PP/PE, PVC),
+  Tipo (Polvo, Masterbatch), Color y Fabricante. Se materializan los 30 pigmentos
+  diferidos de Odoo con Resina+Color (Tipo/Fabricante se capturan después).
+ops:
+  - { op: category.ensure, nombre: Pigmentos }
+
+  - op: product.define
+    nombre: Pigmento
+    sku: PIG
+    uom: kg
+    category: Pigmentos
+    hasVariants: true
+    comprable: true
+    fabricable: false
+    vendible: false
+
+  - { op: attr.ensure, name: Resina de Pigmento, values: ["PP/PE", "PVC"] }
+  - { op: attr.ensure, name: Tipo de Pigmento, values: ["Polvo", "Masterbatch"] }
+  - op: attr.ensure
+    name: Color de Pigmento
+    values:
+      - Café chocolate
+      - Hueso de mamey
+      - Morado hipoalergénico
+      - Rosa silicon
+      - Lila
+      - Negro
+      - Master rosa
+      - Gris
+      - Master naranja RoHS
+      - Rosa
+      - Azul nacar
+      - Master café
+      - Master 9201
+      - Blanco
+      - Verde
+      - Morado
+      - Rosa 8 en 1
+      - Beige
+      - Azul
+      - Rosa hueso de mamey
+  - { op: attr.ensure, name: Fabricante de Pigmento }
+
+  - { op: attr.assignAxis, product: Pigmento, attribute: Resina de Pigmento, sortOrder: 1 }
+  - { op: attr.assignAxis, product: Pigmento, attribute: Tipo de Pigmento, sortOrder: 2 }
+  - { op: attr.assignAxis, product: Pigmento, attribute: Color de Pigmento, sortOrder: 3 }
+  - { op: attr.assignAxis, product: Pigmento, attribute: Fabricante de Pigmento, sortOrder: 4 }
+
+  - { op: attr.restrictValues, product: Pigmento, attribute: Resina de Pigmento, values: ["PP/PE", "PVC"] }
+  - { op: attr.restrictValues, product: Pigmento, attribute: Tipo de Pigmento, values: ["Polvo", "Masterbatch"] }
+
+  # --- PP/PE (17) ---
+  - { op: variant.define, product: Pigmento, sku: PIG-PE-51400, nombre: "PE 51400 café chocolate", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Café chocolate" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PE-51449, nombre: "PE 51449 Hueso De mamey", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Hueso de mamey" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PE-51463, nombre: "PE 51463 Morado Hipo Alergenico", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Morado hipoalergénico" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PE-51469, nombre: "PE 51469 Rosa silicon", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Rosa silicon" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PE-51540, nombre: "PE 51540 Lila", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Lila" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-15N400, nombre: "PP 15N400 Negro", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Negro" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-1992, nombre: "pp 1992 MASTER ROSA", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Master rosa" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-2170, nombre: "PP 2170 gris", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Gris" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-52622, nombre: "PP 52622 Master Naranja RoHS", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Master naranja RoHS" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-708, nombre: "PP 708 Rosa", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Rosa" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-7270, nombre: "PP 7270 rosa", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Rosa" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-8269, nombre: "PP 8269 azul Nacar", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Azul nacar" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-9155, nombre: "PP 9155 Master café", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Master café" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-9161, nombre: "PP 9161 Master 9201", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Master 9201" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-AP-7002, nombre: "PP Ap 7002 Blanco", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Blanco" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-T5G-1878, nombre: "PP T5G 1878 Verde", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Verde" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PP-T5R-2183, nombre: "PP T5R 2183 Rosa", attrs: { "Resina de Pigmento": "PP/PE", "Color de Pigmento": "Rosa" } }
+
+  # --- PVC (13) ---
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-10644, nombre: "PVC 10644 Morado", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Morado" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-1348, nombre: "PVC 1348 Rosa", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Rosa" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-52377, nombre: "PVC 52377 rosa 8 en 1", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Rosa 8 en 1" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-52811, nombre: "PVC 52811 Beige", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Beige" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-1794, nombre: "PVC azul 1794", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Azul" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-1491, nombre: "PVC beige 1491", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Beige" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-9396, nombre: "PVC beige 9396", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Beige" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-5160, nombre: "PVC lila 5160", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Lila" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-51607, nombre: "PVC lila 51607", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Lila" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-46981, nombre: "PVC negro 46981", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Negro" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-0707, nombre: "PVC rosa 0707", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Rosa" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-5171, nombre: "PVC rosa hueso de mamey 5171", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Rosa hueso de mamey" } }
+  - { op: variant.define, product: Pigmento, sku: PIG-PVC-51468, nombre: "PVC rosa silicon 51468", attrs: { "Resina de Pigmento": "PVC", "Color de Pigmento": "Rosa silicon" } }

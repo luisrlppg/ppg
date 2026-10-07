@@ -35,6 +35,8 @@ export type Op =
       basePrice?: number;
       hasVariants?: boolean;
       vendible?: boolean;
+      fabricable?: boolean;
+      comprable?: boolean;
       imagen?: string | null;
       activo?: boolean;
     }
@@ -45,6 +47,7 @@ export type Op =
       nombre?: string;
       attrs: Record<string, string>;
       price?: number | null;
+      costoCompra?: number | null;
       min?: number;
       max?: number;
       longLead?: boolean;

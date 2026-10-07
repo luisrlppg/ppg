@@ -101,7 +101,7 @@ Alcances:
 | Tabla | Campos | Notas |
 |---|---|---|
 | `products` | id, nombre, category_id, `uom`, `base_price`, imagen, activo, `vendible` (bool), notas, timestamps | Familia o producto simple. `vendible` = aparece en el selector de Ventas con sus variantes activas (§7.2) |
-| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock) |
+| `product_variants` | id, product_id, nombre, sku (único), `price` (override, nullable), `costo_compra` (nullable; costo por variante de comprables), `stock_min`, `stock_max` (decimal), `long_lead` (bool), imagen, activo | Una sola estructura para TODO (color, tamaño, combo). **`stock_actual` es derivado** (suma de `stock_levels`, §4-Stock) |
 | `attributes` | id, nombre | Ej. "Tamaño de vástago", "Color de cerda", "Tipo de agujero" |
 | `attribute_values` | id, attribute_id, valor | Ej. "4.5mm", "Negro", "Circular" |
 | `product_attribute_lines` | id, product_id, attribute_id | Ejes del grid de una familia |
@@ -171,6 +171,10 @@ Motivos: `produccion`, `consumo`, `ensamble`, `ubicacion`, `despacho`, `ajuste`,
 `mano_obra = horas_mano_obra × tarifa_mano_obra`; `máquina = horas_maquina × tarifa_maquina`;
 `molde = piezas_molde > 0 ? costo_molde / piezas_molde : 0`; `total = materiales + mano_obra +
 máquina + molde + ensamble + empaque`. Precio/margen son de **solo lectura** (referencia).
+
+**Excepción (2026-10-07):** comprables con costo distinto por presentación (pigmentos por color)
+guardan `product_variants.costo_compra` (costo por variante); `/costos` lo captura en una tabla
+"Costo de compra por variante".
 
 ## 5. Reglas de negocio (producto y variantes)
 

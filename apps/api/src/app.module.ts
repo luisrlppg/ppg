@@ -6,6 +6,7 @@ import { HealthModule } from "./health/health.module";
 import { CatalogosModule } from "./catalogos/catalogos.module";
 import { ProductosModule } from "./productos/productos.module";
 import { InventarioModule } from "./inventario/inventario.module";
+import { InventarioHistoricoModule } from "./inventario-historico/inventario-historico.module";
 import { MonitorModule } from "./monitor/monitor.module";
 import { ClientesModule } from "./clientes/clientes.module";
 import { VentasModule } from "./ventas/ventas.module";
@@ -25,6 +26,7 @@ import { UsuariosModule } from "./usuarios/usuarios.module";
     CatalogosModule,
     ProductosModule,
     InventarioModule,
+    InventarioHistoricoModule,
     MonitorModule,
     ClientesModule,
     VentasModule,

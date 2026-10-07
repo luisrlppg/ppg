@@ -536,10 +536,12 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
       const basePrice = o.basePrice ?? (existing ? Number(existing.basePrice) : 0);
       const hasVariants = o.hasVariants ?? existing?.hasVariants ?? false;
       const vendible = o.vendible ?? existing?.vendible ?? false;
+      const fabricable = o.fabricable ?? existing?.fabricable ?? false;
+      const comprable = o.comprable ?? existing?.comprable ?? false;
       const imagen = o.imagen !== undefined ? o.imagen : existing?.imagen ?? null;
       const activo = o.activo ?? existing?.activo ?? true;
       if (!existing) {
-        await tx.product.create({ data: { nombre, skuBase: o.sku, categoryId, uom: uom as never, basePrice, hasVariants, vendible, imagen, activo } });
+        await tx.product.create({ data: { nombre, skuBase: o.sku, categoryId, uom: uom as never, basePrice, hasVariants, vendible, fabricable, comprable, imagen, activo } });
         log(`product.define: ${o.sku} creado`);
         return;
       }
@@ -549,11 +551,13 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
         Number(existing.basePrice) === Number(basePrice) &&
         existing.hasVariants === hasVariants &&
         existing.vendible === vendible &&
+        existing.fabricable === fabricable &&
+        existing.comprable === comprable &&
         existing.imagen === imagen &&
         existing.activo === activo &&
         existing.categoryId === categoryId;
       if (same) { log(`product.define ya estaba: ${o.sku}`); return; }
-      await tx.product.update({ where: { id: existing.id }, data: { nombre, categoryId, uom: uom as never, basePrice, hasVariants, vendible, imagen, activo } });
+      await tx.product.update({ where: { id: existing.id }, data: { nombre, categoryId, uom: uom as never, basePrice, hasVariants, vendible, fabricable, comprable, imagen, activo } });
       log(`product.define: ${o.sku} actualizado`);
       return;
     }
@@ -574,6 +578,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
             nombre: o.nombre ?? p.nombre,
             sku: o.sku,
             price: o.price ?? null,
+            costoCompra: o.costoCompra ?? null,
             stockMin: o.min ?? 0,
             stockMax: o.max ?? 0,
             longLead: o.longLead ?? false,
@@ -588,6 +593,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
         const meta = {
           nombre: o.nombre ?? v.nombre,
           price: o.price !== undefined ? o.price : (v.price === null ? null : Number(v.price)),
+          costoCompra: o.costoCompra !== undefined ? o.costoCompra : (v.costoCompra === null ? null : Number(v.costoCompra)),
           stockMin: o.min ?? Number(v.stockMin),
           stockMax: o.max ?? Number(v.stockMax),
           longLead: o.longLead ?? v.longLead,
@@ -599,6 +605,7 @@ async function runOp(tx: Tx, o: Op, log: (s: string) => void, warn: (s: string) 
         const same =
           v.nombre === meta.nombre &&
           (v.price === null ? null : Number(v.price)) === meta.price &&
+          (v.costoCompra === null ? null : Number(v.costoCompra)) === meta.costoCompra &&
           Number(v.stockMin) === meta.stockMin &&
           Number(v.stockMax) === meta.stockMax &&
           v.longLead === meta.longLead &&

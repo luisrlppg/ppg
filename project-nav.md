@@ -44,7 +44,7 @@ Registrados en `app.module.ts`.
   - `list` (siempre orden alfabético por `nombre`) 34 · `get` (detalle + componentes + variantes) 73 · `create` 122
   - `update` (registra `PriceChange`) 157 · `deactivate` 202
   - `setEjes` 209 · `setValoresPermitidos` 226 (tabla `ProductAttributeValue`) · `setComponentes` (BOM) 255 · `getPasos`/`setPasos` (wizard)
-  - `variantesDeProducto` 276 · `buscarVariantes` 292 · `createVariant` 324 · `updateVariant` 341
+  - `variantesDeProducto` 276 · `buscarVariantes` 292 · `createVariant` 324 · `updateVariant` 341 (acepta `costoCompra` por variante)
   - `setVariantAttribute` 349 · `removeVariantAttribute` 370 · `setVariantPrice` 378 · `setPackagings` 401
   - `grid` 430 · `materializar` (crea UNA variante puntual, idempotente) 434
   - `eliminarVariante` (chequea historial; 409 con motivos) 493 · `eliminarProducto` (hard delete sin historial) 513
@@ -151,13 +151,15 @@ Registrados en `app.module.ts`.
 
 ### 2.13 Costos (estándar por producto) → `costos/`
 - `costos.controller.ts` — `@Controller("costos")` (sólo `admin`): `GET /costos` (lista + desglose + precio/margen),
-  `GET /costos/:productId` (detalle + receta cruda), `PUT /costos/:productId` (upsert receta + materiales, `$transaction`),
+  `GET /costos/:productId` (detalle + receta cruda + `variantes` con `costoCompra`), `PUT /costos/:productId` (upsert receta + materiales + costo por variante, `$transaction`),
   `DELETE /costos/:productId` (limpia receta).
 - `costos.service.ts`: `list` · `get` · `upsert` · `remove` · `calcular` (materiales = `costoCompra` + Σ líneas;
   M.O. = horas×tarifa; máquina = horas×tarifa; molde = costo/piezas; ensamble; empaque) y `referenciaPrecio`
   (precio = `basePrice` o mínimo si es 0) para margen de **solo lectura**.
 - **v1 separada del ERP:** captura manual por producto, sin historial ni merma y **sin** enlazar a los precios de
   venta todavía (ver `docs/roadmap.md`). Modelo: `ProductCost` + `ProductCostMaterial` (`docs/data-model.md`).
+  **Excepción:** costo **por variante** de comprables vía `ProductVariant.costoCompra` (p. ej. pigmentos),
+  editable en la tabla "Costo de compra por variante" del modal de `/costos`.
 
 ### 2.14 Usuarios / cuentas → `usuarios/`
 - `usuarios.controller.ts` — `@Controller("usuarios")` (`admin`):
@@ -165,6 +167,14 @@ Registrados en `app.module.ts`.
   - `PATCH /usuarios/:id` (`nombre`, `role`, `active`) · `PATCH /usuarios/:id/password` (reset)
 - `usuarios.service.ts`: hash con `bcryptjs` (10 rondas); valida rol contra `ROLES` de `@ppg/shared`;
   impide que un admin se desactive o se quite su propio rol.
+
+### 2.15 Inventario histórico → `inventario-historico/`
+- `inventario-historico.controller.ts` — `@Controller("inventario-historico")`:
+  - `GET /inventario-historico` (filtros `q`, `tipo`, `atributoNombre`, `atributoValor`) · `GET /:id`
+  - `POST` · `PATCH /:id` · `DELETE /:id` · `POST /importar` (CSV) — **escritura sólo `admin`**; lectura todos.
+- `inventario-historico.service.ts`: CRUD + parser CSV (RFC4180, comas/`"`) + infiere `familiaProductoId` por prefijo de SKU.
+  **Aislado**: sin relación con `ProductVariant`/`StockLevel`, no entra a inventario vivo/mín-máx/fabricación/reportes.
+  Carga inicial en `docs/inventario-historico-inicial.csv` (61 filas: 10 descontinuados + 51 subensambles Odoo).
 
 ---
 
@@ -185,6 +195,7 @@ y `AppShell` (excepto tienda y login).
 | Fabricación (necesidades) | `app/fabricacion/page.tsx` | — | **Por ventas** primero, luego **Por mínimo** (colapsable, arranca cerrado) —fabricables faltantes; ensambles como *Armar* solo lectura— + **Pendientes de compra**; la celda **Producto / Variante** muestra la **valoración de atributos** de la variante (chips `.attr-list`, igual que Inventario) bajo el producto; **buscador de producto + filtro por atributos** compartido con Inventario (`useFiltroAtributos` + `BuscadorAtributos`), aplicado a las tres listas; columna **Prioridad** (badge Alta/Media/Baja, editable inline solo `admin` vía `PATCH /fabricacion/variantes/:id/prioridad`) y **selector de orden** Prioridad/Cantidad/Producto; botón **Ingresar producción** (modal: cantidad → `POST /fabricacion/produccion`); el stock entra a "Recibo de Producción" y queda **pendiente de ubicar** en `/ubicaciones` |
 | Ubicaciones | `app/ubicaciones/page.tsx` | — | **bandeja de ubicación**: todo lo producido (por **reporte de producción** aplicado y por **Fabricación**) listo para asignar compartimento. Filas **compactas y clicables** (sin selector ni botón inline): al hacer clic se abre un **modal** para capturar **cantidad** y **compartimento** (input con lista filtrable por nombre); `GET /reportes/lotes`, dos secciones por `origen`, filtro de atributos compartido, `POST /reportes/lotes/:id/ubicar`; muestra **quién lo registró** (`usuario`) |
 | Inventario | `app/inventario/page.tsx` | 779 | toolbar + 3 vistas (Por ubicación / Por variante / Min Max); cantidad editable y mín/máx editables (`components/inventario/cantidad-editable.tsx`); export CSV cliente (`lib/csv.ts`) |
+| Inventario histórico | `app/inventario-historico/page.tsx` | — | existencias de **descontinuados** y **subensambles**, aisladas del inventario vivo. Tabla + buscador + filtro `tipo` (Todos/Descontinuado/Subensamble) + filtro por familia/atributos (`BuscadorAtributos`) + import/export CSV. Alta/edición en `components/inventario-historico/item-form-modal.tsx` (atributos por filas; **asistente**: al elegir familia carga sus ejes `propios` vía `GET /catalogos/atributos/producto/:id` con valores sugeridos —texto libre + `datalist`— y reemplaza las filas; sin familia, captura manual). Escritura sólo `admin`; entrada **Inv. histórico** en el menú junto a Inventario |
 | Reportes de producción | `app/reportes/page.tsx` | — | **captura por pasos**: setup (toggle Matutino/Vespertino, fecha, personas, "Comenzar") → **Paso 1** wizard *Producción de cepillos de Nylon* (máquina → forma → color → cantidad, repetible) → botón **Continuar a ensartado** → **Paso 2 Ensartado** (mango + color de cerda + cantidad, repetible; el mango se elige **por pasos** Ceja → Tamaño rosca → Altura → Agujero, con auto-salto de pasos de una sola opción y solo combinaciones que resuelven pincel; luego color de cerda y vista previa del pincel `PIN`; agrega línea `final` del pincel + `consumo` del mango) → finalizar deja el reporte **pendiente**; stats en `components/reportes/stats-produccion.tsx` (150). La **bandeja de aceptación se retiró** (2026-10-06) y el ubicar lotes vive en `/ubicaciones` |
 | Catálogos | `app/catalogos/page.tsx` | 332 | tabs categorías/empaques/atributos; atributos globales en `components/catalogos/atributos-globales.tsx` |
 | Costos | `app/costos/page.tsx` | — | costo estándar por producto: tabla con desglose + editor en `Modal` (materiales por líneas, compra, M.O., máquina, molde, ensamble, empaque, notas) con resumen en vivo y margen (solo lectura). Sólo `admin` (guardia en la página); en el menú vive en la sección **Administración** |
@@ -230,8 +241,9 @@ Reutilízalos en vez de inventar clases nuevas:
 | Reporte de producción / aplicar / wizard de cepillos / ensartado | `reportes.service.ts` (`aplicar`, `cepillosNylon`, `ensartado`) · `app/reportes/page.tsx` |
 | Bandeja de ubicación (fila clic → modal con cantidad + compartimento buscable; origen + usuario) | `reportes.service.ts` (`lotes`, `ubicar`, `porUbicar`, `registrarProduccionInterna`) · `app/ubicaciones/page.tsx` (`ModalUbicarLote`) · `components/app-shell.tsx` (globo contador) |
 | Panel de Fabricación: mínimos, ventas, prioridad y alta de producción | `fabricacion.service.ts` (`necesidades`, `setPrioridad`, `registrarProduccion`) · `fabricacion.controller.ts` · `app/fabricacion/page.tsx` |
-| Buscador de producto + filtro por atributos (Inventario, Fabricación y Ubicaciones) | `lib/filtro-atributos.ts` (`useFiltroAtributos`) · `components/ui/buscador-atributos.tsx` · `app/inventario/page.tsx` · `app/fabricacion/page.tsx` · `app/ubicaciones/page.tsx` |
+| Buscador de producto + filtro por atributos (Inventario, Fabricación, Ubicaciones e Inv. histórico) | `lib/filtro-atributos.ts` (`useFiltroAtributos`) · `components/ui/buscador-atributos.tsx` · `app/inventario/page.tsx` · `app/fabricacion/page.tsx` · `app/ubicaciones/page.tsx` · `app/inventario-historico/page.tsx` |
 | Inventario: entrada/salida/ajuste/transferencia | `inventario.service.ts` (`movimiento` 126, `ajuste` 181, `mover` 230) |
+| Inventario histórico (descontinuados/subensambles, aislado) | `apps/api/src/inventario-historico/` · `app/inventario-historico/page.tsx` · `components/inventario-historico/item-form-modal.tsx` · `docs/inventario-historico-inicial.csv` |
 | Atributos globales / heredados | `catalogos.controller.ts` + `catalogos.atributos-producto.ts` |
 | Storefront guiado / wizard de configuración | `public.service.ts` (`getPasos`, `resolverConfiguracion`) · `public.controller.ts` · `app/tienda/[productId]/page.tsx` · `components/ventas/modal-config-variante.tsx` (con pasos) · `components/ventas/modal-seleccion-variante.tsx` (selector por eje con `<select>`, sin pasos) · `lib/pasos-wizard.ts` |
 | Editar los pasos guiados de un producto | `productos.service.ts` (`getPasos`/`setPasos`) · `app/productos/[id]/page.tsx` (sección "Pasos guiados") |

@@ -19,6 +19,7 @@ export interface SnapshotVariant {
   activo: boolean;
   stockMin: number;
   stockMax: number;
+  costoCompra: number | null;
   prioridad: string;
   attrs: Record<string, string>;
 }
@@ -28,6 +29,8 @@ export interface SnapshotProduct {
   nombre: string;
   skuBase: string;
   uom: string;
+  comprable: boolean;
+  fabricable: boolean;
   axes: SnapshotAxis[];
   variants: SnapshotVariant[];
 }
@@ -81,6 +84,8 @@ export async function buildSnapshot(
       nombre: p.nombre,
       skuBase: p.skuBase,
       uom: p.uom,
+      comprable: p.comprable,
+      fabricable: p.fabricable,
       axes: p.attributeLines.map((l) => {
         const list = allowedByPair.get(`${p.id}:${l.attributeId}`);
         return { attribute: l.attribute.nombre, sortOrder: l.sortOrder, allowedValues: list && list.length ? list : null };
@@ -92,6 +97,7 @@ export async function buildSnapshot(
         activo: v.activo,
         stockMin: num(v.stockMin),
         stockMax: num(v.stockMax),
+        costoCompra: v.costoCompra === null ? null : num(v.costoCompra),
         prioridad: v.prioridad,
         attrs: Object.fromEntries(v.variantAttributes.map((va) => [va.attribute.nombre, va.value.valor])),
       })),
@@ -107,7 +113,8 @@ export function snapshotToMarkdown(s: CatalogSnapshot): string {
   for (const a of s.attributes) out.push(`| ${a.nombre} | ${a.values.join(", ") || "—"} |`);
   out.push(``, `## Productos (${s.products.length})`, ``);
   for (const p of s.products) {
-    out.push(`### ${p.nombre} (${p.skuBase}, ${p.uom})`, ``);
+    const flags = [p.comprable ? "comprable" : null, p.fabricable ? "fabricable" : null].filter(Boolean);
+    out.push(`### ${p.nombre} (${p.skuBase}, ${p.uom})${flags.length ? ` — ${flags.join(", ")}` : ""}`, ``);
     out.push(`Ejes: ${p.axes.map((x) => `${x.attribute}${x.allowedValues ? ` [${x.allowedValues.join("|")}]` : ""}`).join(" · ") || "—"}`, ``);
     out.push(`| SKU | ${p.axes.map((x) => x.attribute).join(" | ")} |`, `|${"---|".repeat(p.axes.length + 1)}`);
     for (const v of p.variants) out.push(`| ${v.sku} | ${p.axes.map((x) => v.attrs[x.attribute] ?? "").join(" | ")} |`);

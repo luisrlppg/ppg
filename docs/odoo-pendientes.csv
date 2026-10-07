@@ -1,0 +1,92 @@
+area,tipo,sku,producto,detalle,origen,estado
+catalogo,crosswalk_sin_variante,VST-0014,Vastago,eliminada por reorg-vastago; stock Odoo descartado=42874,scripts/reorg-vastago.ts,revisar
+catalogo,crosswalk_sin_variante,VST-0021,Vastago,eliminada por reorg-vastago; stock Odoo descartado=16000,scripts/reorg-vastago.ts,revisar
+catalogo,crosswalk_sin_variante,VST-0022,Vastago,eliminada por reorg-vastago; stock Odoo descartado=4000,scripts/reorg-vastago.ts,revisar
+catalogo,crosswalk_sin_variante,VST-0023,Vastago,eliminada por reorg-vastago; stock Odoo descartado=18000,scripts/reorg-vastago.ts,revisar
+inventario,solo_odoo,CERD-0006,Cerda,qty_odoo=-1.27,docs/odoo-inventario-diferencias.csv,revisar
+inventario,solo_odoo,PIN-0009,Pincel,qty_odoo=-8500,docs/odoo-inventario-diferencias.csv,revisar
+inventario,sin_mapear,,"Cepillo Pino (nuevo, normal, negro, 5"")",cepillo sin variante (Pino Negro),docs/odoo-inventario-diferencias.csv,revisar
+inventario,sin_mapear,,"Tapa con Pincel (15, 25, normal, blanco, 33, negra)",sin variante,docs/odoo-inventario-diferencias.csv,revisar
+inventario,subensamble,,"Sobretapa Con Vastago (10, 44, negro, normal, sin logo, 29, blanco, nylon)",qty_odoo=2000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago (10, 44, negro, normal, sin logo, 70, negro, delineador)",qty_odoo=22500,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago (15, 40, cafe prosa, normal, sin logo, 60, negro, nylon)",qty_odoo=3000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago (15, 40, lila, normal, sin logo, 82, negro, nylon)",qty_odoo=1924,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago (15, 40, naranja barradas, normal, sin logo, 82, transparente, nylon)",qty_odoo=100,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago (15, 40, negro, normal, sin logo, 82, negro, nylon)",qty_odoo=1000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (10, 44, negro, normal, sin logo, 29, nuevo, blanco, recto, nylon, negra, 5)",qty_odoo=2320,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, amarillo keratina, normal, sin logo, 82, nuevo, negro, bala, nylon, negra, 4)",qty_odoo=200,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, azul cielo, normal, sin logo, 82, nuevo, negro, pino, nylon, negra, 5)",qty_odoo=1382,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, cafe prosa, normal, sin logo, 60, nuevo, negro, pino, nylon, negra, 5)",qty_odoo=832,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, fiusha, normal, sin logo, 82, nuevo, negro, bala, nylon, transparente, 5)",qty_odoo=300,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, gris 134, normal, sin logo, 82, nuevo, negro, pino, nylon, negra, 5)",qty_odoo=250,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, naranja barradas, normal, sin logo, 82, nuevo, negro, bala, nylon, negra, 4)",qty_odoo=500,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, naranja barradas, normal, sin logo, 82, nuevo, negro, barril, silicon, NA, NA)",qty_odoo=370,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, negro, normal, sin logo, 82, nuevo, negro, bala, nylon, negra, 4)",qty_odoo=2802,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, negro, normal, sin logo, 82, nuevo, negro, balita, nylon, negra, 5)",qty_odoo=210,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, negro, normal, sin logo, 82, nuevo, negro, cacahuate, nylon, negra, 5)",qty_odoo=3000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Cepillo (SVC) (15, 40, rojo jorge diaz, normal, sin logo, 82, viejo, negro, bolita, silicon, NA, NA)",qty_odoo=10000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Punta (SVP) (10, 44, blanco, normal, 74, negro, lip gloss)",qty_odoo=50,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Sobretapa Con Vastago y Punta (SVP) (10, 44, negro, normal, 70, negro, delineador)",qty_odoo=9100,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca (13, 30, blanco, normal, 29, negro, chico, perforar)",qty_odoo=1480,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca (13, 30, blanco, normal, 35, blanco, chico, perforar)",qty_odoo=1324,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca (13, 30, negro, normal, 35, blanco, chico, perforar)",qty_odoo=670,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca (13, 44, blanco, normal, 21, blanco, chico, perforar)",qty_odoo=280,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca (13, 44, blanco, normal, 29, negro, chico, perforar)",qty_odoo=454,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca y Cepillo (15, 38, negro, normal, 62, negro, pino, nylon, negra, 5)",qty_odoo=1101,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Tapa con Vastago Sin Rosca y Cepillo (15, 38, rojo, normal, 82, negro, pino, nylon, negra, 5)",qty_odoo=1064,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (10, 82, normal, transparente, bala, nylon, transparente, 5)",qty_odoo=500,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 60, normal, negro, bala, nylon, negra, 5)",qty_odoo=800,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 60, normal, negro, pino, nylon, negra, 5.75)",qty_odoo=13569,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, casquillo, negro, bala, nylon, negra, 5)",qty_odoo=1649,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, casquillo, negro, pino, nylon, negra, 5)",qty_odoo=900,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, bala largo, nylon, negra, 5)",qty_odoo=1059,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, bala, nylon, negra, 5)",qty_odoo=280,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, balita, nylon, negra, 5)",qty_odoo=33,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, bolita, silicon, NA, NA)",qty_odoo=3000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, cacahuate, nylon, negra, 5)",qty_odoo=5118,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, espiral, silicon, NA, NA)",qty_odoo=1038,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, pino, nylon, negra, 4)",qty_odoo=7476,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, negro, pino, nylon, negra, 5)",qty_odoo=3000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, transparente, bala, nylon, negra, 5)",qty_odoo=1500,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, transparente, pino, nylon, negra, 5)",qty_odoo=100,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, transparente, pino, nylon, transparente, 4)",qty_odoo=1987,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, normal, transparente, pino, nylon, transparente, 5)",qty_odoo=100,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Cepillo (VC) (15, 82, sin rosca, negro, pino, nylon, negra, 5)",qty_odoo=8057,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Gloss (10, 43, normal, blanco)",qty_odoo=5000,docs/odoo-inventario-diferencias.csv,informativo
+inventario,subensamble,,"Vastago con Punta (VP) (10, 70, normal, negro, delineador)",qty_odoo=19866,docs/odoo-inventario-diferencias.csv,informativo
+minmax,pendiente,,Botella 1580,"atributos=Color: transparente; candidatos=BOT-0026,-",scripts/odoo-migration/min-max-pendientes.csv,revisar
+minmax,pendiente,,Botella 1580,"atributos=Color: transparente; candidatos=BOT-0028,-",scripts/odoo-migration/min-max-pendientes.csv,revisar
+minmax,omitido,,Tapa con Pincel,atributos=rosca: 13; sin minimo ni maximo,scripts/odoo-migration/min-max-omitidos.csv,informativo
+minmax,omitido,,Vastago 1029,atributos=Color: blanco; omitido,scripts/odoo-migration/min-max-omitidos.csv,informativo
+catalogo,pendiente,,Taparrosca,12 variantes sin 'Forma de Taparrosca' (captura manual),docs/catalog-state.md,revisar
+catalogo,pendiente,PIN-0011,Pincel,sin Mango equivalente -> Ceja/Agujero de Mango pendientes (15/28),docs/catalog-state.md,revisar
+catalogo,migrado,,Pigmento,PE 51400 café chocolate (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PE 51449 Hueso De mamey (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PE 51463 Morado Hipo Alergenico (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PE 51469 Rosa silicon (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PE 51540 Lila (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 15N400 Negro (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,pp 1992 MASTER ROSA (Odoo; migrado Resina+Color; stock 25 Units sin cargar),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 2170 gris (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 52622 Master Naranja RoHS (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 708 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 7270 rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 8269 azul Nacar (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 9155 Master café (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP 9161 Master 9201 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP Ap 7002 Blanco (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP T5G 1878 Verde (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PP T5R 2183 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC 10644 Morado (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC 1348 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC 52377 rosa 8 en 1 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC 52811 Beige (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC azul 1794 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC beige 1491 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC beige 9396 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC lila 5160 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC lila 51607 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC negro 46981 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC rosa 0707 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC rosa hueso de mamey 5171 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,PVC rosa silicon 51468 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar

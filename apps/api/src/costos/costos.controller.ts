@@ -33,6 +33,11 @@ class MaterialDto {
   @IsOptional() @IsInt() orden?: number;
 }
 
+class VarianteCostoDto {
+  @IsInt() variantId!: number;
+  @IsOptional() @IsNumber() costoCompra?: number | null;
+}
+
 class UpsertCostoDto {
   @IsOptional() @IsNumber() costoCompra?: number | null;
   @IsOptional() @IsNumber() @Min(0) horasManoObra?: number;
@@ -49,6 +54,11 @@ class UpsertCostoDto {
   @ValidateNested({ each: true })
   @Type(() => MaterialDto)
   materiales?: MaterialDto[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VarianteCostoDto)
+  variantes?: VarianteCostoDto[];
 }
 
 @Controller("costos")
