@@ -10,3 +10,9 @@ allowBuilds:
 
 # Evita que `pnpm run`/`exec` re-instale automáticamente en cada ejecución.
 verifyDepsBeforeRun: false
+
+# `prisma generate` necesita `@prisma/client`/`prisma` resolubles en el
+# node_modules raíz. Con `pnpm deploy` (imagen API) el store es aislado, así que
+# se hoistean explícitamente.
+publicHoistPattern:
+  - "*prisma*"

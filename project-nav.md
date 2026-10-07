@@ -23,7 +23,8 @@ packages/
   shared/     # Tipos/constantes compartidos (@ppg/shared; incluye `formatCantidad`)
 scripts/      # Scripts de utilidad, migración Odoo y toolkit de catálogo
 docs/         # Documentación (este mapa vive en la raíz)
-infra/        # Dockerfiles (perfil full)
+infra/        # Dockerfiles (perfil full) + entrypoint de la API
+.github/      # Workflows de CI (publish.yml: build+push de imágenes a GHCR)
 ```
 
 - **Roles/guards:** `admin`, `operador`. La app está **protegida por defecto**: `JwtAuthGuard` + `RolesGuard`
@@ -269,7 +270,7 @@ Reutilízalos en vez de inventar clases nuevas:
 | Alta/edición de cliente (reusada en ventas) | `components/clientes/cliente-form-modal.tsx` |
 | UI compartida (modales, headers, tabs) | `components/ui/` + `app/globals.css` |
 | Respaldos de la BD (punto de retorno) | `apps/api/src/backups/` · `app/backups/page.tsx` (UI) · `scripts/ppg.sh` (`backup`/`restore`) |
-| Despliegue a producción (stack full) | `scripts/deploy.sh` · `docker-compose.yml` · `.env.production.example` · runbook `docs/development.md` (§ Despliegue a producción) |
+| Despliegue a producción (stack full) | `scripts/deploy.sh` · `docker-compose.yml` · `.env.production.example` · `.github/workflows/publish.yml` (build+push GHCR) · runbook `docs/development.md` (§ Despliegue a producción) |
 | Login / roles / JWT / guards globales | `apps/api/src/auth/` (`decorators/public.decorator.ts`, `guards/`) |
 | Cuentas de usuario (CRUD admin + borrado duro con `SUPER_ADMIN_PASSWORD`) | `apps/api/src/usuarios/` · `app/usuarios/page.tsx` |
 | Tipos shared | `apps/web/src/lib/types.ts` |

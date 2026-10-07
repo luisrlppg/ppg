@@ -8,6 +8,7 @@
 .gitignore
 .github
 docs
+*.log
 .env
 .env.*
 !.env.example

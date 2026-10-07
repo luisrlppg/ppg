@@ -97,8 +97,9 @@ La **web** es la entrada única del stack: publica el puerto host `WEB_HOST_PORT
 
 ### Promover dev → producción (servidor nuevo)
 
-Hay dos carriles: el **esquema** siempre viaja automático (rebuild + `migrate deploy`), y los
-**datos** según la fase.
+Hay dos carriles: el **esquema** siempre viaja automático (imagen + `migrate deploy`), y los
+**datos** según la fase. Las imágenes las construye CI y las publica en **GHCR**
+(`.github/workflows/publish.yml`); el servidor sólo hace `pull` (segundos, sin build).
 
 **Fase 1 — producción aún no vive (clon literal de dev):**
 
@@ -107,7 +108,8 @@ Hay dos carriles: el **esquema** siempre viaja automático (rebuild + `migrate d
 
 # PROD (una sola vez, con el repo clonado):
 cp .env.production.example .env.production   # edita secretos/puertos
-./scripts/deploy.sh update                   # git pull + build + up + migraciones
+docker login ghcr.io -u <usuario> -p <PAT>    # solo si los paquetes son privados
+./scripts/deploy.sh update                    # pull + up + migraciones
 
 # Carga los datos de dev: UI Respaldos (prod) → Subir .dump → Restaurar
 #   (o por CLI: ./scripts/deploy.sh restore docs/backups/<archivo>.dump)
@@ -123,7 +125,8 @@ promueven con ops/seed declarativo (`pnpm cat:seed`), no sobrescribiendo.
 ### Gestor de despliegue `scripts/deploy.sh`
 
 ```bash
-./scripts/deploy.sh update            # git pull + build + up + estado de migraciones
+./scripts/deploy.sh update [tag]      # pull + up + estado de migraciones (tag = rollback)
+./scripts/deploy.sh pull              # solo descarga las imágenes de GHCR
 ./scripts/deploy.sh status            # contenedores + migraciones aplicadas/pendientes
 ./scripts/deploy.sh logs [servicio]   # sigue logs
 ./scripts/deploy.sh backup [nombre]   # pg_dump -Fc -> docs/backups/
@@ -131,9 +134,11 @@ promueven con ops/seed declarativo (`pnpm cat:seed`), no sobrescribiendo.
 ./scripts/deploy.sh down              # detiene el stack (conserva datos)
 ```
 
-Lee `.env.production` si existe (o `.env`); alias en `package.json`: `pnpm deploy:prod`,
-`deploy:status`, `deploy:backup`, `deploy:restore`. El borrado de usuarios (vista **Usuarios**)
-se autoriza con `SUPER_ADMIN_PASSWORD` (defínela en `.env` / `.env.production`).
+`PPG_BUILD=1 ./scripts/deploy.sh update` fuerza el build local (sin CI/registry); `PPG_TAG=<sha>`
+(o `update <sha>`) fija la imagen a desplegar. Lee `.env.production` si existe (o `.env`); alias en
+`package.json`: `pnpm deploy:prod`, `deploy:pull`, `deploy:status`, `deploy:backup`,
+`deploy:restore`. El borrado de usuarios (vista **Usuarios**) se autoriza con `SUPER_ADMIN_PASSWORD`
+(defínela en `.env` / `.env.production`).
 
 
 ### Cargar los datos del Postgres local en el stack

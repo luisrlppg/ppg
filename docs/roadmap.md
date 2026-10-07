@@ -66,13 +66,16 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   **no** toca catálogo ni `PriceChange`. Sin migración.
 
 - **Despliegue dev → producción automatizado (2026-10-07):** `scripts/deploy.sh`
-  (`update`/`status`/`logs`/`backup`/`restore`/`down`; alias `pnpm deploy:*`) hace `git pull` +
-  `build` + `up` + `migrate status` y exporta `GIT_SHA`/`BUILD_TIME`. Compose endurecido
-  (`POSTGRES_*`, healthcheck `/api/health`, `docs/backups` en postgres), `.env.production.example`,
-  restore con respaldo previo + verificación de migraciones; `db:seed` quedó **auth-only**.
-  **Build en caché:** los Dockerfiles copian solo los manifiestos antes de `pnpm install`
-  (`--frozen-lockfile --ignore-scripts`) y usan BuildKit cache mounts (store de pnpm + `.next/cache`);
-  un `update` que solo cambia código no reinstala dependencias ni recompila todo.
+  (`update`/`pull`/`status`/`logs`/`backup`/`restore`/`down`; alias `pnpm deploy:*`). Compose
+  endurecido (`POSTGRES_*`, healthcheck `/api/health`, `docs/backups` en postgres),
+  `.env.production.example`, restore con respaldo previo + verificación de migraciones; `db:seed`
+  quedó **auth-only**.
+  **Imágenes prehechas (2026-10-07):** `.github/workflows/publish.yml` construye `api`/`web`/`tools`
+  en cada push a `main` y las publica en GHCR (`ghcr.io/luisrlppg/ppg-*`, tags `<sha>`/`latest`); el
+  servidor sólo hace `docker compose pull` (~segundos vs ~5 min de build). `update [tag]` permite
+  rollback; `PPG_BUILD=1` conserva el build local. La imagen de API usa `pnpm deploy --prod --legacy`
+  (node_modules sólo de producción, ~320 MB vs ~914 MB); `prisma` pasó a `dependencies` de `@ppg/db`
+  y `publicHoistPattern` en `pnpm-workspace.yaml` hace resoluble `prisma generate` en el layout aislado.
 
 - **Pigmentos en inventario (2026-10-07):** producto `Pigmento` (`PIG`, **comprable**, `uom kg`) con
   4 ejes; 39 pastas de color cargadas en `PIG1/PIG2/PIG3` como `PIG-<color>` (**40** variantes) vía

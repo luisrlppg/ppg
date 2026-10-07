@@ -15,6 +15,7 @@
     "db:backup": "bash scripts/ppg.sh backup",
     "db:restore": "bash scripts/ppg.sh restore",
     "deploy:prod": "bash scripts/deploy.sh update",
+    "deploy:pull": "bash scripts/deploy.sh pull",
     "deploy:status": "bash scripts/deploy.sh status",
     "deploy:backup": "bash scripts/deploy.sh backup",
     "deploy:restore": "bash scripts/deploy.sh restore",

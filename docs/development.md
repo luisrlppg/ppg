@@ -95,8 +95,9 @@ Alias `ppg` (en `~/.bashrc`). Único gestor de api+web: `start|stop|restart|relo
 
 ## Despliegue a producción (Docker Compose)
 
-El código viaja por `git pull` + rebuild en el servidor; el **esquema** se aplica solo
-(`infra/api-entrypoint.sh` corre `migrate deploy` al arrancar). Los **datos** siguen dos carriles:
+CI construye las imágenes y las publica en **GHCR**; el servidor sólo las **descarga** (pull). El
+**esquema** se aplica solo (`infra/api-entrypoint.sh` corre `migrate deploy` al arrancar). Los
+**datos** siguen dos carriles:
 
 - **Fase 1 (prod aún no vive):** clon literal de dev. Dev descarga un dump por la UI de
   **Respaldos**; en prod se sube y restaura (o `scripts/deploy.sh restore`). El restore es atómico,
@@ -107,18 +108,19 @@ El código viaja por `git pull` + rebuild en el servidor; el **esquema** se apli
 
 ```bash
 cp .env.production.example .env.production   # secretos/puertos (no reutilizar los de dev)
-./scripts/deploy.sh update                   # git pull + build + up + estado de migraciones
-./scripts/deploy.sh status                   # contenedores + migraciones aplicadas/pendientes
+docker login ghcr.io -u <usuario> -p <PAT>    # solo si los paquetes de GHCR son privados
+./scripts/deploy.sh update [tag]              # pull + up + migraciones (tag = rollback)
+PPG_BUILD=1 ./scripts/deploy.sh update        # fuerza build local (sin CI/registry)
+./scripts/deploy.sh status                    # contenedores + migraciones aplicadas/pendientes
 ./scripts/deploy.sh restore docs/backups/<archivo>.dump [--yes]
 ```
 
-> **Build en caché (BuildKit):** los Dockerfiles copian primero solo los `package.json` +
-> `pnpm-lock.yaml` y usan `--mount=type=cache` para el store de pnpm y `.next/cache`. Por eso un
-> `update` que solo cambia código no reinstala dependencias ni recompila todo; solo se rehace la
-> imagen afectada. Requiere BuildKit (Docker moderno; `docker compose build` lo usa por defecto).
+> **Imágenes prehechas (GHCR):** `.github/workflows/publish.yml` construye `api`/`web`/`tools` en cada
+> push a `main` y las publica en `ghcr.io/luisrlppg/ppg-*` (tags `<sha>`/`latest`); el deploy es un
+> `pull` de segundos (vs ~5 min de build). La API usa `pnpm deploy --prod` (~320 MB); `PPG_BUILD=1` para build local.
 
 Variables clave de `.env.production`: `POSTGRES_USER/PASSWORD/DB`, `JWT_SECRET`, `SUPER_ADMIN_PASSWORD`,
-`WEB_HOST_PORT`, `API_HOST_PORT`, `ADMIN_*`. El compose compone `DATABASE_URL` desde las credenciales de Postgres.
+`WEB_HOST_PORT`, `API_HOST_PORT`, `ADMIN_*`, `PPG_TAG`. El compose compone `DATABASE_URL` desde las credenciales de Postgres.
 La página **Respaldos** muestra el commit y la última migración del servidor (útil para comparar
 dev vs prod antes de restaurar). Detalle del flujo en [`../README.md`](../README.md).
 

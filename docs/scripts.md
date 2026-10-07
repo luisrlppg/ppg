@@ -43,15 +43,21 @@ Punto de retorno rápido de la BD (datos reales). Ver [`development.md`](./devel
 Gestor del stack `full` en el servidor de producción. Lee `.env.production` (o `.env`).
 Ver el runbook en [`development.md`](./development.md#despliegue-a-producción-docker-compose).
 
-- `update` — `git pull --ff-only` + `docker compose build` + `up -d` + espera salud + `migrate status`.
-  Exporta `GIT_SHA`/`BUILD_TIME` para trazabilidad (visibles en `/api/health` y la UI de Respaldos).
+- `update [tag]` — `git pull --ff-only` + `docker compose pull` (o `build` con `PPG_BUILD=1`) +
+  `up -d` + espera salud + `migrate status`. El `tag` opcional permite desplegar/rollback a una
+  imagen concreta (`PPG_TAG`, por defecto `latest`). Con `PPG_BUILD=1` exporta `GIT_SHA`/`BUILD_TIME`
+  (visibles en `/api/health` y la UI de Respaldos).
+- `pull` — descarga las imágenes del registry (GHCR) sin levantarlas.
 - `status` — contenedores + migraciones aplicadas/pendientes.
 - `logs [servicio]` — sigue logs.
 - `backup [nombre]` — `pg_dump -Fc` dentro del contenedor postgres → `docs/backups/`.
 - `restore [archivo] [--yes]` — respaldo previo, `DROP SCHEMA` + `psql --single-transaction` atómico,
   `migrate deploy` y `up -d`.
 - `down` — detiene el stack (conserva el volumen `pgdata`).
-- Alias: `pnpm deploy:prod` · `deploy:status` · `deploy:backup` · `deploy:restore`.
+- Alias: `pnpm deploy:prod` · `deploy:pull` · `deploy:status` · `deploy:backup` · `deploy:restore`.
+
+Las imágenes las publica CI (`.github/workflows/publish.yml`) en `ghcr.io/luisrlppg/ppg-{api,web,tools}`
+con tags `<sha>` y `latest`. Si son privadas: `docker login ghcr.io -u <usuario> -p <PAT>`.
 
 ## Reorganizaciones one-off (histórico)
 

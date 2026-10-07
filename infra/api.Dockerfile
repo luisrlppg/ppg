@@ -8,7 +8,7 @@ RUN corepack enable
 # (que compilan y necesitarían el código fuente todavía no copiado).
 FROM base AS deps
 WORKDIR /app
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json .npmrc ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY apps/api/package.json apps/api/
@@ -28,6 +28,25 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
  && pnpm --filter @ppg/db build \
  && pnpm --filter @ppg/api build
 
+# Imagen de herramientas (perfil "tools"): conserva el node_modules completo con
+# devDependencies para `migrate deploy` + `prisma db seed` (tsx).
+FROM node:22-alpine AS tools
+WORKDIR /app
+ENV NODE_ENV=production
+RUN apk add --no-cache postgresql18-client
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages ./packages
+COPY --from=build /app/apps/api ./apps/api
+
+# Runtime de producción: `pnpm deploy` deja un node_modules autocontenido y sólo
+# con dependencias de producción (mucho menor que el store completo).
+FROM build AS pruned
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter @ppg/api --prod deploy --legacy /app/api-runtime \
+ && cd /app/api-runtime \
+ && node node_modules/prisma/build/index.js generate \
+      --schema node_modules/@ppg/db/prisma/schema.prisma
+
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
@@ -38,9 +57,7 @@ ENV GIT_SHA=$GIT_SHA
 ENV BUILD_TIME=$BUILD_TIME
 # Cliente PostgreSQL 18 para la UI de Respaldos (pg_dump/pg_restore/psql).
 RUN apk add --no-cache postgresql18-client
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages ./packages
-COPY --from=build /app/apps/api ./apps/api
+COPY --from=pruned /app/api-runtime ./
 COPY infra/api-entrypoint.sh ./entrypoint.sh
 EXPOSE 3001
 CMD ["sh", "entrypoint.sh"]

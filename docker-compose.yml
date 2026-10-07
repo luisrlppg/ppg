@@ -23,6 +23,9 @@ services:
   # Perfil "full": despliegue completo (api + web; web es la entrada única).
   # Dev local: basta con `docker compose up -d postgres`.
   api:
+    # Imagen publicada por CI (GHCR). `docker compose pull` la descarga; con
+    # PPG_BUILD=1 o `docker compose build` se construye localmente (misma tag).
+    image: ghcr.io/luisrlppg/ppg-api:${PPG_TAG:-latest}
     build:
       context: .
       dockerfile: infra/api.Dockerfile
@@ -36,8 +39,6 @@ services:
       COOKIE_NAME: ppg_session
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-}
       API_PORT: 3001
-      GIT_SHA: ${GIT_SHA:-unknown}
-      BUILD_TIME: ${BUILD_TIME:-unknown}
     ports:
       # Acceso directo a la API (depuración). Puerto host configurable con API_HOST_PORT.
       - "${API_HOST_PORT:-3001}:3001"
@@ -58,6 +59,7 @@ services:
 
   # Entrada única del stack: publica la web y proxya /api/* al servicio `api`.
   web:
+    image: ghcr.io/luisrlppg/ppg-web:${PPG_TAG:-latest}
     build:
       context: .
       dockerfile: infra/web.Dockerfile
@@ -80,9 +82,11 @@ services:
   # respaldo completo (UI Respaldos / scripts/deploy.sh restore).
   # Uso: docker compose --profile tools run --rm seed
   seed:
+    image: ghcr.io/luisrlppg/ppg-tools:${PPG_TAG:-latest}
     build:
       context: .
       dockerfile: infra/api.Dockerfile
+      target: tools
     command:
       - sh
       - -lc

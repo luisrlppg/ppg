@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 # PPG ERP — Gestor de despliegue a producción (Docker Compose).
 #
-# Uso: ./scripts/deploy.sh <update|status|logs|backup|restore|down|help>
-#   update            git pull + build + up + espera salud + estado de migraciones
+# Uso: ./scripts/deploy.sh <update|pull|status|logs|backup|restore|down|help> [tag]
+#   update [tag]      pull (o build si PPG_BUILD=1) + up + espera salud + migraciones
+#                     El `tag` opcional permite desplegar/rollback a una imagen concreta
+#                     (por defecto usa PPG_TAG o `latest`).
+#   pull              descarga las imágenes del registry (GHCR)
 #   status            contenedores + migraciones aplicadas/pendientes
 #   logs [servicio]   sigue los logs (todos si se omite el servicio)
 #   backup [nombre]   respaldo pg_dump -Fc -> docs/backups/
 #   restore [archivo] [--yes]  restaura un respaldo (el más reciente si se omite)
 #   down              detiene el stack (conserva el volumen de datos)
 #
-# Variables de entorno: usa PPG_ENV_FILE (default: .env.production si existe, si no .env).
-# El catálogo/maestros se cargan con un respaldo completo (fase 1) o con
-# `pnpm cat:seed` desde el host; el esquema siempre se aplica con `migrate deploy`.
+# Variables de entorno:
+#   PPG_ENV_FILE  archivo de entorno (default: .env.production si existe, si no .env).
+#   PPG_TAG       tag de las imágenes a desplegar (default: latest).
+#   PPG_BUILD=1   construye las imágenes localmente en vez de descargarlas.
+#
+# Las imágenes las publica CI en GHCR (ghcr.io/luisrlppg/ppg-{api,web,tools}). Si
+# los paquetes son privados, haz `docker login ghcr.io -u <usuario> -p <PAT>` una vez.
+# El esquema viaja en la imagen y se aplica con `migrate deploy` al arrancar la API.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -25,6 +33,7 @@ COMPOSE_ENV=()
 COMPOSE=(docker compose "${COMPOSE_ENV[@]}" --profile full)
 BACKUPS_DIR="$ROOT/docs/backups"
 PRISMA="node node_modules/prisma/build/index.js"
+SCHEMA="node_modules/@ppg/db/prisma/schema.prisma"
 
 log()  { printf '==> %s\n' "$*"; }
 warn() { printf 'AVISO: %s\n' "$*" >&2; }
@@ -56,22 +65,34 @@ wait_healthy() {
 
 migrate_status() {
   log "Estado de migraciones (Prisma)"
-  "${COMPOSE[@]}" exec -T api sh -c "cd packages/db && $PRISMA migrate status --schema prisma/schema.prisma" || true
+  "${COMPOSE[@]}" exec -T api sh -c "$PRISMA migrate status --schema $SCHEMA" || true
 }
 
-do_update() {
-  require_docker
-  log "Actualizando código (git pull --ff-only)"
-  git pull --ff-only
-
+build_local() {
   export GIT_SHA
   GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
   export BUILD_TIME
   BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  log "Construyendo imágenes (commit $GIT_SHA)"
+  log "Construyendo imágenes localmente (commit $GIT_SHA)"
   "${COMPOSE[@]}" build
+}
 
-  log "Levantando el stack"
+do_update() {
+  require_docker
+  local tag="${1:-}"
+  [ -n "$tag" ] && export PPG_TAG="$tag"
+
+  log "Actualizando compose/env (git pull --ff-only)"
+  git pull --ff-only || warn "no se pudo hacer git pull; se continúa con la revisión local"
+
+  if [ "${PPG_BUILD:-0}" = "1" ]; then
+    build_local
+  elif ! "${COMPOSE[@]}" pull api web; then
+    warn "Falló 'docker compose pull' (¿login GHCR o tag inexistente?). Construyendo localmente."
+    build_local
+  fi
+
+  log "Levantando el stack (tag ${PPG_TAG:-latest})"
   "${COMPOSE[@]}" up -d
 
   log "Esperando servicios"
@@ -80,6 +101,11 @@ do_update() {
 
   migrate_status
   log "Listo. Entra en http://<host>:${WEB_HOST_PORT:-8090}"
+}
+
+do_pull() {
+  require_docker
+  "${COMPOSE[@]}" pull api web
 }
 
 do_status() {
@@ -168,7 +194,7 @@ do_restore() {
   fi
 
   log "Aplicando migraciones pendientes"
-  "${COMPOSE[@]}" run --rm --no-deps api sh -c "cd packages/db && $PRISMA migrate deploy --schema prisma/schema.prisma"
+  "${COMPOSE[@]}" run --rm --no-deps api sh -c "$PRISMA migrate deploy --schema $SCHEMA"
 
   log "Levantando el stack"
   "${COMPOSE[@]}" up -d
@@ -183,12 +209,13 @@ do_down() {
 }
 
 usage() {
-  sed -n '2,14p' "$0"
+  sed -n '2,19p' "$0"
 }
 
 require_docker
 case "${1:-}" in
-  update)  do_update ;;
+  update)  shift; do_update "$@" ;;
+  pull)    do_pull ;;
   status)  do_status ;;
   logs)    shift; do_logs "$@" ;;
   backup)  do_backup "${2:-}" ;;
