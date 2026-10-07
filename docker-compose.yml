@@ -49,9 +49,9 @@ services:
       - ./docs/backups:/app/docs/backups
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health >/dev/null 2>&1 || exit 1"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 12
+      retries: 24
       start_period: 40s
     restart: unless-stopped
 

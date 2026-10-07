@@ -63,6 +63,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   `build` + `up` + `migrate status` y exporta `GIT_SHA`/`BUILD_TIME`. Compose endurecido
   (`POSTGRES_*`, healthcheck `/api/health`, `docs/backups` en postgres), `.env.production.example`,
   restore con respaldo previo + verificación de migraciones; `db:seed` quedó **auth-only**.
+  **Build en caché:** los Dockerfiles copian solo los manifiestos antes de `pnpm install`
+  (`--frozen-lockfile --ignore-scripts`) y usan BuildKit cache mounts (store de pnpm + `.next/cache`);
+  un `update` que solo cambia código no reinstala dependencias ni recompila todo.
 
 - **Pigmentos en inventario (2026-10-07):** producto `Pigmento` (`PIG`, **comprable**, `uom kg`) con
   4 ejes; 39 pastas de color cargadas en `PIG1/PIG2/PIG3` como `PIG-<color>` (**40** variantes) vía

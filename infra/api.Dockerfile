@@ -2,16 +2,31 @@
 FROM node:22-alpine AS base
 RUN corepack enable
 
+# Dependencias: se copian SOLO los manifiestos. La capa (y el store de pnpm en
+# caché) se reutiliza mientras no cambie `pnpm-lock.yaml` ni algún package.json.
+# `--ignore-scripts` evita que corran los `prepare` de los paquetes del workspace
+# (que compilan y necesitarían el código fuente todavía no copiado).
 FROM base AS deps
 WORKDIR /app
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
-COPY tsconfig.base.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/db/package.json packages/db/
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts --store-dir /pnpm/store \
+      --filter @ppg/api --filter @ppg/db --filter @ppg/shared
+
+# Build: recién aquí el código fuente. Cualquier cambio en `apps/api` sólo
+# invalida esta etapa, no la instalación.
+FROM deps AS build
 COPY packages ./packages
 COPY apps/api ./apps/api
-RUN pnpm install --filter @ppg/api --filter @ppg/db --filter @ppg/shared
-
-FROM deps AS build
-RUN pnpm --filter @ppg/shared build && pnpm --filter @ppg/db build && pnpm --filter @ppg/api build
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm rebuild \
+ && pnpm --filter @ppg/shared build \
+ && pnpm --filter @ppg/db build \
+ && pnpm --filter @ppg/api build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
