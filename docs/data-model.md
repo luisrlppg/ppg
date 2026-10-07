@@ -61,9 +61,10 @@ IDs/SKU reales (la BD manda; verifícalos con `pnpm cat:snapshot`):
 - **PVC** (id 86, `PVC`) — uom `kg`.
 - **Pigmento** (`PIG`, 2026-10-07) — materia prima **comprable** (`uom kg`, `fabricable=false`,
   `vendible=false`); 4 ejes: `Resina de Pigmento` (`PP/PE`, `PVC`), `Tipo de Pigmento`
-  (`Polvo`, `Masterbatch`), `Color de Pigmento` y `Fabricante de Pigmento`. Alta con los 30 pigmentos
-  diferidos de Odoo (sólo `Resina`+`Color`; `Tipo`/`Fabricante` pendientes de captura). Costo de
-  compra **por variante**. Ops: `scripts/catalog/ops/pigmentos.yaml`.
+  (`Polvo`, `Masterbatch`), `Color de Pigmento` y `Fabricante de Pigmento`. **40** variantes:
+  `pp 1992` (de Odoo, `Resina`+`Color`) y **39 pastas de color** con stock en `PIG1/PIG2/PIG3`
+  (`Tipo`/`Fabricante` pendientes de captura). Costo de compra **por variante**. Ops:
+  `scripts/catalog/ops/pigmentos.yaml` + `pigmentos-pastas.yaml`.
 - **BTVPE — Tamaño de Botella (2026-10-04):** el componente **Botella** tiene el eje
   `Tamaño de Botella` (`Mini` 10mm/48mm, `Alta` 10mm/80mm, `Chica` 15mm/60mm, `Grande` 15mm/80mm),
   derivado de `Tamaño rosca` + `Altura de Botella`. Reemplaza al extinto `Capacidad de Botella`

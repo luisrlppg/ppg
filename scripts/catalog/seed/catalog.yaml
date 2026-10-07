@@ -565,6 +565,44 @@ ops:
       - Beige
       - Azul
       - Rosa hueso de mamey
+      - Amanecer
+      - Amarillo Amarelo
+      - Azul Navy
+      - Azul Nectarin
+      - Azul Oceano
+      - Cafe Galleta
+      - Granberry
+      - Mamey
+      - Morado Satin
+      - Naranja Raspberry
+      - Naranja Passion Fruit
+      - Palo De Rosa I
+      - Palo De Rosa II
+      - Pome Granate
+      - Red Blood
+      - Rojo V
+      - Rosa II
+      - Rosa Bombon
+      - Rosa Bugambilia
+      - Rosa Cuarzo
+      - Rosa Gliter
+      - Rosa Grape Fruit
+      - Rosa Uñas
+      - Satinado Sara
+      - Tutifruti I
+      - Tutifruti II
+      - Verde Aqua I
+      - Verde Convite
+      - Verde Lemoncino
+      - Vino
+      - Violeta Blackberry
+      - Watermelon
+      - Coral Confeti
+      - Amarillo Barradas
+      - Azul Barradas
+      - Rosa I
+      - Verde Aqua II
+      - Verde Barradas
   - op: attr.ensure
     name: Color de PVC
     values:
@@ -4192,47 +4230,113 @@ ops:
       Color de Cerda de Cepillo: Transparente
       Forma de cepillo nylon: Citologico
   - op: variant.define
-    sku: PIG-PE-51400
+    sku: PIG-AMANECER
     product: Pigmento
-    nombre: PE 51400 café chocolate
+    nombre: Amanecer
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Café chocolate
+      Color de Pigmento: Amanecer
   - op: variant.define
-    sku: PIG-PE-51449
+    sku: PIG-AMARILLO-AMARELO
     product: Pigmento
-    nombre: PE 51449 Hueso De mamey
+    nombre: Amarillo Amarelo
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Hueso de mamey
+      Color de Pigmento: Amarillo Amarelo
   - op: variant.define
-    sku: PIG-PE-51463
+    sku: PIG-AMARILLO-BARRADAS
     product: Pigmento
-    nombre: PE 51463 Morado Hipo Alergenico
+    nombre: Amarillo Barradas
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Morado hipoalergénico
+      Color de Pigmento: Amarillo Barradas
   - op: variant.define
-    sku: PIG-PE-51469
+    sku: PIG-AZUL-BARRADAS
     product: Pigmento
-    nombre: PE 51469 Rosa silicon
+    nombre: Azul Barradas
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Rosa silicon
+      Color de Pigmento: Azul Barradas
   - op: variant.define
-    sku: PIG-PE-51540
+    sku: PIG-AZUL-NAVY
     product: Pigmento
-    nombre: PE 51540 Lila
+    nombre: Azul Navy
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Lila
+      Color de Pigmento: Azul Navy
   - op: variant.define
-    sku: PIG-PP-15N400
+    sku: PIG-AZUL-NECTARIN
     product: Pigmento
-    nombre: PP 15N400 Negro
+    nombre: Azul Nectarin
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Negro
+      Color de Pigmento: Azul Nectarin
+  - op: variant.define
+    sku: PIG-AZUL-OCEANO
+    product: Pigmento
+    nombre: Azul Oceano
+    attrs:
+      Color de Pigmento: Azul Oceano
+  - op: variant.define
+    sku: PIG-BLANCO
+    product: Pigmento
+    nombre: Blanco
+    attrs:
+      Color de Pigmento: Blanco
+  - op: variant.define
+    sku: PIG-CAFE-GALLETA
+    product: Pigmento
+    nombre: Cafe Galleta
+    attrs:
+      Color de Pigmento: Cafe Galleta
+  - op: variant.define
+    sku: PIG-CORAL-CONFETI
+    product: Pigmento
+    nombre: Coral Confeti
+    attrs:
+      Color de Pigmento: Coral Confeti
+  - op: variant.define
+    sku: PIG-GRANBERRY
+    product: Pigmento
+    nombre: Granberry
+    attrs:
+      Color de Pigmento: Granberry
+  - op: variant.define
+    sku: PIG-MAMEY
+    product: Pigmento
+    nombre: Mamey
+    attrs:
+      Color de Pigmento: Mamey
+  - op: variant.define
+    sku: PIG-MORADO-SATIN
+    product: Pigmento
+    nombre: Morado Satin
+    attrs:
+      Color de Pigmento: Morado Satin
+  - op: variant.define
+    sku: PIG-NARANJA-PASSION-FRUIT
+    product: Pigmento
+    nombre: Naranja Passion Fruit
+    attrs:
+      Color de Pigmento: Naranja Passion Fruit
+  - op: variant.define
+    sku: PIG-NARANJA-RASPBERRY
+    product: Pigmento
+    nombre: Naranja Raspberry
+    attrs:
+      Color de Pigmento: Naranja Raspberry
+  - op: variant.define
+    sku: PIG-PALO-DE-ROSA-I
+    product: Pigmento
+    nombre: Palo De Rosa I
+    attrs:
+      Color de Pigmento: Palo De Rosa I
+  - op: variant.define
+    sku: PIG-PALO-DE-ROSA-II
+    product: Pigmento
+    nombre: Palo De Rosa II
+    attrs:
+      Color de Pigmento: Palo De Rosa II
+  - op: variant.define
+    sku: PIG-POME-GRANATE
+    product: Pigmento
+    nombre: Pome Granate
+    attrs:
+      Color de Pigmento: Pome Granate
   - op: variant.define
     sku: PIG-PP-1992
     product: Pigmento
@@ -4241,163 +4345,128 @@ ops:
       Resina de Pigmento: PP/PE
       Color de Pigmento: Master rosa
   - op: variant.define
-    sku: PIG-PP-2170
+    sku: PIG-RED-BLOOD
     product: Pigmento
-    nombre: PP 2170 gris
+    nombre: Red Blood
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Gris
+      Color de Pigmento: Red Blood
   - op: variant.define
-    sku: PIG-PP-52622
+    sku: PIG-ROJO-V
     product: Pigmento
-    nombre: PP 52622 Master Naranja RoHS
+    nombre: Rojo V
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Master naranja RoHS
+      Color de Pigmento: Rojo V
   - op: variant.define
-    sku: PIG-PP-708
+    sku: PIG-ROSA-BOMBON
     product: Pigmento
-    nombre: PP 708 Rosa
+    nombre: Rosa Bombon
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Rosa
+      Color de Pigmento: Rosa Bombon
   - op: variant.define
-    sku: PIG-PP-7270
+    sku: PIG-ROSA-BUGAMBILIA
     product: Pigmento
-    nombre: PP 7270 rosa
+    nombre: Rosa Bugambilia
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Rosa
+      Color de Pigmento: Rosa Bugambilia
   - op: variant.define
-    sku: PIG-PP-8269
+    sku: PIG-ROSA-CUARZO
     product: Pigmento
-    nombre: PP 8269 azul Nacar
+    nombre: Rosa Cuarzo
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Azul nacar
+      Color de Pigmento: Rosa Cuarzo
   - op: variant.define
-    sku: PIG-PP-9155
+    sku: PIG-ROSA-GLITER
     product: Pigmento
-    nombre: PP 9155 Master café
+    nombre: Rosa Gliter
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Master café
+      Color de Pigmento: Rosa Gliter
   - op: variant.define
-    sku: PIG-PP-9161
+    sku: PIG-ROSA-GRAPE-FRUIT
     product: Pigmento
-    nombre: PP 9161 Master 9201
+    nombre: Rosa Grape Fruit
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Master 9201
+      Color de Pigmento: Rosa Grape Fruit
   - op: variant.define
-    sku: PIG-PP-AP-7002
+    sku: PIG-ROSA-I
     product: Pigmento
-    nombre: PP Ap 7002 Blanco
+    nombre: Rosa I
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Blanco
+      Color de Pigmento: Rosa I
   - op: variant.define
-    sku: PIG-PP-T5G-1878
+    sku: PIG-ROSA-II
     product: Pigmento
-    nombre: PP T5G 1878 Verde
+    nombre: Rosa II
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Verde
+      Color de Pigmento: Rosa II
   - op: variant.define
-    sku: PIG-PP-T5R-2183
+    sku: PIG-ROSA-UNAS
     product: Pigmento
-    nombre: PP T5R 2183 Rosa
+    nombre: Rosa Uñas
     attrs:
-      Resina de Pigmento: PP/PE
-      Color de Pigmento: Rosa
+      Color de Pigmento: Rosa Uñas
   - op: variant.define
-    sku: PIG-PVC-0707
+    sku: PIG-SATINADO-SARA
     product: Pigmento
-    nombre: PVC rosa 0707
+    nombre: Satinado Sara
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Rosa
+      Color de Pigmento: Satinado Sara
   - op: variant.define
-    sku: PIG-PVC-10644
+    sku: PIG-TUTIFRUTI-I
     product: Pigmento
-    nombre: PVC 10644 Morado
+    nombre: Tutifruti I
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Morado
+      Color de Pigmento: Tutifruti I
   - op: variant.define
-    sku: PIG-PVC-1348
+    sku: PIG-TUTIFRUTI-II
     product: Pigmento
-    nombre: PVC 1348 Rosa
+    nombre: Tutifruti II
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Rosa
+      Color de Pigmento: Tutifruti II
   - op: variant.define
-    sku: PIG-PVC-1491
+    sku: PIG-VERDE-AQUA-I
     product: Pigmento
-    nombre: PVC beige 1491
+    nombre: Verde Aqua I
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Beige
+      Color de Pigmento: Verde Aqua I
   - op: variant.define
-    sku: PIG-PVC-1794
+    sku: PIG-VERDE-AQUA-II
     product: Pigmento
-    nombre: PVC azul 1794
+    nombre: Verde Aqua II
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Azul
+      Color de Pigmento: Verde Aqua II
   - op: variant.define
-    sku: PIG-PVC-46981
+    sku: PIG-VERDE-BARRADAS
     product: Pigmento
-    nombre: PVC negro 46981
+    nombre: Verde Barradas
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Negro
+      Color de Pigmento: Verde Barradas
   - op: variant.define
-    sku: PIG-PVC-51468
+    sku: PIG-VERDE-CONVITE
     product: Pigmento
-    nombre: PVC rosa silicon 51468
+    nombre: Verde Convite
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Rosa silicon
+      Color de Pigmento: Verde Convite
   - op: variant.define
-    sku: PIG-PVC-5160
+    sku: PIG-VERDE-LEMONCINO
     product: Pigmento
-    nombre: PVC lila 5160
+    nombre: Verde Lemoncino
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Lila
+      Color de Pigmento: Verde Lemoncino
   - op: variant.define
-    sku: PIG-PVC-51607
+    sku: PIG-VINO
     product: Pigmento
-    nombre: PVC lila 51607
+    nombre: Vino
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Lila
+      Color de Pigmento: Vino
   - op: variant.define
-    sku: PIG-PVC-5171
+    sku: PIG-VIOLETA-BLACKBERRY
     product: Pigmento
-    nombre: PVC rosa hueso de mamey 5171
+    nombre: Violeta Blackberry
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Rosa hueso de mamey
+      Color de Pigmento: Violeta Blackberry
   - op: variant.define
-    sku: PIG-PVC-52377
+    sku: PIG-WATERMELON
     product: Pigmento
-    nombre: PVC 52377 rosa 8 en 1
+    nombre: Watermelon
     attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Rosa 8 en 1
-  - op: variant.define
-    sku: PIG-PVC-52811
-    product: Pigmento
-    nombre: PVC 52811 Beige
-    attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Beige
-  - op: variant.define
-    sku: PIG-PVC-9396
-    product: Pigmento
-    nombre: PVC beige 9396
-    attrs:
-      Resina de Pigmento: PVC
-      Color de Pigmento: Beige
+      Color de Pigmento: Watermelon

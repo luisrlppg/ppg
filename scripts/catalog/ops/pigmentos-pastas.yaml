@@ -1,0 +1,205 @@
+version: 1
+name: pigmentos-pastas
+description: >
+  Completa la migración de pigmentos de Odoo. Carga las 39 pastas de color con
+  stock real en las ubicaciones PIG1/PIG2/PIG3 (63.45 kg) como variantes del
+  producto Pigmento (Color = nombre), carga el stock de pp 1992 (25 kg) en
+  Principal y elimina las 29 variantes codificadas que quedaron sin stock.
+ops:
+  - { op: location.ensure, nombre: PIG1 }
+  - { op: location.ensure, nombre: PIG2 }
+  - { op: location.ensure, nombre: PIG3 }
+
+  - op: attr.ensure
+    name: Color de Pigmento
+    values:
+      - Amanecer
+      - Amarillo Amarelo
+      - Azul Navy
+      - Azul Nectarin
+      - Azul Oceano
+      - Cafe Galleta
+      - Granberry
+      - Mamey
+      - Morado Satin
+      - Naranja Raspberry
+      - Naranja Passion Fruit
+      - Palo De Rosa I
+      - Palo De Rosa II
+      - Pome Granate
+      - Red Blood
+      - Rojo V
+      - Rosa II
+      - Rosa Bombon
+      - Rosa Bugambilia
+      - Rosa Cuarzo
+      - Rosa Gliter
+      - Rosa Grape Fruit
+      - Rosa Uñas
+      - Satinado Sara
+      - Tutifruti I
+      - Tutifruti II
+      - Verde Aqua I
+      - Verde Convite
+      - Verde Lemoncino
+      - Vino
+      - Violeta Blackberry
+      - Watermelon
+      - Coral Confeti
+      - Amarillo Barradas
+      - Azul Barradas
+      - Rosa I
+      - Verde Aqua II
+      - Verde Barradas
+
+  # --- Elimina los codificados sin stock (se conserva PIG-PP-1992) ---
+  - { op: variant.delete, sku: PIG-PE-51400 }
+  - { op: variant.delete, sku: PIG-PE-51449 }
+  - { op: variant.delete, sku: PIG-PE-51463 }
+  - { op: variant.delete, sku: PIG-PE-51469 }
+  - { op: variant.delete, sku: PIG-PE-51540 }
+  - { op: variant.delete, sku: PIG-PP-15N400 }
+  - { op: variant.delete, sku: PIG-PP-2170 }
+  - { op: variant.delete, sku: PIG-PP-52622 }
+  - { op: variant.delete, sku: PIG-PP-708 }
+  - { op: variant.delete, sku: PIG-PP-7270 }
+  - { op: variant.delete, sku: PIG-PP-8269 }
+  - { op: variant.delete, sku: PIG-PP-9155 }
+  - { op: variant.delete, sku: PIG-PP-9161 }
+  - { op: variant.delete, sku: PIG-PP-AP-7002 }
+  - { op: variant.delete, sku: PIG-PP-T5G-1878 }
+  - { op: variant.delete, sku: PIG-PP-T5R-2183 }
+  - { op: variant.delete, sku: PIG-PVC-10644 }
+  - { op: variant.delete, sku: PIG-PVC-1348 }
+  - { op: variant.delete, sku: PIG-PVC-52377 }
+  - { op: variant.delete, sku: PIG-PVC-52811 }
+  - { op: variant.delete, sku: PIG-PVC-1794 }
+  - { op: variant.delete, sku: PIG-PVC-1491 }
+  - { op: variant.delete, sku: PIG-PVC-9396 }
+  - { op: variant.delete, sku: PIG-PVC-5160 }
+  - { op: variant.delete, sku: PIG-PVC-51607 }
+  - { op: variant.delete, sku: PIG-PVC-46981 }
+  - { op: variant.delete, sku: PIG-PVC-0707 }
+  - { op: variant.delete, sku: PIG-PVC-5171 }
+  - { op: variant.delete, sku: PIG-PVC-51468 }
+
+  # --- Stock del único codificado con existencia (Odoo Units → kg 1:1) ---
+  - { op: stock.set, sku: PIG-PP-1992, location: Principal, qty: 25 }
+
+  # --- 39 pastas de color con stock (Color = nombre) ---
+  - { op: variant.define, product: Pigmento, sku: PIG-AMANECER, nombre: Amanecer, attrs: { "Color de Pigmento": Amanecer } }
+  - { op: stock.set, sku: PIG-AMANECER, location: PIG1, qty: 1.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AMARILLO-AMARELO, nombre: Amarillo Amarelo, attrs: { "Color de Pigmento": Amarillo Amarelo } }
+  - { op: stock.set, sku: PIG-AMARILLO-AMARELO, location: PIG1, qty: 0.65 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AZUL-NAVY, nombre: Azul Navy, attrs: { "Color de Pigmento": Azul Navy } }
+  - { op: stock.set, sku: PIG-AZUL-NAVY, location: PIG1, qty: 1.6 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AZUL-NECTARIN, nombre: Azul Nectarin, attrs: { "Color de Pigmento": Azul Nectarin } }
+  - { op: stock.set, sku: PIG-AZUL-NECTARIN, location: PIG1, qty: 0.9 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AZUL-OCEANO, nombre: Azul Oceano, attrs: { "Color de Pigmento": Azul Oceano } }
+  - { op: stock.set, sku: PIG-AZUL-OCEANO, location: PIG1, qty: 1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-CAFE-GALLETA, nombre: Cafe Galleta, attrs: { "Color de Pigmento": Cafe Galleta } }
+  - { op: stock.set, sku: PIG-CAFE-GALLETA, location: PIG1, qty: 0.45 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-GRANBERRY, nombre: Granberry, attrs: { "Color de Pigmento": Granberry } }
+  - { op: stock.set, sku: PIG-GRANBERRY, location: PIG1, qty: 1.45 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-MAMEY, nombre: Mamey, attrs: { "Color de Pigmento": Mamey } }
+  - { op: stock.set, sku: PIG-MAMEY, location: PIG1, qty: 0.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-MORADO-SATIN, nombre: Morado Satin, attrs: { "Color de Pigmento": Morado Satin } }
+  - { op: stock.set, sku: PIG-MORADO-SATIN, location: PIG1, qty: 0.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-NARANJA-RASPBERRY, nombre: Naranja Raspberry, attrs: { "Color de Pigmento": Naranja Raspberry } }
+  - { op: stock.set, sku: PIG-NARANJA-RASPBERRY, location: PIG1, qty: 0.8 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-NARANJA-PASSION-FRUIT, nombre: Naranja Passion Fruit, attrs: { "Color de Pigmento": Naranja Passion Fruit } }
+  - { op: stock.set, sku: PIG-NARANJA-PASSION-FRUIT, location: PIG1, qty: 0.65 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-PALO-DE-ROSA-I, nombre: Palo De Rosa I, attrs: { "Color de Pigmento": Palo De Rosa I } }
+  - { op: stock.set, sku: PIG-PALO-DE-ROSA-I, location: PIG1, qty: 1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-PALO-DE-ROSA-II, nombre: Palo De Rosa II, attrs: { "Color de Pigmento": Palo De Rosa II } }
+  - { op: stock.set, sku: PIG-PALO-DE-ROSA-II, location: PIG1, qty: 2 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-POME-GRANATE, nombre: Pome Granate, attrs: { "Color de Pigmento": Pome Granate } }
+  - { op: stock.set, sku: PIG-POME-GRANATE, location: PIG1, qty: 1.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-RED-BLOOD, nombre: Red Blood, attrs: { "Color de Pigmento": Red Blood } }
+  - { op: stock.set, sku: PIG-RED-BLOOD, location: PIG1, qty: 0.6 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROJO-V, nombre: Rojo V, attrs: { "Color de Pigmento": Rojo V } }
+  - { op: stock.set, sku: PIG-ROJO-V, location: PIG1, qty: 0.6 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-II, nombre: Rosa II, attrs: { "Color de Pigmento": Rosa II } }
+  - { op: stock.set, sku: PIG-ROSA-II, location: PIG1, qty: 1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-BOMBON, nombre: Rosa Bombon, attrs: { "Color de Pigmento": Rosa Bombon } }
+  - { op: stock.set, sku: PIG-ROSA-BOMBON, location: PIG1, qty: 0.4 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-BUGAMBILIA, nombre: Rosa Bugambilia, attrs: { "Color de Pigmento": Rosa Bugambilia } }
+  - { op: stock.set, sku: PIG-ROSA-BUGAMBILIA, location: PIG1, qty: 0.25 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-CUARZO, nombre: Rosa Cuarzo, attrs: { "Color de Pigmento": Rosa Cuarzo } }
+  - { op: stock.set, sku: PIG-ROSA-CUARZO, location: PIG1, qty: 1.1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-GLITER, nombre: Rosa Gliter, attrs: { "Color de Pigmento": Rosa Gliter } }
+  - { op: stock.set, sku: PIG-ROSA-GLITER, location: PIG1, qty: 0.4 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-GRAPE-FRUIT, nombre: Rosa Grape Fruit, attrs: { "Color de Pigmento": Rosa Grape Fruit } }
+  - { op: stock.set, sku: PIG-ROSA-GRAPE-FRUIT, location: PIG1, qty: 0.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-UNAS, nombre: Rosa Uñas, attrs: { "Color de Pigmento": Rosa Uñas } }
+  - { op: stock.set, sku: PIG-ROSA-UNAS, location: PIG1, qty: 0.85 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-SATINADO-SARA, nombre: Satinado Sara, attrs: { "Color de Pigmento": Satinado Sara } }
+  - { op: stock.set, sku: PIG-SATINADO-SARA, location: PIG1, qty: 1.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-TUTIFRUTI-I, nombre: Tutifruti I, attrs: { "Color de Pigmento": Tutifruti I } }
+  - { op: stock.set, sku: PIG-TUTIFRUTI-I, location: PIG1, qty: 1.7 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-TUTIFRUTI-II, nombre: Tutifruti II, attrs: { "Color de Pigmento": Tutifruti II } }
+  - { op: stock.set, sku: PIG-TUTIFRUTI-II, location: PIG1, qty: 0.96 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VERDE-AQUA-I, nombre: Verde Aqua I, attrs: { "Color de Pigmento": Verde Aqua I } }
+  - { op: stock.set, sku: PIG-VERDE-AQUA-I, location: PIG1, qty: 2.7 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VERDE-CONVITE, nombre: Verde Convite, attrs: { "Color de Pigmento": Verde Convite } }
+  - { op: stock.set, sku: PIG-VERDE-CONVITE, location: PIG1, qty: 0.75 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VERDE-LEMONCINO, nombre: Verde Lemoncino, attrs: { "Color de Pigmento": Verde Lemoncino } }
+  - { op: stock.set, sku: PIG-VERDE-LEMONCINO, location: PIG1, qty: 0.35 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VINO, nombre: Vino, attrs: { "Color de Pigmento": Vino } }
+  - { op: stock.set, sku: PIG-VINO, location: PIG1, qty: 1.15 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VIOLETA-BLACKBERRY, nombre: Violeta Blackberry, attrs: { "Color de Pigmento": Violeta Blackberry } }
+  - { op: stock.set, sku: PIG-VIOLETA-BLACKBERRY, location: PIG1, qty: 1.35 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-WATERMELON, nombre: Watermelon, attrs: { "Color de Pigmento": Watermelon } }
+  - { op: stock.set, sku: PIG-WATERMELON, location: PIG1, qty: 0.5 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-CORAL-CONFETI, nombre: Coral Confeti, attrs: { "Color de Pigmento": Coral Confeti } }
+  - { op: stock.set, sku: PIG-CORAL-CONFETI, location: PIG2, qty: 1.35 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AMARILLO-BARRADAS, nombre: Amarillo Barradas, attrs: { "Color de Pigmento": Amarillo Barradas } }
+  - { op: stock.set, sku: PIG-AMARILLO-BARRADAS, location: PIG3, qty: 0.1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-AZUL-BARRADAS, nombre: Azul Barradas, attrs: { "Color de Pigmento": Azul Barradas } }
+  - { op: stock.set, sku: PIG-AZUL-BARRADAS, location: PIG3, qty: 0.29 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-BLANCO, nombre: Blanco, attrs: { "Color de Pigmento": Blanco } }
+  - { op: stock.set, sku: PIG-BLANCO, location: PIG3, qty: 30 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-ROSA-I, nombre: Rosa I, attrs: { "Color de Pigmento": Rosa I } }
+  - { op: stock.set, sku: PIG-ROSA-I, location: PIG3, qty: 0.1 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VERDE-AQUA-II, nombre: Verde Aqua II, attrs: { "Color de Pigmento": Verde Aqua II } }
+  - { op: stock.set, sku: PIG-VERDE-AQUA-II, location: PIG3, qty: 0.15 }
+
+  - { op: variant.define, product: Pigmento, sku: PIG-VERDE-BARRADAS, nombre: Verde Barradas, attrs: { "Color de Pigmento": Verde Barradas } }
+  - { op: stock.set, sku: PIG-VERDE-BARRADAS, location: PIG3, qty: 0.3 }

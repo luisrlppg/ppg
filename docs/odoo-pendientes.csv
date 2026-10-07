@@ -60,33 +60,6 @@ minmax,omitido,,Tapa con Pincel,atributos=rosca: 13; sin minimo ni maximo,script
 minmax,omitido,,Vastago 1029,atributos=Color: blanco; omitido,scripts/odoo-migration/min-max-omitidos.csv,informativo
 catalogo,pendiente,,Taparrosca,12 variantes sin 'Forma de Taparrosca' (captura manual),docs/catalog-state.md,revisar
 catalogo,pendiente,PIN-0011,Pincel,sin Mango equivalente -> Ceja/Agujero de Mango pendientes (15/28),docs/catalog-state.md,revisar
-catalogo,migrado,,Pigmento,PE 51400 café chocolate (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PE 51449 Hueso De mamey (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PE 51463 Morado Hipo Alergenico (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PE 51469 Rosa silicon (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PE 51540 Lila (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 15N400 Negro (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,pp 1992 MASTER ROSA (Odoo; migrado Resina+Color; stock 25 Units sin cargar),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 2170 gris (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 52622 Master Naranja RoHS (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 708 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 7270 rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 8269 azul Nacar (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 9155 Master café (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP 9161 Master 9201 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP Ap 7002 Blanco (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP T5G 1878 Verde (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PP T5R 2183 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC 10644 Morado (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC 1348 Rosa (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC 52377 rosa 8 en 1 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC 52811 Beige (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC azul 1794 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC beige 1491 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC beige 9396 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC lila 5160 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC lila 51607 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC negro 46981 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC rosa 0707 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC rosa hueso de mamey 5171 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
-catalogo,migrado,,Pigmento,PVC rosa silicon 51468 (Odoo; migrado Resina+Color),scripts/odoo-migration/mapping-odoo.csv,revisar
+catalogo,migrado,,Pigmento,pp 1992 MASTER ROSA (Odoo; stock 25 kg cargado en Principal),scripts/catalog/ops/pigmentos-pastas.yaml,migrado
+catalogo,descartado,,Pigmento,29 pigmentos codificados de Odoo (PE/PP/PVC) sin stock: eliminados al completar la migración,scripts/catalog/ops/pigmentos-pastas.yaml,descartado
+inventario,migrado,,Pigmento,39 pastas de color en PIG1/PIG2/PIG3 (63.45 kg) cargadas como PIG-<color>,scripts/catalog/ops/pigmentos-pastas.yaml,migrado

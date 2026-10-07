@@ -42,12 +42,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 - **Pigmentos en inventario (2026-10-07):** producto **`Pigmento`** (`PIG`, **comprable**, `uom kg`)
   con 4 ejes (`Resina de Pigmento` PP/PE·PVC, `Tipo de Pigmento` Polvo·Masterbatch, `Color de
-  Pigmento`, `Fabricante de Pigmento`) y los **30** pigmentos diferidos de Odoo materializados con
-  `Resina`+`Color` (SKU `PIG-<PP|PE|PVC>-<código>`). Ops `scripts/catalog/ops/pigmentos.yaml`.
+  Pigmento`, `Fabricante de Pigmento`). Se materializaron los **30** diferidos de Odoo y se completó
+  la migración: de ellos sólo `pp 1992 MASTER ROSA` traía stock (25), los 29 sin existencia se
+  eliminaron y se cargaron las **39 pastas de color** con stock real en `PIG1/PIG2/PIG3` (63.45 kg)
+  como `PIG-<color>` (**40** variantes). Ops `scripts/catalog/ops/pigmentos.yaml` +
+  `pigmentos-pastas.yaml`.
   Se agregó **costo de compra por variante** (`ProductVariant.costoCompra`, migración
   `20261007130000_variant_costo_compra`; editable en `/costos`). El motor de catálogo ahora declara
   `fabricable`/`comprable` (`product.define`) y `costoCompra` (`variant.define`), y `catalog.yaml`
-  se regeneró. Pendiente: `Tipo`/`Fabricante` de las 30 y BOM consumible.
+  se regeneró. Pendiente: `Tipo`/`Fabricante` y BOM consumible.
 
 - **Inventario histórico aislado (2026-10-07):** nueva tabla `InventarioHistorico` (+
   `InventarioHistoricoAtributo`) para registrar existencias de productos **descontinuados** y
@@ -350,8 +353,8 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   reúne todo lo que no quedó 1:1 en PPG: 4 SKUs de Vástago eliminados por `reorg-vastago.ts` con su
   stock Odoo descartado, 47 líneas de subensambles (inventario, por diseño), 2 `sin_mapear`, 2
   `solo_odoo` (Cerda/Pincel), mín/máx pendientes (`Botella 1580`), pendientes de catálogo y
-  **30 pigmentos diferidos** (17 `Pigmento PP/PE` + 13 `Pigmento PVC`, `accion=diferido` en
-  `mapping-odoo.csv`; sólo `pp 1992 MASTER ROSA` traía stock, 25 Units).
+  **pigmentos** (30 diferidos en `mapping-odoo.csv`; 29 sin stock eliminados, `pp 1992` con 25 kg y
+  las 39 pastas de `PIG1/PIG2/PIG3` con 63.45 kg cargadas vía `pigmentos-pastas.yaml`).
 
 ## Verificaciones end-to-end
 

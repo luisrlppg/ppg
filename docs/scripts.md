@@ -91,8 +91,9 @@ Todas soportan `--dry`/`--apply`.
   (BD `StockLevel` por defecto; `--ppg <csv>` usa un export): mapea con `mapeo-odoo-ppg.csv`, deja
   subensamblados pendientes y excluye pigmentos/oficina. Genera
   `docs/odoo-inventario-diferencias.csv` + `docs/odoo-inventario-correccion.csv`. `--apply` fija
-  `StockLevel` (motivo `ajuste`) sólo en renglones `ajuste`; **`--reset`** borra todo el stock y recarga
-  el snapshot Odoo (destructivo: usar `ppg backup` antes).
+  `StockLevel` (motivo `ajuste`) sólo en renglones `ajuste`; **`--reset`** borra el stock y recarga
+  el snapshot Odoo **preservando** el de pigmentos (`PIG-*`, migrado aparte). Destructivo: usar
+  `ppg backup` antes.
 - `odoo-migration/mapeo-odoo-ppg.csv` — crosswalk vivo **por variante**:
   `sku, producto, uom, familiaOdoo, atributos, stockMin, stockMax, origen(odoo|nuevo)`.
 - `odoo-migration-plan.ts` — plan de migración.
@@ -102,8 +103,10 @@ Todas soportan `--dry`/`--apply`.
   `odoo-diff-report.csv`, `odoo-inventario-diferencias.csv`, `min-max-{pendientes,omitidos}.csv`,
   `mapping-odoo.csv` (pigmentos, `accion=diferido`) y `catalog-state.md`.
   Los pigmentos (`PE`/`PP`/`PVC`) se dejaron fuera de alcance a propósito: `reconcile-stock.ts` los
-  excluye, así que no aparecen en `odoo-inventario-diferencias.csv`; se migraron aparte a un solo
-  producto `Pigmento` (ops `scripts/catalog/ops/pigmentos.yaml`; ver `catalog-state.md`).
+  excluye (y `--reset` los preserva), así que no aparecen en `odoo-inventario-diferencias.csv`; se
+  migraron aparte al producto `Pigmento` (ops `scripts/catalog/ops/pigmentos.yaml` para los 30
+  codificados y `pigmentos-pastas.yaml` para el stock: `pp 1992` + 39 pastas en `PIG1/PIG2/PIG3`;
+  ver `catalog-state.md`).
 - [`docs/inventario-historico-inicial.csv`](../docs/inventario-historico-inicial.csv) — carga inicial
   del **inventario histórico** (existencias de descontinuados + subensambles Odoo, aisladas del
   inventario vivo). Se importa desde `/inventario-historico` (`POST /inventario-historico/importar`).

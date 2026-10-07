@@ -35,10 +35,11 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 - **Pincel** hereda `Ceja` y `Agujero de Mango` de **Mango** por `(Tamaño rosca, Altura de Mango)`.
 - **Pigmentos (2026-10-07):** producto **`Pigmento`** (`PIG`, **comprable**, `uom kg`) con 4 ejes
   (`Resina de Pigmento` PP/PE·PVC, `Tipo de Pigmento` Polvo·Masterbatch, `Color de Pigmento`,
-  `Fabricante de Pigmento`) y los **30** pigmentos diferidos de Odoo materializados con
-  `Resina`+`Color` (SKU `PIG-<PP|PE|PVC>-<código>`). Costo de compra **por variante**
-  (`ProductVariant.costoCompra`, editable en `/costos`). Ops:
-  `scripts/catalog/ops/pigmentos.yaml`.
+  `Fabricante de Pigmento`). De los **30** diferidos de Odoo (SKU `PIG-<PP|PE|PVC>-<código>`) sólo
+  `pp 1992 MASTER ROSA` traía stock (25), así que se eliminaron los 29 sin existencia y se cargaron
+  las **39 pastas de color** con stock real en `PIG1/PIG2/PIG3` (63.45 kg) como `PIG-<color>`
+  (**40** variantes totales). Costo de compra **por variante** (`ProductVariant.costoCompra`, editable
+  en `/costos`). Ops: `scripts/catalog/ops/pigmentos.yaml` + `pigmentos-pastas.yaml`.
 - Histórico de los reorgs: `docs/scripts.md` (§ reorganizaciones one-off).
 
 ## Valores canónicos (atributos tocados)
@@ -63,9 +64,8 @@ Qué está **vigente hoy** en el catálogo y qué falta. Para *cómo* cambiarlo 
 - **`pnpm db:seed` desalineado:** usa nombres viejos (`Altura vastago`, `Forma tapa`…).
   `cat:seed` es el seed bueno del catálogo; decidir si se alinea `seed.ts` o se retira de ahí la
   parte de atributos/productos para no duplicar.
-- **Pigmentos:** falta capturar `Tipo` (Polvo/Masterbatch) y `Fabricante` de las 30 variantes; el
-  `Color` puede repetirse entre variantes hasta que `Fabricante` las desambigüe. Stock inicial
-  pendiente (`pp 1992 MASTER ROSA` traía 25 Units en Odoo y no se cargó).
+- **Pigmentos:** falta capturar `Tipo` (Polvo/Masterbatch) y `Fabricante`; el `Color` puede repetirse
+  entre variantes hasta que `Fabricante` las desambigüe. Stock migrado (39 pastas + `pp 1992`).
 
 ## Capturar cambios manuales
 

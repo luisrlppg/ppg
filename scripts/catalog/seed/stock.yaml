@@ -1094,3 +1094,163 @@ ops:
     sku: VST-0016
     location: Recibo de Producción
     qty: 2
+  - op: stock.set
+    sku: PIG-PP-1992
+    location: Principal
+    qty: 25
+  - op: stock.set
+    sku: PIG-AMANECER
+    location: PIG1
+    qty: 1.5
+  - op: stock.set
+    sku: PIG-AMARILLO-AMARELO
+    location: PIG1
+    qty: 0.65
+  - op: stock.set
+    sku: PIG-AZUL-NAVY
+    location: PIG1
+    qty: 1.6
+  - op: stock.set
+    sku: PIG-AZUL-NECTARIN
+    location: PIG1
+    qty: 0.9
+  - op: stock.set
+    sku: PIG-AZUL-OCEANO
+    location: PIG1
+    qty: 1
+  - op: stock.set
+    sku: PIG-CAFE-GALLETA
+    location: PIG1
+    qty: 0.45
+  - op: stock.set
+    sku: PIG-GRANBERRY
+    location: PIG1
+    qty: 1.45
+  - op: stock.set
+    sku: PIG-MAMEY
+    location: PIG1
+    qty: 0.5
+  - op: stock.set
+    sku: PIG-MORADO-SATIN
+    location: PIG1
+    qty: 0.5
+  - op: stock.set
+    sku: PIG-NARANJA-RASPBERRY
+    location: PIG1
+    qty: 0.8
+  - op: stock.set
+    sku: PIG-NARANJA-PASSION-FRUIT
+    location: PIG1
+    qty: 0.65
+  - op: stock.set
+    sku: PIG-PALO-DE-ROSA-I
+    location: PIG1
+    qty: 1
+  - op: stock.set
+    sku: PIG-PALO-DE-ROSA-II
+    location: PIG1
+    qty: 2
+  - op: stock.set
+    sku: PIG-POME-GRANATE
+    location: PIG1
+    qty: 1.5
+  - op: stock.set
+    sku: PIG-RED-BLOOD
+    location: PIG1
+    qty: 0.6
+  - op: stock.set
+    sku: PIG-ROJO-V
+    location: PIG1
+    qty: 0.6
+  - op: stock.set
+    sku: PIG-ROSA-II
+    location: PIG1
+    qty: 1
+  - op: stock.set
+    sku: PIG-ROSA-BOMBON
+    location: PIG1
+    qty: 0.4
+  - op: stock.set
+    sku: PIG-ROSA-BUGAMBILIA
+    location: PIG1
+    qty: 0.25
+  - op: stock.set
+    sku: PIG-ROSA-CUARZO
+    location: PIG1
+    qty: 1.1
+  - op: stock.set
+    sku: PIG-ROSA-GLITER
+    location: PIG1
+    qty: 0.4
+  - op: stock.set
+    sku: PIG-ROSA-GRAPE-FRUIT
+    location: PIG1
+    qty: 0.5
+  - op: stock.set
+    sku: PIG-ROSA-UNAS
+    location: PIG1
+    qty: 0.85
+  - op: stock.set
+    sku: PIG-SATINADO-SARA
+    location: PIG1
+    qty: 1.5
+  - op: stock.set
+    sku: PIG-TUTIFRUTI-I
+    location: PIG1
+    qty: 1.7
+  - op: stock.set
+    sku: PIG-TUTIFRUTI-II
+    location: PIG1
+    qty: 0.96
+  - op: stock.set
+    sku: PIG-VERDE-AQUA-I
+    location: PIG1
+    qty: 2.7
+  - op: stock.set
+    sku: PIG-VERDE-CONVITE
+    location: PIG1
+    qty: 0.75
+  - op: stock.set
+    sku: PIG-VERDE-LEMONCINO
+    location: PIG1
+    qty: 0.35
+  - op: stock.set
+    sku: PIG-VINO
+    location: PIG1
+    qty: 1.15
+  - op: stock.set
+    sku: PIG-VIOLETA-BLACKBERRY
+    location: PIG1
+    qty: 1.35
+  - op: stock.set
+    sku: PIG-WATERMELON
+    location: PIG1
+    qty: 0.5
+  - op: stock.set
+    sku: PIG-CORAL-CONFETI
+    location: PIG2
+    qty: 1.35
+  - op: stock.set
+    sku: PIG-AMARILLO-BARRADAS
+    location: PIG3
+    qty: 0.1
+  - op: stock.set
+    sku: PIG-AZUL-BARRADAS
+    location: PIG3
+    qty: 0.29
+  - op: stock.set
+    sku: PIG-BLANCO
+    location: PIG3
+    qty: 30
+  - op: stock.set
+    sku: PIG-ROSA-I
+    location: PIG3
+    qty: 0.1
+  - op: stock.set
+    sku: PIG-VERDE-AQUA-II
+    location: PIG3
+    qty: 0.15
+  - op: stock.set
+    sku: PIG-VERDE-BARRADAS
+    location: PIG3
+    qty: 0.3
