@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Put,
   Query,
   Req,
@@ -13,9 +14,11 @@ import {
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Min,
@@ -26,40 +29,26 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { CostosService } from "./costos.service";
 
-class MaterialDto {
-  @IsString() @IsNotEmpty() nombre!: string;
-  @IsNumber() @Min(0) cantidad!: number;
-  @IsNumber() @Min(0) costoUnitario!: number;
+const FUENTES = ["manual", "bom", "variante", "formula"];
+
+class ValorCostoDto {
+  @IsString() @IsNotEmpty() clave!: string;
+  @IsOptional() @IsString() etiqueta?: string;
+  @IsIn(FUENTES) fuente!: "manual" | "bom" | "variante" | "formula";
+  @IsOptional() @IsNumber() valor?: number | null;
+  @IsOptional() @IsObject() opciones?: Record<string, unknown>;
   @IsOptional() @IsInt() orden?: number;
 }
 
-class VarianteCostoDto {
-  @IsInt() variantId!: number;
-  @IsOptional() @IsNumber() costoCompra?: number | null;
-}
-
-class UpsertCostoDto {
+class CostoDto {
   @IsOptional() @IsNumber() @Min(0) precioBase?: number;
-  @IsOptional() @IsNumber() costoCompra?: number | null;
-  @IsOptional() @IsNumber() @Min(0) horasManoObra?: number;
-  @IsOptional() @IsNumber() @Min(0) tarifaManoObra?: number;
-  @IsOptional() @IsNumber() @Min(0) horasMaquina?: number;
-  @IsOptional() @IsNumber() @Min(0) tarifaMaquina?: number;
-  @IsOptional() @IsNumber() @Min(0) costoMolde?: number;
-  @IsOptional() @IsNumber() @Min(0) piezasMolde?: number;
-  @IsOptional() @IsNumber() @Min(0) costoEnsamble?: number;
-  @IsOptional() @IsNumber() @Min(0) costoEmpaque?: number;
+  @IsOptional() @IsString() formula?: string | null;
   @IsOptional() @IsString() notas?: string | null;
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => MaterialDto)
-  materiales?: MaterialDto[];
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => VarianteCostoDto)
-  variantes?: VarianteCostoDto[];
+  @Type(() => ValorCostoDto)
+  valores?: ValorCostoDto[];
 }
 
 @Controller("costos")
@@ -80,10 +69,16 @@ export class CostosController {
   }
 
   @Roles("admin")
+  @Post(":productId/preview")
+  preview(@Param("productId", ParseIntPipe) productId: number, @Body() dto: CostoDto) {
+    return this.costos.preview(productId, dto);
+  }
+
+  @Roles("admin")
   @Put(":productId")
   upsert(
     @Param("productId", ParseIntPipe) productId: number,
-    @Body() dto: UpsertCostoDto,
+    @Body() dto: CostoDto,
     @Req() req: { user: { id: number } },
   ) {
     return this.costos.upsert(productId, dto, req.user.id);

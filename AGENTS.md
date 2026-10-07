@@ -18,6 +18,14 @@ y en `docs/`. Entrega actual: **E3** (producción/reportes). Admin `admin`/`admi
 3. **Catálogo:** usa ops declarativas (`docs/catalog-ops.md`), no scripts one-off.
 4. **Migraciones:** nunca `prisma migrate dev` en shell no-TTY; usa `pnpm db:deploy`.
 5. **Mapa vivo:** si mueves/renombras zonas, actualiza `project-nav.md`.
+6. **Presupuesto de docs:** un doc de área debe caber en **≤150 líneas**; si crece, divídelo por tema
+   o añade TOC. **Nunca leas un doc entero:** localiza la sección con `rg` y lee sólo ese rango.
+   Los tomos de referencia (`REQUIREMENTS.md`, `docs/data-model.md`, `docs/plan-btvpe.md`) se leen
+   **por sección**, no completos.
+7. **Presupuesto de código:** guía **≤400 líneas** por archivo; revisa cuando pase de **600**.
+   Si un archivo crece, extrae componentes/hooks/helpers antes de seguir añadiendo.
+8. **Docs generados:** `docs/catalog-snapshot.{md,json}` es salida de `pnpm cat:snapshot`; **no** lo
+   leas completo ni lo edites a mano: consúltalo con `rg` (o regenera).
 
 Qué actualizar según el cambio:
 

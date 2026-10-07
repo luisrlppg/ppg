@@ -8,6 +8,7 @@ export interface StatsResult {
   reportesAplicados: number;
   totalFinal: number;
   totalConsumo: number;
+  totalInformativo: number;
   porSeccion: { seccion: string; unidades: number; unidadesPorPersonaHora: number }[];
   consumo: { variantId: number; nombre: string; producto: string; unidades: number }[];
 }
@@ -31,6 +32,7 @@ export async function estadisticas(
   const consumo = new Map<string, { variantId: number; nombre: string; producto: string; unidades: number }>();
   let totalFinal = 0;
   let totalConsumo = 0;
+  let totalInformativo = 0;
 
   for (const r of reports) {
     const horas = dec(r.horasTrabajadas) > 0 ? dec(r.horasTrabajadas) : HORAS_TURNO[r.turno as Turno] ?? 8;
@@ -43,10 +45,17 @@ export async function estadisticas(
         act.unidades += ok;
         act.metrica += ok / base;
         porSeccion.set(l.seccion, act);
+      } else if (l.tipo === "informativo") {
+        totalInformativo += ok;
+        const act = porSeccion.get(l.seccion) ?? { unidades: 0, metrica: 0 };
+        act.unidades += ok;
+        act.metrica += ok / base;
+        porSeccion.set(l.seccion, act);
       } else {
         totalConsumo += ok;
+        if (l.variantId == null) continue;
         const clave = `${l.variantId}`;
-        const act = consumo.get(clave) ?? { variantId: l.variantId, nombre: l.variant.nombre, producto: l.variant.product.nombre, unidades: 0 };
+        const act = consumo.get(clave) ?? { variantId: l.variantId, nombre: l.variant?.nombre ?? "", producto: l.variant?.product.nombre ?? "", unidades: 0 };
         act.unidades += ok;
         consumo.set(clave, act);
       }
@@ -59,6 +68,7 @@ export async function estadisticas(
     reportesAplicados: reports.length,
     totalFinal,
     totalConsumo,
+    totalInformativo,
     porSeccion: [...porSeccion.entries()].map(([seccion, v]) => ({
       seccion,
       unidades: Math.round(v.unidades * 1000) / 1000,

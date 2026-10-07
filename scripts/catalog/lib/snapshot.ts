@@ -107,7 +107,13 @@ export async function buildSnapshot(
 
 export function snapshotToMarkdown(s: CatalogSnapshot): string {
   const out: string[] = [];
-  out.push(`# Catálogo PPG`, ``, `Generado: ${s.generatedAt}`, ``);
+  out.push(
+    `# Catálogo PPG`,
+    ``,
+    `> Generado automáticamente por \`pnpm cat:snapshot\`; **no editar a mano**.`,
+    `Generado: ${s.generatedAt}`,
+    ``,
+  );
   out.push(`## Atributos (${s.attributes.length})`, ``);
   out.push(`| Atributo | Valores |`, `|---|---|`);
   for (const a of s.attributes) out.push(`| ${a.nombre} | ${a.values.join(", ") || "—"} |`);

@@ -283,37 +283,40 @@ model PriceChange {
 
 /// Costo estándar por producto (uno por producto). Materiales 100% manuales;
 /// el resto de conceptos es un formulario fijo.
-model ProductCost {
-  id             Int      @id @default(autoincrement())
-  productId      Int      @unique
-  product        Product  @relation(fields: [productId], references: [id])
-  costoCompra    Decimal? // costo de adquisición (productos comprables)
-  horasManoObra  Decimal  @default(0)
-  tarifaManoObra Decimal  @default(0)
-  horasMaquina   Decimal  @default(0)
-  tarifaMaquina  Decimal  @default(0)
-  costoMolde     Decimal  @default(0)
-  piezasMolde    Decimal  @default(0) // vida útil del molde en piezas
-  costoEnsamble  Decimal  @default(0)
-  costoEmpaque   Decimal  @default(0)
-  notas          String?
-  updatedById    Int?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  materiales ProductCostMaterial[]
+/// Fuente de un valor de la fórmula de costo de un producto.
+enum FuenteCostoValor {
+  manual // capturado a mano (precio de compra, tarifa, % merma…)
+  bom // suma de componentes del BOM (opcionalmente uno específico)
+  variante // ProductVariant.costoCompra de un variantId
+  formula // sub-expresión sobre otros valores
 }
 
-/// Línea de material capturada a mano para el costo de un producto.
-model ProductCostMaterial {
-  id            Int         @id @default(autoincrement())
-  productCostId Int
-  productCost   ProductCost @relation(fields: [productCostId], references: [id], onDelete: Cascade)
-  nombre        String
-  cantidad      Decimal     @default(1)
-  costoUnitario Decimal     @default(0)
-  orden         Int         @default(0)
+model ProductCost {
+  id          Int      @id @default(autoincrement())
+  productId   Int      @unique
+  product     Product  @relation(fields: [productId], references: [id])
+  formula     String? // expresión sobre las claves de `valores`; null = suma de los valores
+  notas       String?
+  updatedById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  valores ProductCostValor[]
+}
+
+/// Valor/factor configurable de la fórmula de costo de un producto.
+model ProductCostValor {
+  id            Int              @id @default(autoincrement())
+  productCostId Int
+  productCost   ProductCost      @relation(fields: [productCostId], references: [id], onDelete: Cascade)
+  clave         String // identificador usado en la fórmula (sin espacios)
+  etiqueta      String
+  fuente        FuenteCostoValor @default(manual)
+  valor         Decimal? // fuente manual
+  opciones      Json? // bom: {tipo?, componenteId?, mermaPct?}; variante: {variantId}; formula: {expresion}
+  orden         Int              @default(0)
+
+  @@unique([productCostId, clave])
   @@index([productCostId])
 }
 
@@ -494,6 +497,7 @@ enum SeccionProduccion {
 enum TipoLineaReporte {
   final // producto terminado → incrementa inventario al aplicarse (§8.1)
   consumo // consumible (ej. cerda en metros) → decrementa stock al aplicarse
+  informativo // sección sin inventario (ensamble/pegado/perforado); solo métrica operativa
 }
 
 enum EstadoReporte {
@@ -528,10 +532,11 @@ model ProductionReportLine {
   id         Int              @id @default(autoincrement())
   reportId   Int
   report     ProductionReport @relation(fields: [reportId], references: [id])
-  variantId  Int
-  variant    ProductVariant   @relation(fields: [variantId], references: [id])
+  variantId  Int?
+  variant    ProductVariant?  @relation(fields: [variantId], references: [id])
   seccion    SeccionProduccion
   tipo       TipoLineaReporte
+  productoTexto String?       // producto libre de las líneas informativas (sin variante)
   ok         Decimal          // conteo registrado (§8.1)
   qtyAplicada Decimal         @default(0) // lo que ya entró/consumió al aplicarse
   qtyUbicada  Decimal         @default(0) // lo ya movido del Recibo a compartimentos

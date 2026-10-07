@@ -72,6 +72,10 @@ export default function StatsProduccion({ onError }: Props) {
               <strong style={{ fontSize: "1.4rem" }}>{formatCantidad(stats.totalConsumo)}</strong>
             </div>
             <div className="card" style={{ margin: 0 }}>
+              <p className="muted small" style={{ margin: 0 }}>Informativo (sin inventario)</p>
+              <strong style={{ fontSize: "1.4rem" }}>{formatCantidad(stats.totalInformativo)}</strong>
+            </div>
+            <div className="card" style={{ margin: 0 }}>
               <p className="muted small" style={{ margin: 0 }}>Reportes aplicados</p>
               <strong style={{ fontSize: "1.4rem" }}>{stats.reportesAplicados}</strong>
             </div>

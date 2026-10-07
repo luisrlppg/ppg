@@ -28,7 +28,7 @@ const LINKS: NavItem[] = [
   { href: "/reportes", label: "Reportes", icon: "📋" },
   { href: "/ventas", label: "Ventas", icon: "🧾" },
   { href: "/fabricacion", label: "Fabricación", icon: "🏭" },
-  { href: "/ubicaciones", label: "Bandeja", icon: "📍" },
+  { href: "/bandeja", label: "Bandeja", icon: "📍" },
   { href: "/productos", label: "Productos", icon: "📦", match: ["/productos", "/catalogos"] },
   { href: "/inventario", label: "Inventario", icon: "📊" },
   { href: "/inventario-historico", label: "Inv. histórico", icon: "🗃️" },
@@ -162,7 +162,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   function renderLink(item: NavItem) {
     const active = esActivo(item.href, item.match, pathname);
-    const badge = item.href === "/ubicaciones" ? porUbicar : 0;
+    const badge = item.href === "/bandeja" ? porUbicar : 0;
     return (
       <Link key={item.href} href={item.href} className={active ? "active" : ""} title={item.label}>
         <span className="icon" aria-hidden="true">

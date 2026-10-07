@@ -126,24 +126,28 @@ Globales, asignados por producto. **Convención "un atributo por producto"**
 - Herramientas: `scripts/reorg-cepillos.ts` + `scripts/reorg-cepillos-grosor.ts`
   (quita el eje `Grosor cerda`).
 
-## Costos (v1)
+## Costos (fórmula por producto)
 
-Costo **estándar por producto** (no por variante), capturado a mano. Arranca **separado** del
-precio de venta; el margen que muestra es solo referencia. **Excepción:** los comprables con
-costo distinto por presentación (pigmentos) usan `ProductVariant.costoCompra`; `/costos` los
-edita en una tabla "Costo de compra por variante".
+Costo **estándar por producto** (no por variante), **configurable**: cada producto define sus propios
+**valores/factores** y una **fórmula** que los combina. El costo se **calcula** (no se captura); el
+precio base se administra desde `/costos` y se registra en `PriceChange`.
 
-- **`ProductCost`** (1:1 con `Product`): `costoCompra` (comprables), `horasManoObra` +
-  `tarifaManoObra`, `horasMaquina` + `tarifaMaquina`, `costoMolde` + `piezasMolde` (amortización
-  por pieza), `costoEnsamble`, `costoEmpaque`, `notas`, `updatedById`, timestamps.
-- **`ProductCostMaterial`** (hijos): `nombre`, `cantidad`, `costoUnitario`, `orden`. Materiales
-  **100% manuales** (no se recorre el BOM en v1).
-- **Cálculo:** `materiales = (costoCompra ?? 0) + Σ(cantidad × costoUnitario)`;
-  `manoObra = horasManoObra × tarifaManoObra`; `maquina = horasMaquina × tarifaMaquina`;
-  `molde = piezasMolde > 0 ? costoMolde / piezasMolde : 0`; `total = materiales + manoObra +
-  maquina + molde + ensamble + empaque`. Sin merma ni historial por ahora.
-- **Precio/margen (solo lectura):** `precio` = `Product.basePrice` (si es 0, el mínimo de las
-  variantes activas); `margen = precio − total`. Ver [`roadmap.md`](./roadmap.md).
+- **`ProductCost`** (1:1 con `Product`): `formula` (`String?`; `null` = suma de los valores), `notas`,
+  `updatedById`, timestamps.
+- **`ProductCostValor`** (hijos): `clave` (identificador usado en la fórmula, único por producto),
+  `etiqueta`, `fuente` (`enum FuenteCostoValor`), `valor` (`Decimal?`, fuente manual), `opciones`
+  (`Json?`) y `orden`.
+- **Fuentes (`FuenteCostoValor`):**
+  - `manual` — capturado a mano (`valor`).
+  - `bom` — Σ(`cantidad` × costo del componente) del BOM; `opciones` = `{tipo?, componenteId?, mermaPct?}`.
+    El costo de cada componente = su propia fórmula (recursivo) o, si es comprable, su `costoCompra`.
+  - `variante` — `ProductVariant.costoCompra`; `opciones` = `{variantId}`.
+  - `formula` — sub-expresión; `opciones` = `{expresion}`.
+- **Cálculo:** `evaluarFormula(ProductCost.formula, entorno)` con el parser de `costos.formula.ts`
+  (`+ - * / ( )`, `min max round sum abs`); sin `formula`, `total = Σ valores`. Recursión BOM con
+  detección de ciclos (`costos.calc.ts`).
+- **Excepción:** costo **por variante** de comprables vía `ProductVariant.costoCompra` (p. ej. pigmentos),
+  utilizable como fuente `variante`. Ver [`roadmap.md`](./roadmap.md).
 
 ## Pasos del storefront (`ProductPasso`)
 
@@ -193,6 +197,16 @@ edita en una tabla "Costo de compra por variante".
   `motivo consumo`); se valida stock de cada componente.
 - El flujo de reportes de producción (`/reportes`, `ProductionReport`) sigue existiendo y es independiente
   de fabricación; `ProductionReport.interno` se conserva por histórico.
+- **Ciclo del reporte de turno (2026-10-07):** el wizard de `/reportes` crea el reporte **`pendiente`**,
+  **sin tocar inventario**. Las **secciones informativas** (`ensamble`/`pegado`/`perforado`, tipo de línea
+  `informativo`) llevan el **producto como texto libre** (`ProductionReportLine.productoTexto`, con
+  `variantId` nullable) y **solo alimentan estadísticas** (`stats.porSeccion` + `totalInformativo`); nunca
+  mueven stock. El reporte se **aplica al ubicarlo en la Bandeja (`/bandeja`)** (`reportes.ubicar` llama a
+  `aplicarEnTx` cuando el reporte está `pendiente`): las líneas `final` entran a "Recibo de Producción",
+  los `consumo` se descuentan y la cantidad ubicada pasa del Recibo al compartimento (*ubicar = aplicar*).
+  Un reporte se puede **editar o cancelar** solo mientras esté `pendiente`; una vez ubicado queda cerrado
+  y solo se consulta en el **historial** (`/reportes`). La antigua bandeja de aceptación se retiró de
+  `/reportes` (2026-10-06); ahora su función vive en `/bandeja`.
 
 ## Inventario histórico (2026-10-07)
 

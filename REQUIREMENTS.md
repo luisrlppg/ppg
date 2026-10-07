@@ -348,6 +348,9 @@ requerido = (cantidad vendida/consumida) − stock_actual   [stock_actual = suma
 - `tipo` de línea:
   - `final` → producto terminado vendible/almacenable → **incrementa** inventario al confirmarse.
   - `consumo` → consumible (ej. cerda en metros) → **decrementa** su stock al confirmarse.
+  - `informativo` → **sin inventario**: secciones `ensamble`/`pegado`/`perforado` donde el producto se
+    captura como **texto libre** (`productoTexto`, sin variante) y la cantidad **solo** cuenta para las
+    métricas operativas (persona/hora). No cruza con el catálogo.
 - Métricas operativas portadas: producción/persona/hora según turno (Matutino 8h · Vespertino 7.5h · Nocturno 8h), stats y CSV.
 
 ### 8.2 Confirmación de inventario (pendiente → aplicado)
@@ -355,17 +358,22 @@ El reporte **nunca modifica inventario por sí solo**; hay validación humana an
 
 ```
 1. Manufactura ingresa el reporte        → estado PENDIENTE (no toca inventario)
-2. Encargada de inventario lo revisa
-       ├─ ¿Correcto?        → ACEPTAR
-       └─ ¿Incorrecto?      → MODIFICAR (regresa a pendiente)
-3. AL ACEPTAR se aplican movimientos (todo con ref = reporte):
+2. Encargada de inventario lo revisa / ubica
+       ├─ ¿Correcto?        → UBICAR en la Bandeja
+       └─ ¿Incorrecto?      → MODIFICAR (mientras siga pendiente) o CANCELAR
+3. AL UBICAR se aplican movimientos (todo con ref = reporte):
        • líneas `final`     → +N hacia "Recibo de Producción" (temporal), motivo `produccion`
        • líneas `consumo`   → −N del consumible (ej. cerda), motivo `consumo`
-4. Luego: Ubicar (§8.3)
+       • y la cantidad ubicada pasa del Recibo al compartimento elegido (motivo `ubicacion`)
+4. Las líneas `informativo` no generan movimientos (solo métrica).
 ```
 
+> **Vigente 2026-10-07:** la "bandeja de aceptación" separada se retiró. **Ubicar en `/bandeja`
+> equivale a aceptar/aplicar**: el primer ubicar de un reporte `pendiente` aplica el reporte completo
+> (finales + consumos) y luego mueve lo ubicado. La Bandeja reúne también los lotes de Fabricación.
+
 Reglas:
-- Un reporte solo se edita mientras esté `pendiente`.
+- Un reporte solo se edita/cancela mientras esté `pendiente`.
 - Si ya está `aplicado` y se detecta un error, la corrección se hace con un **ajuste/contracargo con referencia** — nunca re-girando el reporte.
 
 ### 8.3 Ubicar (la encargada asigna la ubicación)
@@ -392,22 +400,29 @@ Si un producto atraviesa varias secciones dentro del proceso, **solo la línea `
 - **Pantalla "Ubicar"**: recibidos sin ubicar → asignación a compartimentos.
 - Stats, gráficas y exportación CSV portados; reporte con edición/eliminación protegida.
 
-### 8.7 Módulo Costos (v1 — post-E3)
-Página especial para administrar **cómo se obtiene el costo de cada producto**, con cálculos
-distintos según el tipo:
+### 8.7 Módulo Costos (fórmula por producto — post-E3)
+Página **por producto** para administrar **cómo se calcula su costo**. En vez de un formulario fijo
+con los mismos campos para todos, cada producto define sus propios **valores/factores** y una
+**fórmula**:
 
-- **Objetivo:** costo **estándar (receta)** por producto para fijar precio y ver margen.
-- **Nivel:** solo por **producto** (no por variante). Un registro vigente (sin historial).
-- **Conceptos:** materiales (**100% manuales**), mano de obra, máquina (hora-máquina),
-  molde (amortización por pieza), ensamble, empaque. **Sin merma** por ahora.
-- **Captura:** manual por producto, formulario fijo por concepto; materiales como líneas.
-- **Comprables:** se captura su `costo_compra`.
+- **Objetivo:** costo **estándar** por producto para fijar precio y ver utilidad.
+- **Nivel:** por **producto** (no por variante). Un registro vigente (sin historial).
+- **Valores (`ProductCostValor`):** clave, etiqueta, fuente, valor/opciones, orden. Fuentes:
+  - `manual` — se captura (precio de compra, tarifas, % merma…).
+  - `bom` — Σ(cantidad × costo de componentes del BOM), con filtro por tipo/componente y merma.
+  - `variante` — `product_variants.costo_compra` de una variante (p. ej. pigmentos).
+  - `formula` — sub-expresión sobre otros valores.
+- **Fórmula:** expresión sobre las claves, evaluada con un parser propio (`+ - * / ( )`,
+  `min max round sum abs`); si se deja vacía, el costo es la suma de los valores.
+- **Cálculo:** `costos.calc.ts` resuelve/recorre el BOM con detección de ciclos. El costo es
+  calculado (no editable).
 - **Precio base editable (2026-10-07):** desde `/costos` se ajusta `Product.base_price` (a mano o
-  despejado de un margen deseado) y se registra en `PriceChange`; el costo total es calculado
-  (no editable). Sigue pendiente unificar con precios por variante y materiales automáticos desde el BOM.
+  despejado de un margen deseado) y se registra en `PriceChange`. Sigue pendiente unificar con
+  precios por variante.
 - **Acceso:** ver/editar sólo `admin`.
-- **API:** `GET /costos` · `GET /costos/:productId` · `PUT /costos/:productId` ·
-  `DELETE /costos/:productId`. **Web:** `/costos` (lista + editor en modal).
+- **API:** `GET /costos` · `GET /costos/:productId` · `POST /costos/:productId/preview` ·
+  `PUT /costos/:productId` · `DELETE /costos/:productId`.
+  **Web:** `/costos` (lista) + `/costos/[productId]` (editor con preview en vivo).
 
 ## 9. Principios de UI (usabilidad)
 

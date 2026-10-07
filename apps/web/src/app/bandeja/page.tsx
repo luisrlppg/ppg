@@ -69,6 +69,9 @@ function SeccionLotes({
                   <span>
                     <strong>{l.producto}</strong> {l.nombre}
                     <span className="muted small"> ({l.sku})</span>
+                    {l.estadoReporte === "pendiente" && (
+                      <span className="badge bajo" style={{ marginLeft: 8 }}>Por aplicar</span>
+                    )}
                     <DetalleLote l={l} />
                   </span>
                   <span className="badge normal">
@@ -143,6 +146,12 @@ function ModalUbicarLote({
         {lote.sku} · pendiente {formatCantidad(lote.pendiente)} {lote.uom}
       </p>
       <DetalleLote l={lote} />
+      {lote.estadoReporte === "pendiente" && (
+        <p className="small" style={{ marginTop: 8 }}>
+          Al ubicar este lote se <strong>aplica el reporte</strong>: lo terminado entra al almacén y se descuentan
+          los consumos.
+        </p>
+      )}
 
       <div style={{ marginTop: 12 }}>
         <div className="small" style={{ marginBottom: 4 }}>Buscar compartimento</div>
@@ -194,7 +203,7 @@ function ModalUbicarLote({
   );
 }
 
-export default function UbicacionesPage() {
+export default function BandejaPage() {
   const formatCantidad = useFormatCantidad();
   const [lotes, setLotes] = useState<LoteUbicar[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
@@ -251,16 +260,17 @@ export default function UbicacionesPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Ubicaciones de producción"
-        subtitle="Todo lo producido queda en 'Recibo de Producción' esperando que le asignes su compartimento."
+        title="Bandeja"
+        subtitle="Lo producido por reportes de turno y por Fabricación, listo para asignarle su compartimento."
       />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
 
       <HelpNote>
-        Aquí llega lo producido por <strong>reporte de turno</strong> (tras aceptarlo en la bandeja de
-        Reportes) y lo registrado en <strong>Fabricación</strong>. Haz clic en un producto para asignar el
-        compartimento y la cantidad que se mueve del Recibo de Producción al almacén.
+        Aquí llega lo producido por <strong>reporte de turno</strong> y lo registrado en <strong>Fabricación</strong>.
+        Haz clic en un producto para asignar el compartimento y la cantidad que se mueve del Recibo de Producción al
+        almacén. Ubicar un reporte pendiente equivale a aplicarlo: entra el producto terminado y se descuentan los
+        consumos.
       </HelpNote>
 
       <StickyBar>
@@ -275,7 +285,7 @@ export default function UbicacionesPage() {
 
       <SeccionLotes
         titulo="Por reporte de producción"
-        descripcion="Productos terminados de reportes de turno ya aceptados."
+        descripcion="Productos terminados de reportes de turno (pendientes de aplicar o ya aplicados)."
         lotes={deReporte}
         onAbrir={setLoteModal}
         formatCantidad={formatCantidad}

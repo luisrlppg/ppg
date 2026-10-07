@@ -16,7 +16,8 @@ export {
 export type { Turno, Seccion } from "./reportes.constants";
 
 interface LineaInput {
-  variantId: number;
+  variantId?: number;
+  productoTexto?: string;
   seccion: string;
   tipo: string;
   ok: number;
@@ -269,6 +270,7 @@ export class ReportesService {
       const secciones = [...new Set(r.lines.map((l) => l.seccion))];
       const totalFinal = r.lines.filter((l) => l.tipo === "final").reduce((a, l) => a + dec(l.ok), 0);
       const totalConsumo = r.lines.filter((l) => l.tipo === "consumo").reduce((a, l) => a + dec(l.ok), 0);
+      const totalInformativo = r.lines.filter((l) => l.tipo === "informativo").reduce((a, l) => a + dec(l.ok), 0);
       return {
         id: r.id,
         numero: r.numero,
@@ -283,6 +285,7 @@ export class ReportesService {
         secciones,
         totalFinal,
         totalConsumo,
+        totalInformativo,
       };
     });
   }
@@ -310,10 +313,10 @@ export class ReportesService {
       notas: r.notas,
       lines: r.lines.map((l) => ({
         variantId: l.variantId,
-        sku: l.variant.sku,
-        nombre: l.variant.nombre,
-        producto: l.variant.product.nombre,
-        uom: l.variant.product.uom,
+        sku: l.variant?.sku ?? null,
+        nombre: l.productoTexto ?? l.variant?.nombre ?? null,
+        producto: l.variant?.product.nombre ?? l.productoTexto ?? null,
+        uom: l.variant?.product.uom ?? null,
         seccion: l.seccion,
         tipo: l.tipo,
         ok: dec(l.ok),
@@ -337,10 +340,11 @@ export class ReportesService {
       lines: r.lines.map((l) => ({
         id: l.id,
         variantId: l.variantId,
-        sku: l.variant.sku,
-        nombre: l.variant.nombre,
-        producto: l.variant.product.nombre,
-        uom: l.variant.product.uom,
+        sku: l.variant?.sku ?? null,
+        nombre: l.productoTexto ?? l.variant?.nombre ?? null,
+        producto: l.variant?.product.nombre ?? l.productoTexto ?? null,
+        uom: l.variant?.product.uom ?? null,
+        productoTexto: l.productoTexto,
         seccion: l.seccion,
         tipo: l.tipo,
         ok: l.ok,
@@ -369,7 +373,14 @@ export class ReportesService {
       const numero = `RPT-${String(created.id).padStart(4, "0")}`;
       await tx.productionReport.update({ where: { id: created.id }, data: { numero } });
       await tx.productionReportLine.createMany({
-        data: input.lines.map((l) => ({ reportId: created.id, variantId: l.variantId, seccion: l.seccion as Seccion, tipo: l.tipo as "final" | "consumo", ok: dec(l.ok) })),
+        data: input.lines.map((l) => ({
+          reportId: created.id,
+          variantId: l.variantId ?? null,
+          productoTexto: l.productoTexto?.trim() || null,
+          seccion: l.seccion as Seccion,
+          tipo: l.tipo as "final" | "consumo" | "informativo",
+          ok: dec(l.ok),
+        })),
       });
       return created.id;
     });
@@ -394,7 +405,14 @@ export class ReportesService {
       });
       await tx.productionReportLine.deleteMany({ where: { reportId: id } });
       await tx.productionReportLine.createMany({
-        data: input.lines.map((l) => ({ reportId: id, variantId: l.variantId, seccion: l.seccion as Seccion, tipo: l.tipo as "final" | "consumo", ok: dec(l.ok) })),
+        data: input.lines.map((l) => ({
+          reportId: id,
+          variantId: l.variantId ?? null,
+          productoTexto: l.productoTexto?.trim() || null,
+          seccion: l.seccion as Seccion,
+          tipo: l.tipo as "final" | "consumo" | "informativo",
+          ok: dec(l.ok),
+        })),
       });
     });
     return this.get(id);
@@ -402,63 +420,10 @@ export class ReportesService {
 
   // ------------------------------------------------------- Aplicar (§8.2)
   async aplicar(id: number, userId?: number) {
-    const recibo = await this.prisma.location.findFirst({ where: { nombre: "Recibo de Producción" } });
-    if (!recibo) throw new BadRequestException("Falta la ubicación 'Recibo de Producción'");
     const notificar: number[] = [];
-
     await this.prisma.$transaction(async (tx) => {
-      const r = await tx.productionReport.findUnique({
-        where: { id },
-        include: { lines: { orderBy: { id: "asc" } } },
-      });
-      if (!r) throw new NotFoundException("Reporte no encontrado");
-      if (r.estado !== "pendiente") throw new BadRequestException("Solo se aplica un reporte pendiente");
-
-      for (const line of r.lines) {
-        const ok = dec(line.ok);
-        if (ok <= 0) continue;
-        if (line.tipo === "final") {
-          const level = await tx.stockLevel.findUnique({
-            where: { variantId_locationId: { variantId: line.variantId, locationId: recibo.id } },
-          });
-          if (level) {
-            await tx.stockLevel.update({ where: { id: level.id }, data: { qty: { increment: ok } } });
-          } else {
-            await tx.stockLevel.create({ data: { variantId: line.variantId, locationId: recibo.id, qty: ok } });
-          }
-          await tx.stockMove.create({
-            data: { variantId: line.variantId, locationId: recibo.id, qty: ok, motivo: "produccion", ref: r.numero, userId },
-          });
-        } else {
-          // consumo: decrementa del stock (prefiere "Almacén principal", igual que el despacho)
-          const levels = await tx.stockLevel.findMany({ where: { variantId: line.variantId } });
-          const preferido = await tx.location.findFirst({ where: { nombre: "Almacén principal" } });
-          levels.sort(
-            (a, b) => Number(a.locationId === (preferido?.id ?? null) ? 0 : 1) - Number(b.locationId === (preferido?.id ?? null) ? 0 : 1),
-          );
-          const total = levels.reduce((a, l) => a + dec(l.qty), 0);
-          if (total < ok) {
-            throw new BadRequestException(`Stock insuficiente del consumible en el reporte (hay ${total} y se consumen ${ok})`);
-          }
-          let restante = ok;
-          for (const level of levels) {
-            if (restante <= 0) break;
-            const usar = Math.min(restante, dec(level.qty));
-            await tx.stockLevel.update({
-              where: { id: level.id },
-              data: { qty: { decrement: usar } },
-            });
-            await tx.stockMove.create({
-              data: { variantId: line.variantId, locationId: level.locationId, qty: -usar, motivo: "consumo", ref: r.numero, userId },
-            });
-            restante -= usar;
-          }
-        }
-        await tx.productionReportLine.update({ where: { id: line.id }, data: { qtyAplicada: ok } });
-        notificar.push(line.variantId);
-      }
-
-      await tx.productionReport.update({ where: { id }, data: { estado: "aplicado", aplicadoAt: new Date() } });
+      const { notificar: n } = await this.aplicarEnTx(tx, id, userId);
+      notificar.push(...n);
     });
 
     const canales: string[] = [];
@@ -467,6 +432,75 @@ export class ReportesService {
       if (res.notificado) canales.push(...res.canales);
     }
     return { ok: true, aplicados: notificar.length, canales: [...new Set(canales)] };
+  }
+
+  /**
+   * Movimientos de un reporte dentro de una transacción ya abierta. Las líneas
+   * `informativo` no tocan inventario. Lo usa `aplicar` y `ubicar` (ubicar aplica
+   * el reporte pendiente antes de mover el lote).
+   */
+  private async aplicarEnTx(
+    tx: Prisma.TransactionClient,
+    id: number,
+    userId?: number,
+  ): Promise<{ notificar: number[] }> {
+    const recibo = await tx.location.findFirst({ where: { nombre: "Recibo de Producción" } });
+    if (!recibo) throw new BadRequestException("Falta la ubicación 'Recibo de Producción'");
+    const r = await tx.productionReport.findUnique({
+      where: { id },
+      include: { lines: { orderBy: { id: "asc" } } },
+    });
+    if (!r) throw new NotFoundException("Reporte no encontrado");
+    if (r.estado !== "pendiente") throw new BadRequestException("Solo se aplica un reporte pendiente");
+
+    const notificar: number[] = [];
+    for (const line of r.lines) {
+      if (line.tipo === "informativo" || line.variantId == null) continue;
+      const ok = dec(line.ok);
+      if (ok <= 0) continue;
+      if (line.tipo === "final") {
+        const level = await tx.stockLevel.findUnique({
+          where: { variantId_locationId: { variantId: line.variantId, locationId: recibo.id } },
+        });
+        if (level) {
+          await tx.stockLevel.update({ where: { id: level.id }, data: { qty: { increment: ok } } });
+        } else {
+          await tx.stockLevel.create({ data: { variantId: line.variantId, locationId: recibo.id, qty: ok } });
+        }
+        await tx.stockMove.create({
+          data: { variantId: line.variantId, locationId: recibo.id, qty: ok, motivo: "produccion", ref: r.numero, userId },
+        });
+      } else {
+        // consumo: decrementa del stock (prefiere "Almacén principal", igual que el despacho)
+        const levels = await tx.stockLevel.findMany({ where: { variantId: line.variantId } });
+        const preferido = await tx.location.findFirst({ where: { nombre: "Almacén principal" } });
+        levels.sort(
+          (a, b) => Number(a.locationId === (preferido?.id ?? null) ? 0 : 1) - Number(b.locationId === (preferido?.id ?? null) ? 0 : 1),
+        );
+        const total = levels.reduce((a, l) => a + dec(l.qty), 0);
+        if (total < ok) {
+          throw new BadRequestException(`Stock insuficiente del consumible en el reporte (hay ${total} y se consumen ${ok})`);
+        }
+        let restante = ok;
+        for (const level of levels) {
+          if (restante <= 0) break;
+          const usar = Math.min(restante, dec(level.qty));
+          await tx.stockLevel.update({
+            where: { id: level.id },
+            data: { qty: { decrement: usar } },
+          });
+          await tx.stockMove.create({
+            data: { variantId: line.variantId, locationId: level.locationId, qty: -usar, motivo: "consumo", ref: r.numero, userId },
+          });
+          restante -= usar;
+        }
+      }
+      await tx.productionReportLine.update({ where: { id: line.id }, data: { qtyAplicada: ok } });
+      notificar.push(line.variantId);
+    }
+
+    await tx.productionReport.update({ where: { id }, data: { estado: "aplicado", aplicadoAt: new Date() } });
+    return { notificar };
   }
 
   // ------------------------------------------------------------- Cancelar
@@ -482,7 +516,7 @@ export class ReportesService {
 // ------------------------------------------------- Lotes para ubicar (§8.3)
   async lotes() {
     const lines = await this.prisma.productionReportLine.findMany({
-      where: { tipo: "final", report: { estado: "aplicado" } },
+      where: { tipo: "final", report: { estado: { in: ["pendiente", "aplicado"] } } },
       orderBy: { id: "asc" },
       include: {
         variant: {
@@ -491,7 +525,7 @@ export class ReportesService {
             variantAttributes: { include: { attribute: true, value: true } },
           },
         },
-        report: { select: { numero: true, interno: true, userId: true } },
+        report: { select: { numero: true, interno: true, userId: true, estado: true } },
       },
     });
     const userIds = [...new Set(lines.map((l) => l.report.userId).filter((id): id is number => id != null))];
@@ -500,37 +534,45 @@ export class ReportesService {
       : [];
     const nombrePorUsuario = new Map(usuarios.map((u) => [u.id, u.nombre]));
     return lines
-      .map((l) => ({
-        lineaId: l.id,
-        reporte: l.report.numero,
-        origen: l.report.interno ? "fabricacion" : "reporte",
-        usuario: l.report.userId != null ? nombrePorUsuario.get(l.report.userId) ?? null : null,
-        variantId: l.variantId,
-        sku: l.variant.sku,
-        nombre: l.variant.nombre,
-        productoId: l.variant.productId,
-        producto: l.variant.product.nombre,
-        uom: l.variant.product.uom,
-        valoracion: l.variant.variantAttributes
-          .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
-          .sort((a, b) => a.attribute.localeCompare(b.attribute)),
-        aplicado: dec(l.qtyAplicada),
-        ubicado: dec(l.qtyUbicada),
-        pendiente: dec(l.qtyAplicada) - dec(l.qtyUbicada),
-      }))
+      .map((l) => {
+        const aplicado = dec(l.qtyAplicada);
+        const ubicado = dec(l.qtyUbicada);
+        const base = l.report.estado === "pendiente" ? dec(l.ok) : aplicado;
+        return {
+          lineaId: l.id,
+          reporteId: l.reportId,
+          reporte: l.report.numero,
+          estadoReporte: l.report.estado,
+          origen: l.report.interno ? "fabricacion" : "reporte",
+          usuario: l.report.userId != null ? nombrePorUsuario.get(l.report.userId) ?? null : null,
+          variantId: l.variantId!,
+          sku: l.variant!.sku,
+          nombre: l.variant!.nombre,
+          productoId: l.variant!.productId,
+          producto: l.variant!.product.nombre,
+          uom: l.variant!.product.uom,
+          valoracion: l.variant!.variantAttributes
+            .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+            .sort((a, b) => a.attribute.localeCompare(b.attribute)),
+          aplicado,
+          ubicado,
+          pendiente: base - ubicado,
+        };
+      })
       .filter((l) => l.pendiente > 0);
   }
 
   /** Conteo de lotes pendientes de ubicar, separado por origen. */
   async porUbicar() {
     const rows = await this.prisma.productionReportLine.findMany({
-      where: { tipo: "final", report: { estado: "aplicado" } },
-      select: { qtyAplicada: true, qtyUbicada: true, report: { select: { interno: true } } },
+      where: { tipo: "final", report: { estado: { in: ["pendiente", "aplicado"] } } },
+      select: { ok: true, qtyAplicada: true, qtyUbicada: true, report: { select: { interno: true, estado: true } } },
     });
     let reporte = 0;
     let fabricacion = 0;
     for (const l of rows) {
-      if (dec(l.qtyAplicada) - dec(l.qtyUbicada) <= 0) continue;
+      const base = l.report.estado === "pendiente" ? dec(l.ok) : dec(l.qtyAplicada);
+      if (base - dec(l.qtyUbicada) <= 0) continue;
       if (l.report.interno) fabricacion += 1;
       else reporte += 1;
     }
@@ -541,15 +583,26 @@ export class ReportesService {
   async ubicar(lineaId: number, dto: { cantidad: number; locationId: number }, userId?: number) {
     const cantidad = dec(dto.cantidad);
     if (!(cantidad > 0)) throw new BadRequestException("Cantidad inválida");
-    return this.prisma.$transaction(async (tx) => {
+    const notificar: number[] = [];
+    await this.prisma.$transaction(async (tx) => {
       const line = await tx.productionReportLine.findUnique({
         where: { id: lineaId },
-        include: { report: { select: { numero: true, estado: true } } },
+        include: { report: { select: { id: true, numero: true, estado: true } } },
       });
       if (!line) throw new NotFoundException("Lote no encontrado");
-      if (line.report.estado !== "aplicado") throw new BadRequestException("El lote debe provenir de un reporte aplicado");
+      if (line.variantId == null) throw new BadRequestException("El lote no tiene variante");
+      if (line.report.estado === "cancelado") throw new BadRequestException("El reporte está cancelado");
 
-      const pendiente = dec(line.qtyAplicada) - dec(line.qtyUbicada);
+      // Ubicar un reporte pendiente equivale a aplicarlo (§8.2): mueve lo final
+      // al Recibo y descuenta los consumos antes de asignar el compartimento.
+      if (line.report.estado === "pendiente") {
+        const res = await this.aplicarEnTx(tx, line.report.id, userId);
+        notificar.push(...res.notificar);
+      }
+
+      const actual = await tx.productionReportLine.findUnique({ where: { id: lineaId } });
+      if (!actual || actual.variantId == null) throw new NotFoundException("Lote no encontrado");
+      const pendiente = dec(actual.qtyAplicada) - dec(actual.qtyUbicada);
       if (cantidad > pendiente) throw new BadRequestException(`Solo quedan ${pendiente} de este lote por ubicar`);
 
       const destino = await tx.location.findUnique({ where: { id: dto.locationId } });
@@ -560,7 +613,7 @@ export class ReportesService {
       if (!recibo) throw new BadRequestException("Falta la ubicación 'Recibo de Producción'");
 
       const levelRecibo = await tx.stockLevel.findUnique({
-        where: { variantId_locationId: { variantId: line.variantId, locationId: recibo.id } },
+        where: { variantId_locationId: { variantId: actual.variantId, locationId: recibo.id } },
       });
       if (!levelRecibo || dec(levelRecibo.qty) < cantidad) {
         throw new BadRequestException("No hay suficiente stock en el Recibo de Producción para este lote");
@@ -568,18 +621,18 @@ export class ReportesService {
 
       await tx.stockLevel.update({ where: { id: levelRecibo.id }, data: { qty: { decrement: cantidad } } });
       const levelDestino = await tx.stockLevel.findUnique({
-        where: { variantId_locationId: { variantId: line.variantId, locationId: destino.id } },
+        where: { variantId_locationId: { variantId: actual.variantId, locationId: destino.id } },
       });
       if (levelDestino) {
         await tx.stockLevel.update({ where: { id: levelDestino.id }, data: { qty: { increment: cantidad } } });
       } else {
         await tx.stockLevel.create({
-          data: { variantId: line.variantId, locationId: destino.id, qty: cantidad },
+          data: { variantId: actual.variantId, locationId: destino.id, qty: cantidad },
         });
       }
       await tx.stockMove.create({
         data: {
-          variantId: line.variantId,
+          variantId: actual.variantId,
           fromLocationId: recibo.id,
           toLocationId: destino.id,
           qty: cantidad,
@@ -592,10 +645,15 @@ export class ReportesService {
         where: { id: lineaId },
         data: { qtyUbicada: { increment: cantidad } },
       });
-    }).then(async () => {
-      const res = await this.monitor.afterStockChange((await this.prisma.productionReportLine.findUnique({ where: { id: lineaId } }))!.variantId);
-      return { ok: true, notificado: res.notificado };
+      notificar.push(actual.variantId);
     });
+
+    const canales: string[] = [];
+    for (const vid of [...new Set(notificar)]) {
+      const res = await this.monitor.afterStockChange(vid);
+      if (res.notificado) canales.push(...res.canales);
+    }
+    return { ok: true, canales: [...new Set(canales)] };
   }
 
   // ---------------------------------------------------------------- Stats
@@ -614,9 +672,17 @@ export class ReportesService {
     if (!input.lines || input.lines.length === 0) throw new BadRequestException("Agrega al menos una línea con conteo");
     for (const l of input.lines) {
       if (!SECCIONES.includes(l.seccion as Seccion)) throw new BadRequestException(`Sección inválida: ${l.seccion}`);
-      if (l.tipo !== "final" && l.tipo !== "consumo") throw new BadRequestException(`Tipo de línea inválido: ${l.tipo}`);
+      if (l.tipo !== "final" && l.tipo !== "consumo" && l.tipo !== "informativo") {
+        throw new BadRequestException(`Tipo de línea inválido: ${l.tipo}`);
+      }
       if (!(dec(l.ok) > 0)) throw new BadRequestException("Las cantidades deben ser mayores a 0");
-      if (!(l.variantId > 0)) throw new BadRequestException("Se requiere una variante real");
+      if (l.tipo === "informativo") {
+        if (!l.productoTexto || !l.productoTexto.trim()) {
+          throw new BadRequestException("Las líneas informativas requieren el producto");
+        }
+      } else if (!(l.variantId && l.variantId > 0)) {
+        throw new BadRequestException("Se requiere una variante real");
+      }
     }
   }
 }

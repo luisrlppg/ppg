@@ -29,6 +29,8 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
    Mantén ese contrato.
 8. **Migraciones:** nunca ejecutes `prisma migrate dev` directo en shell no-TTY; genera con
    `--create-only` y aplica con `pnpm db:deploy` (ver `development.md`).
+   **Fórmulas de costo:** se evalúan con el parser propio de `costos.formula.ts` (**nunca `eval`**);
+   valida claves y sintaxis antes de guardar (`costos.service.validarFormula`).
 
 ## Web (Next.js)
 
@@ -66,8 +68,20 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
     registra producción (`POST /fabricacion/produccion`) vía `reportes.registrarProduccionInterna`: crea
     un `ProductionReport` **interno aplicado** (`interno: true`, sección `fabricacion`) y deja el stock en
     **"Recibo de Producción"** pendiente de ubicar, igual que un reporte de turno. No alimenta métricas E3.
-    La bandeja de ubicación es la página `/ubicaciones` (`reportes.lotes`/`reportes.ubicar`, con
-    `origen` reporte/fabricación). Los **ensambles** (2+ componentes) se arman contra pedido:
+    La bandeja es la página `/bandeja` (`reportes.lotes`/`reportes.ubicar`, con `origen`
+    reporte/fabricación). **Ubicar = aplicar**: si el reporte está `pendiente`, `ubicar` primero lo
+    aplica (`aplicarEnTx`) y luego mueve del Recibo al compartimento. Las líneas de secciones
+    informativas (`ensamble`/`pegado`/`perforado`) van con `tipo: informativo`, `variantId` null y
+    `productoTexto`, y **no** mueven stock. Los **ensambles** (2+ componentes) se arman contra pedido:
     no se inventarían y `ventas.despacharLinea` **consume sus componentes** (`planificacion.consumirEnsamble`).
-    Al tocar el BOM, `SeccionProduccion` o `ProductionReport`, genera la migración (`--create-only`) y aplica
-    con `pnpm db:deploy`.
+    Al tocar el BOM, `SeccionProduccion`, `TipoLineaReporte` o `ProductionReport`, genera la migración
+    (`--create-only`) y aplica con `pnpm db:deploy`.
+20. **Presupuesto de docs:** un doc de área debe caber en **≤150 líneas**; si crece, divídelo por tema
+    o añade TOC. **No leas ni escribas docs enteros:** usa `rg` para localizar la sección. Los tomos de
+    referencia (`REQUIREMENTS.md`, `data-model.md`, `plan-btvpe.md`) se leen **por sección**.
+    `docs/catalog-snapshot.{md,json}` es **generado** por `pnpm cat:snapshot`: consúltalo con `rg`,
+    no lo edites a mano.
+21. **Presupuesto de código:** guía **≤400 líneas** por archivo; revisa cuando pase de **600**. Antes de
+    seguir añadiendo a un archivo grande, extrae componentes/hooks/helpers a su carpeta de dominio
+    (p. ej. `components/reportes/`, `components/productos/`). El log de `roadmap.md` es una **ventana
+    rodante**: al añadir un hito, mueve el más antiguo a `git log` (no crece indefinidamente).

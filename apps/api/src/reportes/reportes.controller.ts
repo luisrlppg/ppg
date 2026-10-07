@@ -19,7 +19,8 @@ import { Roles } from "../auth/decorators/roles.decorator";
 import { ReportesService } from "./reportes.service";
 
 class LineaReporteDto {
-  @IsInt() @Min(1) variantId!: number;
+  @IsOptional() @IsInt() @Min(1) variantId?: number;
+  @IsOptional() @IsString() productoTexto?: string;
   @IsString() @IsNotEmpty() seccion!: string;
   @IsString() @IsNotEmpty() tipo!: string;
   @IsNumber() @Min(0.001) ok!: number;

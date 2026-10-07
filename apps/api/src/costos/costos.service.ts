@@ -1,45 +1,28 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@ppg/db";
 import { PrismaService } from "../prisma/prisma.service";
 import { dec } from "../common/util";
+import { CostosCalc, FuenteCosto, ValorInput } from "./costos.calc";
+import { clavesFormula, evaluarFormula } from "./costos.formula";
 
-// v1: costo estándar por producto, capturado a mano. Materiales 100% manuales;
-// el resto de conceptos es un formulario fijo. Sin historial ni merma.
-// Aún no se enlaza con el precio de venta (ver docs/roadmap.md).
+/** Costo estándar por producto, con fórmula y valores configurables.
+ *  El costo total se calcula (nunca se captura); el precio base se administra
+ *  aquí y se registra en `PriceChange`. Ver docs/data-model.md §Costos. */
 
-interface MaterialInput {
-  nombre: string;
-  cantidad: number;
-  costoUnitario: number;
+export interface ValorCostoInput {
+  clave: string;
+  etiqueta?: string;
+  fuente: FuenteCosto;
+  valor?: number | null;
+  opciones?: Record<string, unknown> | null;
   orden?: number;
 }
 
 export interface CostoInput {
   precioBase?: number;
-  costoCompra?: number | null;
-  horasManoObra?: number;
-  tarifaManoObra?: number;
-  horasMaquina?: number;
-  tarifaMaquina?: number;
-  costoMolde?: number;
-  piezasMolde?: number;
-  costoEnsamble?: number;
-  costoEmpaque?: number;
+  formula?: string | null;
   notas?: string | null;
-  materiales?: MaterialInput[];
-  variantes?: { variantId: number; costoCompra?: number | null }[];
-}
-
-interface CostoRow {
-  costoCompra: unknown;
-  horasManoObra: unknown;
-  tarifaManoObra: unknown;
-  horasMaquina: unknown;
-  tarifaMaquina: unknown;
-  costoMolde: unknown;
-  piezasMolde: unknown;
-  costoEnsamble: unknown;
-  costoEmpaque: unknown;
-  materiales: { cantidad: unknown; costoUnitario: unknown }[];
+  valores?: ValorCostoInput[];
 }
 
 function r4(n: number): number {
@@ -48,44 +31,12 @@ function r4(n: number): number {
 
 @Injectable()
 export class CostosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calc: CostosCalc,
+  ) {}
 
-  // ------------------------------------------------ cálculo del desglose
-  private calcular(cost: CostoRow | null) {
-    if (!cost) {
-      return {
-        costoCompra: 0,
-        materiales: 0,
-        manoObra: 0,
-        maquina: 0,
-        molde: 0,
-        ensamble: 0,
-        empaque: 0,
-        total: 0,
-      };
-    }
-    const costoCompra = dec(cost.costoCompra);
-    const materiales =
-      costoCompra +
-      cost.materiales.reduce((s, m) => s + dec(m.cantidad) * dec(m.costoUnitario), 0);
-    const manoObra = dec(cost.horasManoObra) * dec(cost.tarifaManoObra);
-    const maquina = dec(cost.horasMaquina) * dec(cost.tarifaMaquina);
-    const piezas = dec(cost.piezasMolde);
-    const molde = piezas > 0 ? dec(cost.costoMolde) / piezas : 0;
-    const ensamble = dec(cost.costoEnsamble);
-    const empaque = dec(cost.costoEmpaque);
-    return {
-      costoCompra: r4(costoCompra),
-      materiales: r4(materiales),
-      manoObra: r4(manoObra),
-      maquina: r4(maquina),
-      molde: r4(molde),
-      ensamble: r4(ensamble),
-      empaque: r4(empaque),
-      total: r4(materiales + manoObra + maquina + molde + ensamble + empaque),
-    };
-  }
-
+  // ------------------------------------------------- referencia de precio
   private referenciaPrecio(product: {
     basePrice: unknown;
     variants: { price: unknown; activo: boolean }[];
@@ -106,8 +57,7 @@ export class CostosService {
     total: number,
   ) {
     const margen = ref.precio > 0 ? r4(ref.precio - total) : null;
-    const margenPct =
-      ref.precio > 0 ? r4(((ref.precio - total) / ref.precio) * 100) : null;
+    const margenPct = ref.precio > 0 ? r4(((ref.precio - total) / ref.precio) * 100) : null;
     return { ...ref, margen, margenPct };
   }
 
@@ -128,14 +78,18 @@ export class CostosService {
       orderBy: { nombre: "asc" },
       include: {
         variants: { select: { price: true, activo: true } },
-        cost: { include: { materiales: { orderBy: { orden: "asc" } } } },
+        cost: true,
       },
     });
 
-    return rows.map((p) => {
-      const desglose = this.calcular(p.cost as CostoRow | null);
+    const cache = new Map<number, Awaited<ReturnType<CostosCalc["calcularProducto"]>>>();
+    const out = [];
+    for (const p of rows) {
+      const calc = p.cost
+        ? await this.calc.calcularProducto(p.id, new Set(), cache)
+        : { total: 0, avisos: [] as string[] };
       const ref = this.referenciaPrecio(p);
-      return {
+      out.push({
         productId: p.id,
         nombre: p.nombre,
         skuBase: p.skuBase,
@@ -143,13 +97,16 @@ export class CostosService {
         fabricable: p.fabricable,
         comprable: p.comprable,
         tieneReceta: p.cost !== null,
+        tieneFormula: !!p.cost?.formula,
         notas: p.cost?.notas ?? null,
         variantes: p.variants.length,
         precioBase: dec(p.basePrice),
-        ...desglose,
-        ...this.conMargen(ref, desglose.total),
-      };
-    });
+        total: calc.total,
+        avisos: calc.avisos,
+        ...this.conMargen(ref, calc.total),
+      });
+    }
+    return out;
   }
 
   // -------------------------------------------------------------- detalle
@@ -157,15 +114,20 @@ export class CostosService {
     const p = await this.prisma.product.findUnique({
       where: { id: productId },
       include: {
-        variants: { select: { id: true, sku: true, nombre: true, costoCompra: true, price: true, activo: true }, orderBy: { nombre: "asc" } },
-        cost: { include: { materiales: { orderBy: { orden: "asc" } } } },
+        variants: {
+          select: { id: true, sku: true, nombre: true, costoCompra: true, price: true, activo: true },
+          orderBy: { nombre: "asc" },
+        },
+        components: { include: { component: { select: { id: true, nombre: true, skuBase: true } } } },
+        cost: { include: { valores: { orderBy: { orden: "asc" } } } },
       },
     });
     if (!p) throw new NotFoundException("Producto no encontrado");
 
-    const desglose = this.calcular(p.cost as CostoRow | null);
+    const costo = p.cost
+      ? await this.calc.calcularProducto(productId)
+      : { formula: null, valores: [], total: 0, avisos: [] as string[] };
     const ref = this.referenciaPrecio(p);
-    const c = p.cost;
     return {
       productId: p.id,
       nombre: p.nombre,
@@ -173,86 +135,121 @@ export class CostosService {
       uom: p.uom,
       fabricable: p.fabricable,
       comprable: p.comprable,
-      tieneReceta: c !== null,
+      tieneReceta: p.cost !== null,
+      formula: p.cost?.formula ?? null,
+      notas: p.cost?.notas ?? null,
       precioBase: dec(p.basePrice),
-      receta: {
-        costoCompra: c ? dec(c.costoCompra) : 0,
-        horasManoObra: c ? dec(c.horasManoObra) : 0,
-        tarifaManoObra: c ? dec(c.tarifaManoObra) : 0,
-        horasMaquina: c ? dec(c.horasMaquina) : 0,
-        tarifaMaquina: c ? dec(c.tarifaMaquina) : 0,
-        costoMolde: c ? dec(c.costoMolde) : 0,
-        piezasMolde: c ? dec(c.piezasMolde) : 0,
-        costoEnsamble: c ? dec(c.costoEnsamble) : 0,
-        costoEmpaque: c ? dec(c.costoEmpaque) : 0,
-        notas: c?.notas ?? null,
-        materiales:
-          c?.materiales.map((m) => ({
-            nombre: m.nombre,
-            cantidad: dec(m.cantidad),
-            costoUnitario: dec(m.costoUnitario),
-            orden: m.orden,
-          })) ?? [],
-      },
+      valores: costo.valores,
+      total: costo.total,
+      avisos: costo.avisos,
       variantes: p.variants.map((v) => ({
         variantId: v.id,
         sku: v.sku,
         nombre: v.nombre,
         costoCompra: v.costoCompra === null ? null : dec(v.costoCompra),
       })),
-      desglose,
-      ...this.conMargen(ref, desglose.total),
+      componentes: p.components.map((c) => ({
+        componentId: c.componentId,
+        nombre: c.component.nombre,
+        skuBase: c.component.skuBase,
+        tipo: c.tipo,
+        cantidad: dec(c.cantidad),
+      })),
+      ...this.conMargen(ref, costo.total),
     };
+  }
+
+  // --------------------------------------------------- validar y normalizar
+  private normalizarValores(valores: ValorCostoInput[]): {
+    clave: string;
+    etiqueta: string;
+    fuente: FuenteCosto;
+    valor: number | null;
+    opciones: Record<string, unknown> | null;
+    orden: number;
+  }[] {
+    const vistos = new Set<string>();
+    const out = [];
+    const fuentesValidas: FuenteCosto[] = ["manual", "bom", "variante", "formula"];
+    for (const [i, v] of valores.entries()) {
+      const clave = (v.clave ?? "").trim();
+      if (!clave) continue;
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(clave)) {
+        throw new BadRequestException(`La clave "${clave}" no es válida (usa letras, números y _)`);
+      }
+      if (vistos.has(clave)) throw new BadRequestException(`La clave "${clave}" está repetida`);
+      vistos.add(clave);
+      if (!fuentesValidas.includes(v.fuente)) {
+        throw new BadRequestException(`Fuente no válida en "${clave}"`);
+      }
+      out.push({
+        clave,
+        etiqueta: (v.etiqueta ?? "").trim() || clave,
+        fuente: v.fuente,
+        valor: v.fuente === "manual" ? (v.valor ?? 0) : null,
+        opciones: v.opciones ?? null,
+        orden: v.orden ?? i,
+      });
+    }
+    return out;
+  }
+
+  private validarFormula(formula: string | null | undefined, claves: Set<string>) {
+    if (!formula || formula.trim() === "") return null;
+    const f = formula.trim();
+    try {
+      const usadas = clavesFormula(f);
+      const faltantes = usadas.filter((k) => !claves.has(k));
+      if (faltantes.length) {
+        throw new BadRequestException(`La fórmula usa claves no definidas: ${faltantes.join(", ")}`);
+      }
+      const entorno = Object.fromEntries([...claves].map((k) => [k, 1]));
+      evaluarFormula(f, entorno);
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException(`Fórmula inválida: ${(e as Error).message}`);
+    }
+    return f;
+  }
+
+  // -------------------------------------------------------------- preview
+  async preview(productId: number, data: CostoInput) {
+    await this.verificarProducto(productId);
+    const valores = this.normalizarValores(data.valores ?? []);
+    const claves = new Set(valores.map((v) => v.clave));
+    const formula = this.validarFormula(data.formula, claves);
+    const res = await this.calc.calcular(productId, valores as ValorInput[], formula);
+    return { ...res, ...this.conMargen(await this.referenciaDeProducto(productId), res.total) };
   }
 
   // -------------------------------------------------------------- upsert
   async upsert(productId: number, data: CostoInput, userId?: number) {
-    const exists = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { id: true, basePrice: true },
-    });
-    if (!exists) throw new NotFoundException("Producto no encontrado");
-
-    const campos = {
-      costoCompra: data.costoCompra ?? null,
-      horasManoObra: data.horasManoObra ?? 0,
-      tarifaManoObra: data.tarifaManoObra ?? 0,
-      horasMaquina: data.horasMaquina ?? 0,
-      tarifaMaquina: data.tarifaMaquina ?? 0,
-      costoMolde: data.costoMolde ?? 0,
-      piezasMolde: data.piezasMolde ?? 0,
-      costoEnsamble: data.costoEnsamble ?? 0,
-      costoEmpaque: data.costoEmpaque ?? 0,
-      notas: data.notas ?? null,
-      updatedById: userId ?? null,
-    };
-    const materiales = (data.materiales ?? []).filter((m) => m.nombre.trim() !== "");
+    const exists = await this.verificarProducto(productId);
+    const valores = this.normalizarValores(data.valores ?? []);
+    const claves = new Set(valores.map((v) => v.clave));
+    const formula = this.validarFormula(data.formula, claves);
+    const notas = data.notas ?? null;
 
     await this.prisma.$transaction(async (tx) => {
       const cost = await tx.productCost.upsert({
         where: { productId },
-        create: { productId, ...campos },
-        update: campos,
+        create: { productId, formula, notas, updatedById: userId ?? null },
+        update: { formula, notas, updatedById: userId ?? null },
       });
-      await tx.productCostMaterial.deleteMany({ where: { productCostId: cost.id } });
-      if (materiales.length > 0) {
-        await tx.productCostMaterial.createMany({
-          data: materiales.map((m, i) => ({
+      await tx.productCostValor.deleteMany({ where: { productCostId: cost.id } });
+      if (valores.length > 0) {
+        await tx.productCostValor.createMany({
+          data: valores.map((v) => ({
             productCostId: cost.id,
-            nombre: m.nombre.trim(),
-            cantidad: m.cantidad ?? 0,
-            costoUnitario: m.costoUnitario ?? 0,
-            orden: m.orden ?? i,
+            clave: v.clave,
+            etiqueta: v.etiqueta,
+            fuente: v.fuente,
+            valor: v.valor,
+            opciones: (v.opciones ?? undefined) as Prisma.InputJsonValue | undefined,
+            orden: v.orden,
           })),
         });
       }
-      for (const v of data.variantes ?? []) {
-        await tx.productVariant.updateMany({
-          where: { id: v.variantId, productId },
-          data: { costoCompra: v.costoCompra },
-        });
-      }
-      // El precio base se edita desde aquí, pero sigue registrándose en PriceChange.
       if (data.precioBase !== undefined && dec(exists.basePrice) !== data.precioBase) {
         await tx.product.update({ where: { id: productId }, data: { basePrice: data.precioBase } });
         await tx.priceChange.create({
@@ -278,5 +275,24 @@ export class CostosService {
       await this.prisma.productCost.delete({ where: { productId } });
     }
     return this.get(productId);
+  }
+
+  // -------------------------------------------------------------- helpers
+  private async verificarProducto(productId: number) {
+    const exists = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, basePrice: true },
+    });
+    if (!exists) throw new NotFoundException("Producto no encontrado");
+    return exists;
+  }
+
+  private async referenciaDeProducto(productId: number) {
+    const p = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: { variants: { select: { price: true, activo: true } } },
+    });
+    if (!p) throw new NotFoundException("Producto no encontrado");
+    return this.referenciaPrecio(p);
   }
 }

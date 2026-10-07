@@ -116,7 +116,8 @@ Todas soportan `--dry`/`--apply`.
 
 Ver detalle y formato de ops en [`catalog-ops.md`](./catalog-ops.md).
 
-- `snapshot.ts` → `docs/catalog-snapshot.{json,md}` (estado canónico).
+- `snapshot.ts` → `docs/catalog-snapshot.{json,md}` (estado canónico, **generado**: no leer completo
+  ni editar a mano; consúltalo con `rg`).
 - `apply.ts --file <ops.yaml> [--apply]` — motor genérico de ops declarativas (idempotente, transaccional).
 - `odoo-diff.ts` — compara `mapeo-odoo-ppg.csv` ↔ PPG y propone ops.
 - `export-seed.ts` — vuelca el catálogo actual a `scripts/catalog/seed/catalog.yaml` (+ `stock.yaml`).

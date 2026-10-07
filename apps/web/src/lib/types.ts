@@ -416,15 +416,16 @@ export interface NecesidadesResp {
 
 export type Turno = "matutino" | "vespertino" | "nocturno";
 export type SeccionReporte = "maquina1" | "maquina2" | "maquina3" | "ensamble" | "ensartado" | "pegado" | "perforado";
-export type TipoLineaReporte = "final" | "consumo";
+export type TipoLineaReporte = "final" | "consumo" | "informativo";
 
 export interface ReporteLinea {
   id: number;
-  variantId: number;
-  sku: string;
-  nombre: string;
-  producto: string;
-  uom: string;
+  variantId: number | null;
+  sku: string | null;
+  nombre: string | null;
+  producto: string | null;
+  uom: string | null;
+  productoTexto?: string | null;
   seccion: SeccionReporte;
   tipo: TipoLineaReporte;
   ok: number;
@@ -447,6 +448,7 @@ export interface Reporte {
   secciones: string[];
   totalFinal: number;
   totalConsumo: number;
+  totalInformativo: number;
 }
 
 export interface ReporteDetalle {
@@ -466,7 +468,9 @@ export type OrigenLote = "reporte" | "fabricacion";
 
 export interface LoteUbicar {
   lineaId: number;
+  reporteId: number;
   reporte: string;
+  estadoReporte: "pendiente" | "aplicado";
   origen: OrigenLote;
   usuario: string | null;
   variantId: number;
@@ -555,27 +559,24 @@ export interface StatsReporte {
   reportesAplicados: number;
   totalFinal: number;
   totalConsumo: number;
+  totalInformativo: number;
   porSeccion: StatsSeccion[];
   consumo: StatsConsumo[];
 }
 
 // ------------------------------------------------------------------ Costos
-export interface CostoMaterial {
-  nombre: string;
-  cantidad: number;
-  costoUnitario: number;
-  orden?: number;
-}
+export type FuenteCostoValor = "manual" | "bom" | "variante" | "formula";
 
-export interface CostoDesglose {
-  costoCompra: number;
-  materiales: number;
-  manoObra: number;
-  maquina: number;
-  molde: number;
-  ensamble: number;
-  empaque: number;
-  total: number;
+export interface CostoValor {
+  clave: string;
+  etiqueta: string;
+  fuente: FuenteCostoValor;
+  valor?: number | null;
+  opciones?: Record<string, unknown> | null;
+  orden?: number;
+  valorResuelto: number;
+  detalle?: string;
+  error?: string;
 }
 
 export interface CostoMargen {
@@ -586,7 +587,7 @@ export interface CostoMargen {
   margenPct: number | null;
 }
 
-export interface CostoFila extends CostoDesglose, CostoMargen {
+export interface CostoFila extends CostoMargen {
   productId: number;
   nombre: string;
   skuBase: string;
@@ -594,23 +595,12 @@ export interface CostoFila extends CostoDesglose, CostoMargen {
   fabricable: boolean;
   comprable: boolean;
   tieneReceta: boolean;
+  tieneFormula: boolean;
   notas: string | null;
   variantes: number;
   precioBase: number;
-}
-
-export interface CostoReceta {
-  costoCompra: number;
-  horasManoObra: number;
-  tarifaManoObra: number;
-  horasMaquina: number;
-  tarifaMaquina: number;
-  costoMolde: number;
-  piezasMolde: number;
-  costoEnsamble: number;
-  costoEmpaque: number;
-  notas: string | null;
-  materiales: CostoMaterial[];
+  total: number;
+  avisos: string[];
 }
 
 export interface CostoVariante {
@@ -620,7 +610,15 @@ export interface CostoVariante {
   costoCompra: number | null;
 }
 
-export interface CostoDetalle extends CostoDesglose, CostoMargen {
+export interface CostoComponente {
+  componentId: number;
+  nombre: string;
+  skuBase: string;
+  tipo: string;
+  cantidad: number;
+}
+
+export interface CostoDetalle extends CostoMargen {
   productId: number;
   nombre: string;
   skuBase: string;
@@ -628,9 +626,21 @@ export interface CostoDetalle extends CostoDesglose, CostoMargen {
   fabricable: boolean;
   comprable: boolean;
   tieneReceta: boolean;
-  receta: CostoReceta;
-  variantes: CostoVariante[];
+  formula: string | null;
+  notas: string | null;
   precioBase: number;
+  valores: CostoValor[];
+  total: number;
+  avisos: string[];
+  variantes: CostoVariante[];
+  componentes: CostoComponente[];
+}
+
+export interface CostoPreview extends CostoMargen {
+  formula: string | null;
+  valores: CostoValor[];
+  total: number;
+  avisos: string[];
 }
 
 export interface InventarioHistoricoAtributo {
