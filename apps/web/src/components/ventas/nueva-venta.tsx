@@ -92,6 +92,7 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
         producto: p.nombre,
         uom: p.uom,
         cantidad: "1",
+        precio: String(v.precio),
         configVariantId: v.id,
       });
     }
@@ -129,6 +130,7 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
           lines: lineas.map((l) => ({
             variantId: l.configVariantId ?? l.variantId,
             cantidad: Number(l.cantidad),
+            precioUnitario: l.precio === "" ? undefined : Number(l.precio),
             configuracion: l.configuracion ? JSON.stringify(l.configuracion) : undefined,
           })),
         }),
@@ -282,6 +284,16 @@ export default function NuevaVenta({ onCreada, onError, onMsg }: Props) {
                             min="0.001"
                             value={l.cantidad}
                             onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, cantidad: e.target.value } : x)))}
+                          />
+                        </label>
+                        <label style={{ flex: 0.8 }}>
+                          Precio unitario
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={l.precio ?? ""}
+                            onChange={(e) => setLineas(lineas.map((x, j) => (j === i ? { ...x, precio: e.target.value } : x)))}
                           />
                         </label>
                         <button type="button" className="btn ghost" style={{ flex: 0 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>

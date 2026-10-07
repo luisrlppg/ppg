@@ -13,7 +13,10 @@ Reglas que **debes** respetar al modificar PPG ERP. Para ubicar archivos ver `pr
    escrituras de `catalogos` y `productos`, y todo `costos`, `backups`, `monitor` y `usuarios`.
 3. **Rutas estáticas antes de `:param`** en los controllers (p. ej. `/inventario/existencia` vs `/inventario/:id`).
 4. **Decimal ↔ number:** usa siempre `dec()` de `common/util.ts` para convertir `Decimal` de Prisma.
-5. **Precios:** todo cambio de precio base/variante **debe** registrarse en `PriceChange`.
+5. **Precios:** todo cambio de precio base/variante de **catálogo** (incluido el `precioBase` editado
+   desde `/costos`) **debe** registrarse en `PriceChange`. El **precio pactado por línea de venta**
+   (`SalesOrderLine.precioUnitario`, editable en el alta y en el detalle de una venta `abierta`) es
+   propio de esa venta y **no** se registra en `PriceChange`.
 6. **BOM recursivo / ciclos:** cualquier lógica que recorra `ProductComponent` recursivamente debe
    **detectar ciclos** (patrón presente en `ventas`, `inventario`, `productos.resolveComponentVariant`
    y `catalogos.atributos-producto`). La recursión BOM hoy está duplicada en varios sitios; si la tocas,

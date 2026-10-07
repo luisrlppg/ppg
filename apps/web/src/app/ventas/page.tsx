@@ -10,6 +10,7 @@ import StickyBar from "@/components/ui/sticky-bar";
 import NuevaVenta from "@/components/ventas/nueva-venta";
 import DocumentoVenta from "@/components/ventas/documento-venta";
 import ModalEtiqueta from "@/components/ventas/modal-etiqueta";
+import PrecioEditable from "@/components/ventas/precio-editable";
 import { api } from "@/lib/api";
 import { useFormatCantidad } from "@/lib/preferences";
 import type { Desglose, DesgloseNodo, Venta, VentaLinea } from "@/lib/types";
@@ -119,8 +120,22 @@ export default function VentasPage() {
     }
   }
 
-  async function cancelar(id: number) {
-    setCargando(true);
+  async function guardarPrecio(lineaId: number, precio: number) {
+    if (!detalle) return;
+    setError("");
+    try {
+      await api(`/ventas/${detalle.id}/lineas/${lineaId}/precio`, {
+        method: "PATCH",
+        body: JSON.stringify({ precioUnitario: precio }),
+      });
+      await abrirDetalle(detalle.id);
+      setMsg("Precio actualizado.");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function cancelar(id: number) {    setCargando(true);
     setError("");
     try {
       await api(`/ventas/${id}/cancelar`, { method: "POST", body: "{}" });
@@ -268,7 +283,13 @@ export default function VentasPage() {
                         <div className="small muted">{l.nombre} · {l.sku}</div>
                       </td>
                       <td className="num">{formatCantidad(l.cantidad)} {l.uom}</td>
-                      <td className="num">${(l.precioUnitario ?? 0).toFixed(2)}</td>
+                      <td className="num">
+                        {d.estado === "abierta" ? (
+                          <PrecioEditable value={l.precioUnitario ?? 0} onSave={(n) => guardarPrecio(l.id, n)} />
+                        ) : (
+                          `$${(l.precioUnitario ?? 0).toFixed(2)}`
+                        )}
+                      </td>
                       <td className="num">${(l.subtotal ?? 0).toFixed(2)}</td>
                       <td>
                         {formatCantidad(l.qtyDelivered ?? 0)}/{formatCantidad(l.cantidad)}

@@ -250,6 +250,22 @@ export class VentasService {
     });
   }
 
+  // ------------------------------------------------ Precio de una línea
+  /** Cambia el precio pactado de una línea sin tocar el catálogo ni PriceChange:
+   *  el precio pertenece a la venta. Permitido mientras la venta esté abierta
+   *  (aunque ya esté confirmada, porque el desglose no depende del precio). */
+  async setLineaPrecio(orderId: number, lineaId: number, precioUnitario: number) {
+    if (!(precioUnitario >= 0)) throw new BadRequestException("El precio debe ser mayor o igual a 0");
+    return this.prisma.$transaction(async (tx) => {
+      const line = await tx.salesOrderLine.findUnique({ where: { id: lineaId }, include: { order: true } });
+      if (!line) throw new NotFoundException("Línea no encontrada");
+      if (line.orderId !== orderId) throw new BadRequestException("La línea no pertenece a esta venta");
+      if (line.order.estado !== "abierta") throw new BadRequestException("Solo se edita el precio de una venta abierta");
+      await tx.salesOrderLine.update({ where: { id: lineaId }, data: { precioUnitario } });
+      return { ok: true };
+    });
+  }
+
   // ------------------------------------------------- Confirmar (desglose)
   /**
    * Calcula el desglose neto multi-nivel y lo guarda en `resumen`. No genera

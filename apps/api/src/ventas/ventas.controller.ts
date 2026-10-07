@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -49,6 +49,10 @@ class DespacharDto {
   @IsOptional() @IsNumber() locationId?: number;
 }
 
+class PrecioLineaDto {
+  @IsNumber() @Min(0) precioUnitario!: number;
+}
+
 @Controller("ventas")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class VentasController {
@@ -81,6 +85,16 @@ export class VentasController {
         ? dto.lines.map((l) => ({ variantId: l.variantId, cantidad: Number(l.cantidad), precioUnitario: l.precioUnitario }))
         : undefined,
     });
+  }
+
+  @Roles("admin", "operador")
+  @Patch(":id/lineas/:lineaId/precio")
+  setLineaPrecio(
+    @Param("id", ParseIntPipe) id: number,
+    @Param("lineaId", ParseIntPipe) lineaId: number,
+    @Body() dto: PrecioLineaDto,
+  ) {
+    return this.ventas.setLineaPrecio(id, lineaId, Number(dto.precioUnitario));
   }
 
   @Roles("admin", "operador")

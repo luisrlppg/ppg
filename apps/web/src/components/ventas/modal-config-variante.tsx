@@ -14,6 +14,7 @@ export interface LineaConfigurada {
   producto: string;
   uom: string;
   cantidad: string;
+  precio: string;
   configuracion?: ConfiguracionLinea;
   configVariantId?: number;
 }
@@ -27,7 +28,7 @@ interface Props {
 
 const iconosPlaceholder = ["▣", "◉", "▲", "■", "◆", "●", "▢", "★"];
 
-export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }: Props) {
+export default function ModalConfigVariante({ producto, lineaInicial, onConfirmar, onCerrar }: Props) {
   const w = usePasosWizard(producto.productId);
   const [cantidad, setCantidad] = useState("1");
   const [error, setError] = useState("");
@@ -56,6 +57,7 @@ export default function ModalConfigVariante({ producto, onConfirmar, onCerrar }:
         producto: producto.nombre,
         uom: producto.uom,
         cantidad,
+        precio: lineaInicial?.precio ?? String(producto.basePrice),
         configuracion: cfg,
         configVariantId: r.variantId,
       });

@@ -127,6 +127,10 @@ La "cantidad por caja de almacén" **no tiene campo propio**: es un `packaging` 
 precio_efectivo(variante) = COALESCE(variant.price, product.base_price)
 ```
 
+**Precio pactado en una venta:** cada línea guarda su `precio_unitario`, editable al crear la venta y
+mientras esté `abierta`. Es el precio acordado con el cliente en esa venta: **no** modifica el catálogo
+ni se registra en `price_changes`. El precio base se administra desde `/costos` (o la ficha de producto).
+
 #### Ubicaciones
 | Tabla | Campos | Notas |
 |---|---|---|
@@ -398,8 +402,9 @@ distintos según el tipo:
   molde (amortización por pieza), ensamble, empaque. **Sin merma** por ahora.
 - **Captura:** manual por producto, formulario fijo por concepto; materiales como líneas.
 - **Comprables:** se captura su `costo_compra`.
-- **Arranque separado:** no alimenta aún los precios de venta; precio y margen se muestran
-  solo como referencia. La unificación con la página de precios queda como pendiente.
+- **Precio base editable (2026-10-07):** desde `/costos` se ajusta `Product.base_price` (a mano o
+  despejado de un margen deseado) y se registra en `PriceChange`; el costo total es calculado
+  (no editable). Sigue pendiente unificar con precios por variante y materiales automáticos desde el BOM.
 - **Acceso:** ver/editar sólo `admin`.
 - **API:** `GET /costos` · `GET /costos/:productId` · `PUT /costos/:productId` ·
   `DELETE /costos/:productId`. **Web:** `/costos` (lista + editor en modal).

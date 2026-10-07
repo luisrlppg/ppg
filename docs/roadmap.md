@@ -15,8 +15,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
    `resumen.comprar` / Pendientes de compra (sin documento). Falta un módulo `PurchaseOrder`
    (modelo + API + UI) que consuma `Product.comprable`. Fase siguiente tras E3.
 5. **Costos (v1) — integración pendiente:** el módulo de costo estándar (`/costos`, `ProductCost`)
-   arrancó **separado** del ERP: captura manual, sin historial ni merma y **sin** escribir el precio
-   de venta. Falta, cuando se decida: (a) ligar el costo a la página de precios/margen real,
+   arrancó **separado** del ERP: captura manual, sin historial ni merma. Falta, cuando se decida:
+   (a) ligar el costo a la página de precios/margen real (**parcial:** ya se edita el **precio base**
+   desde `/costos`, con `PriceChange`; falta precio por variante),
    (b) materiales automáticos desde el BOM, (c) merma, (d) historial/versionado, (e) costo por
    variante (**parcial:** `ProductVariant.costoCompra` ya existe para comprables/pigmentos) y
    (f) catálogo de tarifas reutilizables. Ver §8.7 de `REQUIREMENTS.md`.
@@ -29,6 +30,14 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 - `common/util.ts`: helpers mezclados, candidato a separar.
 
 ## Trabajo reciente (contexto)
+
+- **Precio desde costos y en la venta (2026-10-07):** `/costos` ahora edita el **precio base** del
+  producto a mano o despejado de un margen deseado (`PUT /costos/:productId` con `precioBase`), y el
+  costo total queda calculado (fijo); el cambio se registra en `PriceChange`. En ventas, el **precio
+  unitario** de cada línea es editable al crear (`components/ventas/nueva-venta.tsx`, paso Revisión)
+  y desde el detalle de una venta **abierta** (nuevo `PATCH /ventas/:id/lineas/:lineaId/precio`,
+  `ventas.service.setLineaPrecio` + `components/ventas/precio-editable.tsx`). Ese precio es de la
+  venta: **no** toca catálogo ni `PriceChange`. Sin migración.
 
 - **Despliegue dev → producción automatizado (2026-10-07):** `scripts/deploy.sh` (`update`/`status`/
   `logs`/`backup`/`restore`/`down`; alias `pnpm deploy:*`) hace `git pull` + `build` + `up` +

@@ -69,6 +69,8 @@ export default function CostosPage() {
   const [costoEnsamble, setCostoEnsamble] = useState("");
   const [costoEmpaque, setCostoEmpaque] = useState("");
   const [notas, setNotas] = useState("");
+  const [precioBase, setPrecioBase] = useState("");
+  const [margenPctInput, setMargenPctInput] = useState("");
   const [materiales, setMateriales] = useState<MaterialForm[]>([]);
   const [variantes, setVariantes] = useState<VarianteForm[]>([]);
 
@@ -84,6 +86,8 @@ export default function CostosPage() {
     setCostoEnsamble(r.costoEnsamble ? String(r.costoEnsamble) : "");
     setCostoEmpaque(r.costoEmpaque ? String(r.costoEmpaque) : "");
     setNotas(r.notas ?? "");
+    setPrecioBase(d.precioBase ? String(d.precioBase) : "");
+    setMargenPctInput(d.margenPct === null ? "" : d.margenPct.toFixed(1));
     setMateriales(
       r.materiales.map((m: CostoMaterial) => ({
         nombre: m.nombre,
@@ -120,6 +124,20 @@ export default function CostosPage() {
     setDetalle(null);
   }
 
+  function aplicarPrecio(valor: string, total: number) {
+    setPrecioBase(valor);
+    const p = num(valor);
+    setMargenPctInput(total > 0 && p > 0 ? (((p - total) / p) * 100).toFixed(1) : "");
+  }
+
+  function aplicarMargen(valor: string, total: number) {
+    setMargenPctInput(valor);
+    const m = num(valor);
+    if (total > 0 && m >= 0 && m < 100) {
+      setPrecioBase((total / (1 - m / 100)).toFixed(2));
+    }
+  }
+
   const live = (() => {
     const materialesTotal =
       num(costoCompra) +
@@ -131,7 +149,7 @@ export default function CostosPage() {
     const ensamble = num(costoEnsamble);
     const empaque = num(costoEmpaque);
     const total = materialesTotal + manoObra + maquina + molde + ensamble + empaque;
-    const precio = detalle?.precio ?? 0;
+    const precio = num(precioBase) > 0 ? num(precioBase) : (detalle?.precio ?? 0);
     const margen = precio > 0 ? precio - total : null;
     const margenPct = precio > 0 ? ((precio - total) / precio) * 100 : null;
     return { materialesTotal, manoObra, maquina, molde, ensamble, empaque, total, precio, margen, margenPct };
@@ -146,6 +164,7 @@ export default function CostosPage() {
       await api(`/costos/${detalle.productId}`, {
         method: "PUT",
         body: JSON.stringify({
+          precioBase: num(precioBase),
           costoCompra: costoCompra === "" ? null : num(costoCompra),
           horasManoObra: num(horasManoObra),
           tarifaManoObra: num(tarifaManoObra),
@@ -215,7 +234,7 @@ export default function CostosPage() {
     <AppShell>
       <PageHeader
         title="Costos"
-        subtitle="Costo estándar por producto (capturado a mano). Por ahora es independiente del precio de venta; se muestra precio y margen solo como referencia."
+        subtitle="Costo estándar por producto, calculado a partir de sus factores. El costo total es fijo; aquí también ajustas el precio de venta (base) y revisas la utilidad."
       />
       {error && <div className="error">{error}</div>}
       {msg && <div className="msg-ok">{msg}</div>}
@@ -319,7 +338,8 @@ export default function CostosPage() {
           <form id="form-costo" onSubmit={guardar}>
             <HelpNote>
               Captura manual por concepto. En <strong>comprados</strong> usa el costo de compra; en{" "}
-              <strong>fabricados</strong> usa materiales + operaciones. Todo es por unidad.
+              <strong>fabricados</strong> usa materiales + operaciones. Todo es por unidad. El costo total
+              se calcula y no se edita; el precio de venta sí.
             </HelpNote>
 
             {/* Materiales + compra */}
@@ -555,6 +575,38 @@ export default function CostosPage() {
               Notas
               <input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Supuestos, fuente de tarifas…" />
             </label>
+
+            {/* Precio de venta y utilidad */}
+            <h4 style={{ marginBottom: 4, marginTop: 16 }}>Precio de venta y utilidad</h4>
+            <p className="muted small" style={{ marginTop: 0 }}>
+              Escribe el <strong>precio base</strong> o el <strong>margen deseado</strong>: el sistema calcula el otro.
+              El precio se guarda en el catálogo (queda en el historial de precios).
+            </p>
+            <div className="grid-2">
+              <label>
+                Precio base
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={precioBase}
+                  onChange={(e) => aplicarPrecio(e.target.value, live.total)}
+                  placeholder="0.00"
+                />
+              </label>
+              <label>
+                Margen deseado (%)
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="99"
+                  value={margenPctInput}
+                  onChange={(e) => aplicarMargen(e.target.value, live.total)}
+                  placeholder="—"
+                />
+              </label>
+            </div>
 
             {/* Resumen en vivo */}
             <div className="card" style={{ marginTop: 16, background: "var(--surface-2, #f7f7f8)" }}>

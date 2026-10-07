@@ -14,6 +14,7 @@ interface MaterialInput {
 }
 
 export interface CostoInput {
+  precioBase?: number;
   costoCompra?: number | null;
   horasManoObra?: number;
   tarifaManoObra?: number;
@@ -144,6 +145,7 @@ export class CostosService {
         tieneReceta: p.cost !== null,
         notas: p.cost?.notas ?? null,
         variantes: p.variants.length,
+        precioBase: dec(p.basePrice),
         ...desglose,
         ...this.conMargen(ref, desglose.total),
       };
@@ -172,6 +174,7 @@ export class CostosService {
       fabricable: p.fabricable,
       comprable: p.comprable,
       tieneReceta: c !== null,
+      precioBase: dec(p.basePrice),
       receta: {
         costoCompra: c ? dec(c.costoCompra) : 0,
         horasManoObra: c ? dec(c.horasManoObra) : 0,
@@ -206,7 +209,7 @@ export class CostosService {
   async upsert(productId: number, data: CostoInput, userId?: number) {
     const exists = await this.prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true },
+      select: { id: true, basePrice: true },
     });
     if (!exists) throw new NotFoundException("Producto no encontrado");
 
@@ -247,6 +250,20 @@ export class CostosService {
         await tx.productVariant.updateMany({
           where: { id: v.variantId, productId },
           data: { costoCompra: v.costoCompra },
+        });
+      }
+      // El precio base se edita desde aquí, pero sigue registrándose en PriceChange.
+      if (data.precioBase !== undefined && dec(exists.basePrice) !== data.precioBase) {
+        await tx.product.update({ where: { id: productId }, data: { basePrice: data.precioBase } });
+        await tx.priceChange.create({
+          data: {
+            variantId: null,
+            campo: "base",
+            precioAnterior: exists.basePrice,
+            precioNuevo: data.precioBase,
+            source: userId ? "manual" : "api",
+            userId: userId ?? null,
+          },
         });
       }
     });

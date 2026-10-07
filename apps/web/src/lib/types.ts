@@ -596,6 +596,7 @@ export interface CostoFila extends CostoDesglose, CostoMargen {
   tieneReceta: boolean;
   notas: string | null;
   variantes: number;
+  precioBase: number;
 }
 
 export interface CostoReceta {
@@ -629,6 +630,7 @@ export interface CostoDetalle extends CostoDesglose, CostoMargen {
   tieneReceta: boolean;
   receta: CostoReceta;
   variantes: CostoVariante[];
+  precioBase: number;
 }
 
 export interface InventarioHistoricoAtributo {

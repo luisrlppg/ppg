@@ -162,6 +162,7 @@ export default function ModalSeleccionVariante({ producto, lineaInicial, onConfi
       producto: producto.nombre,
       uom: producto.uom,
       cantidad,
+      precio: lineaInicial?.precio ?? String(varianteFinal.precio),
       configuracion,
       configVariantId: varianteFinal.id,
     });

@@ -39,6 +39,7 @@ class VarianteCostoDto {
 }
 
 class UpsertCostoDto {
+  @IsOptional() @IsNumber() @Min(0) precioBase?: number;
   @IsOptional() @IsNumber() costoCompra?: number | null;
   @IsOptional() @IsNumber() @Min(0) horasManoObra?: number;
   @IsOptional() @IsNumber() @Min(0) tarifaManoObra?: number;
