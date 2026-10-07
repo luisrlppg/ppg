@@ -31,7 +31,7 @@ const LINKS: NavItem[] = [
   { href: "/bandeja", label: "Bandeja", icon: "📍" },
   { href: "/productos", label: "Productos", icon: "📦", match: ["/productos", "/catalogos"] },
   { href: "/inventario", label: "Inventario", icon: "📊" },
-  { href: "/inventario-historico", label: "Inv. histórico", icon: "🗃️" },
+  { href: "/inventario-historico", label: "Alm. histórico", icon: "🗃️" },
   { href: "/clientes", label: "Clientes", icon: "👥" },
 ];
 

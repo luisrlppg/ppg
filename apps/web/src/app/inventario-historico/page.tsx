@@ -156,7 +156,7 @@ export default function InventarioHistoricoPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Inventario histórico"
+        title="Almacén histórico"
         subtitle="Existencias de productos descontinuados y subensambles. Aislado del inventario vivo."
         actions={
           esAdmin ? (
@@ -182,28 +182,25 @@ export default function InventarioHistoricoPage() {
       {msg && <div className="msg-ok">{msg}</div>}
 
       <StickyBar>
-        <div className="card" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ flex: 2, minWidth: 200 }}>
+        <div className="toolbar">
+          <label style={{ flex: "1 1 220px" }}>
             Buscar
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, SKU o ubicación…" />
           </label>
-          <div style={{ flex: 2, minWidth: 220, display: "flex", alignItems: "center", gap: 12 }}>
-            <BuscadorAtributos filtro={filtro} />
-          </div>
-          <div style={{ flex: 1, minWidth: 200, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
-            <span className="muted small">
-              {visibles.length} registro(s) · {totalUnidades.toLocaleString("es-MX")} u
-            </span>
-            <Segmented
-              value={tipo}
-              onChange={(v) => setTipo(v as FiltroTipo)}
-              options={[
-                { value: "todos", label: "Todos" },
-                { value: "descontinuado", label: "Descontinuado" },
-                { value: "subensamble", label: "Subensamble" },
-              ]}
-            />
-          </div>
+          <BuscadorAtributos filtro={filtro} />
+          <div className="grow" />
+          <span className="muted small">
+            {visibles.length} registro(s) · {totalUnidades.toLocaleString("es-MX")} u
+          </span>
+          <Segmented
+            value={tipo}
+            onChange={(v) => setTipo(v as FiltroTipo)}
+            options={[
+              { value: "todos", label: "Todos" },
+              { value: "descontinuado", label: "Descontinuado" },
+              { value: "subensamble", label: "Subensamble" },
+            ]}
+          />
         </div>
       </StickyBar>
 
@@ -212,13 +209,9 @@ export default function InventarioHistoricoPage() {
           <table className="table" style={{ overflowWrap: "anywhere" }}>
             <thead>
               <tr>
-                <th style={{ whiteSpace: "nowrap" }}>Nombre</th>
-                <th style={{ whiteSpace: "nowrap" }}>SKU</th>
-                <th style={{ whiteSpace: "nowrap" }}>Tipo</th>
+                <th>Nombre</th>
                 <th className="num" style={{ whiteSpace: "nowrap" }}>Cantidad</th>
                 <th style={{ whiteSpace: "nowrap" }}>Ubicación</th>
-                <th style={{ whiteSpace: "nowrap" }}>Atributos</th>
-                {esAdmin && <th />}
               </tr>
             </thead>
             <tbody>
@@ -239,17 +232,7 @@ export default function InventarioHistoricoPage() {
                   <td>
                     <strong>{it.nombre}</strong>
                     {it.familia && <div className="muted small">{it.familia}</div>}
-                  </td>
-                  <td>{it.sku ?? "—"}</td>
-                  <td>
-                    <span className={`badge ${it.tipo === "subensamble" ? "info" : ""}`}>{it.tipo}</span>
-                  </td>
-                  <td className="num">{Number(it.cantidad).toLocaleString("es-MX")}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>{it.ubicacion}</td>
-                  <td>
-                    {it.atributos.length === 0 ? (
-                      <span className="muted">—</span>
-                    ) : (
+                    {it.atributos.length > 0 && (
                       <span className="attr-list">
                         {it.atributos.map((a) => (
                           <span key={a.nombre} className="attr-item">
@@ -259,25 +242,13 @@ export default function InventarioHistoricoPage() {
                       </span>
                     )}
                   </td>
-                  {esAdmin && (
-                    <td className="num">
-                      <button
-                        type="button"
-                        className="btn ghost sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPorEliminar(it);
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  )}
+                  <td className="num">{Number(it.cantidad).toLocaleString("es-MX")}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{it.ubicacion}</td>
                 </tr>
               ))}
               {visibles.length === 0 && (
                 <tr>
-                  <td colSpan={esAdmin ? 7 : 6} className="empty">
+                  <td colSpan={3} className="empty">
                     Sin registros.
                   </td>
                 </tr>
@@ -294,6 +265,12 @@ export default function InventarioHistoricoPage() {
           item={editando}
           productos={productos}
           onGuardado={() => guardado(editando === null)}
+          onEliminar={() => {
+            setPorEliminar(editando);
+            setShowModal(false);
+            setEditando(null);
+            setError("");
+          }}
           onCerrar={() => { setShowModal(false); setEditando(null); }}
         />
       )}
@@ -317,7 +294,7 @@ export default function InventarioHistoricoPage() {
 
       {mostrarCsv && (
         <Modal
-          title="Importar inventario histórico (CSV)"
+          title="Importar almacén histórico (CSV)"
           onClose={() => { setMostrarCsv(false); setCsv(""); }}
           size="lg"
         >

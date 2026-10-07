@@ -9,6 +9,7 @@ interface Props {
   item: InventarioHistoricoItem | null;
   productos: { id: number; nombre: string }[];
   onGuardado: () => void;
+  onEliminar?: () => void;
   onCerrar: () => void;
 }
 
@@ -24,7 +25,7 @@ function sugerenciasDe(a: Atributo): string[] {
   return valores.map((v) => v.valor);
 }
 
-export default function ItemFormModal({ item, productos, onGuardado, onCerrar }: Props) {
+export default function ItemFormModal({ item, productos, onGuardado, onEliminar, onCerrar }: Props) {
   const [nombre, setNombre] = useState(item?.nombre ?? "");
   const [sku, setSku] = useState(item?.sku ?? "");
   const [tipo, setTipo] = useState(item?.tipo ?? "descontinuado");
@@ -113,14 +114,23 @@ export default function ItemFormModal({ item, productos, onGuardado, onCerrar }:
       onClose={onCerrar}
       size="lg"
       footer={
-        <>
-          <button type="button" className="btn ghost" onClick={onCerrar}>
-            Cancelar
-          </button>
-          <button type="button" className="btn primary" disabled={guardando} onClick={guardar}>
-            {guardando ? "Guardando…" : "Guardar"}
-          </button>
-        </>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%" }}>
+          {item && onEliminar ? (
+            <button type="button" className="btn danger" onClick={onEliminar}>
+              Eliminar
+            </button>
+          ) : (
+            <span />
+          )}
+          <span style={{ display: "flex", gap: 12 }}>
+            <button type="button" className="btn ghost" onClick={onCerrar}>
+              Cancelar
+            </button>
+            <button type="button" className="btn primary" disabled={guardando} onClick={guardar}>
+              {guardando ? "Guardando…" : "Guardar"}
+            </button>
+          </span>
+        </div>
       }
     >
       {error && <div className="error">{error}</div>}
