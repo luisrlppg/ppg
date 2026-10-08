@@ -110,7 +110,8 @@ CI construye las imágenes y las publica en **GHCR**; el servidor sólo las **de
 cp .env.production.example .env.production   # secretos/puertos (no reutilizar los de dev)
 docker login ghcr.io -u <usuario> -p <PAT>    # solo si los paquetes de GHCR son privados
 ./scripts/deploy.sh update [tag]              # pull + up + migraciones (tag = rollback)
-PPG_BUILD=1 ./scripts/deploy.sh update        # fuerza build local (sin CI/registry)
+./scripts/deploy.sh update --build            # construye local en vez de descargar
+PPG_BUILD=1 ./scripts/deploy.sh update        # equivalente a --build (sin CI/registry)
 ./scripts/deploy.sh status                    # contenedores + migraciones aplicadas/pendientes
 ./scripts/deploy.sh restore docs/backups/<archivo>.dump [--yes]
 ```

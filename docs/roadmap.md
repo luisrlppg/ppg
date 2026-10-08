@@ -73,7 +73,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   **Imágenes prehechas (2026-10-07):** `.github/workflows/publish.yml` construye `api`/`web`/`tools`
   en cada push a `main` y las publica en GHCR (`ghcr.io/luisrlppg/ppg-*`, tags `<sha>`/`latest`); el
   servidor sólo hace `docker compose pull` (~segundos vs ~5 min de build). `update [tag]` permite
-  rollback; `PPG_BUILD=1` conserva el build local. La imagen de API usa `pnpm deploy --prod --legacy`
+  rollback; `update --build` (`-b`) o `PPG_BUILD=1` conservan el build local. La imagen de API usa `pnpm deploy --prod --legacy`
   (node_modules sólo de producción, ~320 MB vs ~914 MB); `prisma` pasó a `dependencies` de `@ppg/db`
   y `publicHoistPattern` en `pnpm-workspace.yaml` hace resoluble `prisma generate` en el layout aislado.
 

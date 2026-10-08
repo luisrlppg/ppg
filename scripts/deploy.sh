@@ -2,7 +2,8 @@
 # PPG ERP — Gestor de despliegue a producción (Docker Compose).
 #
 # Uso: ./scripts/deploy.sh <update|pull|status|logs|backup|restore|down|help> [tag]
-#   update [tag]      pull (o build si PPG_BUILD=1) + up + espera salud + migraciones
+#   update [-b|--build] [tag]  pull + up + espera salud + migraciones
+#                     Con `-b`/`--build` construye localmente en vez de descargar.
 #                     El `tag` opcional permite desplegar/rollback a una imagen concreta
 #                     (por defecto usa PPG_TAG o `latest`).
 #   pull              descarga las imágenes del registry (GHCR)
@@ -15,7 +16,8 @@
 # Variables de entorno:
 #   PPG_ENV_FILE  archivo de entorno (default: .env.production si existe, si no .env).
 #   PPG_TAG       tag de las imágenes a desplegar (default: latest).
-#   PPG_BUILD=1   construye las imágenes localmente en vez de descargarlas.
+#   PPG_BUILD=1   construye las imágenes localmente en vez de descargarlas
+#                 (equivalente a `update --build`).
 #
 # Las imágenes las publica CI en GHCR (ghcr.io/luisrlppg/ppg-{api,web,tools}). Si
 # los paquetes son privados, haz `docker login ghcr.io -u <usuario> -p <PAT>` una vez.
@@ -79,13 +81,19 @@ build_local() {
 
 do_update() {
   require_docker
-  local tag="${1:-}"
+  local tag="" force_build=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      -b|--build|build) force_build=1 ;;
+      *) tag="$arg" ;;
+    esac
+  done
   [ -n "$tag" ] && export PPG_TAG="$tag"
 
   log "Actualizando compose/env (git pull --ff-only)"
   git pull --ff-only || warn "no se pudo hacer git pull; se continúa con la revisión local"
 
-  if [ "${PPG_BUILD:-0}" = "1" ]; then
+  if [ "$force_build" = "1" ] || [ "${PPG_BUILD:-0}" = "1" ]; then
     build_local
   elif ! "${COMPOSE[@]}" pull api web; then
     warn "Falló 'docker compose pull' (¿login GHCR o tag inexistente?). Construyendo localmente."
@@ -209,7 +217,7 @@ do_down() {
 }
 
 usage() {
-  sed -n '2,19p' "$0"
+  sed -n '2,24p' "$0"
 }
 
 require_docker
