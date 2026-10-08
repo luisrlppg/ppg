@@ -91,6 +91,20 @@ export default function UbicacionesModal({ ubicaciones, exist, onCambio, onCerra
         Administra los compartimentos y almacenes. Una ubicación sólo se puede eliminar si no tiene existencias.
       </p>
 
+      <form onSubmit={crear} className="row" style={{ alignItems: "flex-end", marginBottom: 12 }}>
+        <label style={{ flex: 1 }}>
+          Nueva ubicación
+          <input
+            value={nuevoNombre}
+            onChange={(e) => setNuevoNombre(e.target.value)}
+            placeholder="ej. Almacén 2, Piso producción"
+          />
+        </label>
+        <button className="btn primary" disabled={guardando || !nuevoNombre.trim()}>
+          Crear
+        </button>
+      </form>
+
       {porEliminar ? (
         <div className="card" style={{ borderColor: "var(--danger, #c0392b)" }}>
           <p style={{ marginTop: 0 }}>
@@ -107,7 +121,7 @@ export default function UbicacionesModal({ ubicaciones, exist, onCambio, onCerra
         </div>
       ) : null}
 
-      <div className="table-wrap" style={{ marginBottom: 12 }}>
+      <div className="table-wrap ubicaciones-lista" style={{ marginBottom: 12 }}>
         <table className="table">
           <thead>
             <tr>
@@ -183,20 +197,6 @@ export default function UbicacionesModal({ ubicaciones, exist, onCambio, onCerra
           </tbody>
         </table>
       </div>
-
-      <form onSubmit={crear} className="row" style={{ alignItems: "flex-end" }}>
-        <label style={{ flex: 1 }}>
-          Nueva ubicación
-          <input
-            value={nuevoNombre}
-            onChange={(e) => setNuevoNombre(e.target.value)}
-            placeholder="ej. Almacén 2, Piso producción"
-          />
-        </label>
-        <button className="btn primary" disabled={guardando || !nuevoNombre.trim()}>
-          Crear
-        </button>
-      </form>
     </Modal>
   );
 }

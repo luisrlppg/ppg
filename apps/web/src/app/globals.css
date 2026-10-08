@@ -1228,6 +1228,19 @@ select:focus {
   overflow: visible;
 }
 
+/* Lista de ubicaciones dentro del modal: scroll propio y encabezado fijo. */
+.ubicaciones-lista {
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.ubicaciones-lista thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 1;
+}
+
 /* ---- Barra de búsqueda/filtros fija (arriba) ---- */
 .sticky-bar {
   position: sticky;
