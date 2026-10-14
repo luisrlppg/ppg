@@ -1310,6 +1310,11 @@ select:focus {
   background: var(--info-bg);
 }
 
+.buscador-lista button.on {
+  background: var(--info-bg);
+  font-weight: 600;
+}
+
 /* ---- Filtro activo + chips de atributo ---- */
 .filtro-activo {
   display: inline-flex;

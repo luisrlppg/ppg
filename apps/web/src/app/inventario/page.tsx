@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
@@ -48,7 +48,10 @@ export default function InventarioPage() {
   }, [cargar]);
 
   // ------------------------------------------------- Filtro producto/atributos
-  const filtroAtributos = useFiltroAtributos(exist);
+  // Los chips de atributo sólo muestran valores con existencia; la selección de
+  // variante (modal) sigue viendo todos los items, incluidos los de stock 0.
+  const existConStock = useMemo(() => exist.filter((e) => e.stockActual > 0), [exist]);
+  const filtroAtributos = useFiltroAtributos(exist, { itemsAtributos: existConStock });
   const { filtradas } = filtroAtributos;
 
   const notify = (e: Error | null, okMsg: string) => {

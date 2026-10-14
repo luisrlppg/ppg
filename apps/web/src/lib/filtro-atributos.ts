@@ -24,12 +24,20 @@ export interface VarianteFiltrable extends ItemFiltrable {
   uom?: string;
 }
 
+export interface OpcionesFiltroAtributos<T extends ItemFiltrable> {
+  /**
+   * Subconjunto de `items` usado para calcular los chips de atributo (p. ej.
+   * sólo variantes con stock). Por defecto son todos los `items`.
+   */
+  itemsAtributos?: T[];
+}
+
 /**
  * Buscador de producto + filtro por atributos (mismos valores presentes en los
  * items). Compartido por Inventario y Fabricación. Dentro de un atributo es
  * "alguno de"; entre atributos se combinan (Y).
  */
-export function useFiltroAtributos<T extends ItemFiltrable>(items: T[]) {
+export function useFiltroAtributos<T extends ItemFiltrable>(items: T[], opciones?: OpcionesFiltroAtributos<T>) {
   const [busqueda, setBusqueda] = useState("");
   const [coincidenciasAbiertas, setCoincidenciasAbiertas] = useState(false);
   const [productoSelId, setProductoSelId] = useState<number | null>(null);
@@ -68,10 +76,12 @@ export function useFiltroAtributos<T extends ItemFiltrable>(items: T[]) {
 
   const productoSel = productos.find((p) => p.productoId === productoSelId) ?? null;
 
+  const itemsAtributos = opciones?.itemsAtributos ?? items;
+
   const atributosProducto = useMemo(() => {
     if (!productoSel) return [] as { attribute: string; valores: string[] }[];
     const map = new Map<string, Set<string>>();
-    for (const v of items) {
+    for (const v of itemsAtributos) {
       if (v.productoId !== productoSel.productoId) continue;
       for (const a of v.valoracion) {
         const s = map.get(a.attribute) ?? new Set<string>();
@@ -82,7 +92,7 @@ export function useFiltroAtributos<T extends ItemFiltrable>(items: T[]) {
     return [...map.entries()]
       .map(([attribute, set]) => ({ attribute, valores: [...set].sort() }))
       .sort((a, b) => a.attribute.localeCompare(b.attribute));
-  }, [items, productoSel]);
+  }, [itemsAtributos, productoSel]);
 
   const seleccionarProducto = useCallback((productoId: number) => {
     setProductoSelId(productoId);

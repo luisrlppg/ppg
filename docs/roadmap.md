@@ -7,7 +7,7 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos. Ya extraídos
    `reportes/page.tsx` (1003→100) a `components/reportes/` y `productos/[id]/page.tsx` (1148→183) a
    `components/productos/detalle/`. Quedan: `ventas/page.tsx` (579), `fabricacion/page.tsx` (364);
-   `inventario/page.tsx` bajó a 457 al extraer el modal de movimientos. La API ya quedó mayormente
+   `inventario/page.tsx` bajó a 460 al extraer el modal de movimientos. La API ya quedó mayormente
    modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, decidir si se
@@ -37,6 +37,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 > **Ventana rodante:** al añadir un hito arriba, mueve el más antiguo a `git log`. Este log no crece
 > indefinidamente. Detalle de cambios previos: `git log --oneline`.
+
+- **Selector de ubicación + chips con stock (2026-10-14):** el modal de movimientos de **Inventario**
+  (`components/inventario/modal-movimiento.tsx`) reemplaza los `<select>` de ubicación por
+  `components/ui/selector-ubicacion.tsx` (input que filtra las opciones por nombre). En **Transferir**,
+  tras elegir la variante el **Origen** sale sólo de las ubicaciones con existencia de esa variante
+  (se autoselecciona si hay una sola) y el **Destino** es cualquier ubicación salvo el origen. El
+  filtro por atributos de Inventario acota los chips a **valores con existencia**
+  (`useFiltroAtributos(exist, { itemsAtributos: existConStock })`; `itemsAtributos` opcional en
+  `lib/filtro-atributos.ts`). `pnpm --filter @ppg/web build` en verde.
 
 - **Selector de variante por producto + atributos (2026-10-14):** se reemplazaron los `<select>`
   planos de variante por `components/ui/selector-variante.tsx` (busca producto por nombre y acota con
