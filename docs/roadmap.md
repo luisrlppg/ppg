@@ -38,11 +38,19 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 > **Ventana rodante:** al añadir un hito arriba, mueve el más antiguo a `git log`. Este log no crece
 > indefinidamente. Detalle de cambios previos: `git log --oneline`.
 
-- **Selector de ubicación + chips con stock (2026-10-14):** el modal de movimientos de **Inventario**
-  (`components/inventario/modal-movimiento.tsx`) reemplaza los `<select>` de ubicación por
-  `components/ui/selector-ubicacion.tsx` (input que filtra las opciones por nombre). En **Transferir**,
-  tras elegir la variante el **Origen** sale sólo de las ubicaciones con existencia de esa variante
-  (se autoselecciona si hay una sola) y el **Destino** es cualquier ubicación salvo el origen. El
+- **Acciones de inventario por fila (2026-10-14):** el toolbar de **Inventario** deja sólo **+ Entrada**
+  (`components/inventario/modal-entrada.tsx`, variante con selector + ubicación buscable). **Salida** y
+  **Transferir** se eliminan como botones: en **Por ubicación** y **Por variante** las filas son
+  clicables (`tr.row-click`) y abren `components/inventario/modal-accion-fila.tsx` con 4 modos sobre esa
+  variante en esa ubicación (**Reajustar cantidad**, **Entrada**, **Salida**, **Reubicación**), con el
+  **origen fijado por la fila** y la **cantidad precargada** desde la celda (editable). Se quitó la
+  edición inline de cantidad (evita mis-clicks); el ajuste de conteo físico pasa a ser el modo
+  *Reajustar*. La vista **Min Max** conserva mín/máx editables
+  (`components/inventario/cantidad-editable.tsx`). Se elimina `components/inventario/modal-movimiento.tsx`.
+  `pnpm --filter @ppg/web build` en verde.
+
+- **Selector de ubicación + chips con stock (2026-10-14):** se añadió
+  `components/ui/selector-ubicacion.tsx` (input que filtra las opciones de ubicación por nombre) y el
   filtro por atributos de Inventario acota los chips a **valores con existencia**
   (`useFiltroAtributos(exist, { itemsAtributos: existConStock })`; `itemsAtributos` opcional en
   `lib/filtro-atributos.ts`). `pnpm --filter @ppg/web build` en verde.

@@ -622,6 +622,10 @@ select:focus {
   background: #fafafa;
 }
 
+.table tr.row-click {
+  cursor: pointer;
+}
+
 /* ---- Badges ---- */
 .badge {
   display: inline-block;

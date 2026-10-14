@@ -9,7 +9,8 @@ import Segmented from "@/components/ui/segmented";
 import StickyBar from "@/components/ui/sticky-bar";
 import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
-import ModalMovimiento, { type Accion } from "@/components/inventario/modal-movimiento";
+import ModalEntrada from "@/components/inventario/modal-entrada";
+import ModalAccionFila from "@/components/inventario/modal-accion-fila";
 import UbicacionesModal from "@/components/inventario/ubicaciones-modal";
 import { api } from "@/lib/api";
 import { descargarCSV } from "@/lib/csv";
@@ -66,30 +67,13 @@ export default function InventarioPage() {
   };
 
   // --------------------------------------------------------------- Acciones
-  const [accion, setAccion] = useState<Accion | null>(null);
+  const [showEntrada, setShowEntrada] = useState(false);
+  const [fila, setFila] = useState<{ variante: Existencia; ubicacion: Ubicacion; cantidad: number } | null>(null);
 
-  function abrir(a: Accion) {
+  function abrirEntrada() {
     setError("");
     setMsg("");
-    setAccion(a);
-  }
-
-  function cerrarAccion() {
-    setAccion(null);
-  }
-
-  // ---------------------------------------------------------- Ajuste por celda
-  async function ajustar(variantId: number, locationId: number, nuevaCantidad: number) {
-    try {
-      const r = await api<{ resultado: { delta: number; sinCambio: boolean } }>("/inventario/ajuste", {
-        method: "POST",
-        body: JSON.stringify({ variantId, locationId, nuevaCantidad }),
-      });
-      if (r.resultado.sinCambio) notify(null, "Sin cambios.");
-      else notify(null, `Ajuste registrado (${r.resultado.delta > 0 ? "+" : ""}${formatCantidad(r.resultado.delta)}).`);
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    setShowEntrada(true);
   }
 
   // -------------------------------------------------- Editar mín/máx variante
@@ -177,22 +161,17 @@ export default function InventarioPage() {
       />
 
       <HelpNote closable>
-        Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Para un{" "}
-        <strong>ajuste</strong> (conteo físico), haz clic en la cantidad en <strong>Por ubicación</strong> o{" "}
-        <strong>Por variante</strong> y escribe la cantidad real: se registra la diferencia. El stock no puede
-        quedar por debajo de cero. En <strong>Min Max</strong> puedes editar el mínimo y el máximo de cada variante.
+        Las alertas de bajo stock se disparan <strong>al momento</strong> de cada movimiento. Haz clic en una fila
+        de <strong>Por ubicación</strong> o <strong>Por variante</strong> para <strong>reajustar la cantidad</strong>{" "}
+        (conteo físico), registrar <strong>entrada</strong>, <strong>salida</strong> o <strong>reubicación</strong>{" "}
+        de ese material en esa ubicación: la cantidad viene precargada y se puede editar. El stock no puede quedar
+        por debajo de cero. En <strong>Min Max</strong> puedes editar el mínimo y el máximo de cada variante.
       </HelpNote>
 
       <StickyBar>
       <div className="toolbar">
-        <button className="btn primary" onClick={() => abrir("entrada")}>
+        <button className="btn primary" onClick={abrirEntrada}>
           + Entrada
-        </button>
-        <button className="btn secondary" onClick={() => abrir("salida")}>
-          − Salida
-        </button>
-        <button className="btn secondary" onClick={() => abrir("mover")}>
-          Transferir
         </button>
         <div className="grow" />
         <BuscadorAtributos filtro={filtroAtributos} />
@@ -290,9 +269,13 @@ export default function InventarioPage() {
               <tbody>
                 {grupos.map((g) =>
                   g.filas.map((f, i) => (
-                    <tr key={`${g.v.variantId}-${f.l.id}`}>
+                    <tr
+                      key={`${g.v.variantId}-${f.l.id}`}
+                      className="row-click"
+                      onClick={() => setFila({ variante: g.v, ubicacion: f.l, cantidad: f.qty })}
+                    >
                       {i === 0 && (
-                        <td rowSpan={g.filas.length}>
+                        <td rowSpan={g.filas.length} onClick={(e) => e.stopPropagation()}>
                           <strong>{g.v.producto}</strong>
                           <div className="attr-list">
                             {g.v.valoracion.length > 0
@@ -306,9 +289,7 @@ export default function InventarioPage() {
                         </td>
                       )}
                       <td>{f.l.nombre}</td>
-                      <td className="num">
-                        <CantidadEditable value={f.qty} onSave={(nueva) => ajustar(g.v.variantId, f.l.id, nueva)} />
-                      </td>
+                      <td className="num">{formatCantidad(f.qty)}</td>
                     </tr>
                   )),
                 )}
@@ -331,9 +312,13 @@ export default function InventarioPage() {
               <tbody>
                 {gruposUbicacion.map((g) =>
                   g.filas.map((f, i) => (
-                    <tr key={`${g.l.id}-${f.v.variantId}`}>
+                    <tr
+                      key={`${g.l.id}-${f.v.variantId}`}
+                      className="row-click"
+                      onClick={() => setFila({ variante: f.v, ubicacion: g.l, cantidad: f.qty })}
+                    >
                       {i === 0 && (
-                        <td rowSpan={g.filas.length}>
+                        <td rowSpan={g.filas.length} onClick={(e) => e.stopPropagation()}>
                           <strong>{g.l.nombre}</strong>
                         </td>
                       )}
@@ -349,9 +334,7 @@ export default function InventarioPage() {
                             : <span className="muted small">—</span>}
                         </div>
                       </td>
-                      <td className="num">
-                        <CantidadEditable value={f.qty} onSave={(nueva) => ajustar(f.v.variantId, g.l.id, nueva)} />
-                      </td>
+                      <td className="num">{formatCantidad(f.qty)}</td>
                     </tr>
                   )),
                 )}
@@ -386,17 +369,31 @@ export default function InventarioPage() {
         </ul>
       </div>
 
-      {/* --- Modal: entrada / salida / transferencia --- */}
-      {accion && (
-        <ModalMovimiento
-          key={accion}
-          accion={accion}
+      {/* --- Modal: registrar entrada --- */}
+      {showEntrada && (
+        <ModalEntrada
           exist={exist}
           locs={locs}
-          onCerrar={cerrarAccion}
+          onCerrar={() => setShowEntrada(false)}
           onHecho={(m) => {
             notify(null, m);
-            cerrarAccion();
+            setShowEntrada(false);
+          }}
+        />
+      )}
+
+      {/* --- Modal: acciones sobre una fila (reajustar/entrada/salida/reubicar) --- */}
+      {fila && (
+        <ModalAccionFila
+          key={`${fila.variante.variantId}-${fila.ubicacion.id}`}
+          variante={fila.variante}
+          ubicacion={fila.ubicacion}
+          cantidad={fila.cantidad}
+          locs={locs}
+          onCerrar={() => setFila(null)}
+          onHecho={(m) => {
+            notify(null, m);
+            setFila(null);
           }}
         />
       )}
