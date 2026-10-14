@@ -141,7 +141,7 @@ export default function ModalAccionFila({ variante, ubicacion, cantidad, locs, o
         </p>
 
         <div style={{ marginBottom: 12 }}>
-          <Segmented value={modo} onChange={(v) => setModo(v as Modo)} options={MODOS} />
+          <Segmented value={modo} onChange={(v) => setModo(v as Modo)} options={MODOS} wrap />
         </div>
 
         <div className="row">

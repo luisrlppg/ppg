@@ -9,11 +9,13 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   options: Option[];
+  /** Permite que los botones salten de línea si no caben (p. ej. en modales estrechos). */
+  wrap?: boolean;
 }
 
-export default function Segmented({ value, onChange, options }: Props) {
+export default function Segmented({ value, onChange, options, wrap }: Props) {
   return (
-    <div className="segmented" role="tablist">
+    <div className={wrap ? "segmented wrap" : "segmented"} role="tablist">
       {options.map((o) => (
         <button
           key={o.value}

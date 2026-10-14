@@ -965,6 +965,18 @@ select:focus {
   box-shadow: var(--shadow-sm);
 }
 
+/* Variante que envuelve: los botones saltan de línea si no caben. */
+.segmented.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  border-radius: 14px;
+}
+
+.segmented.wrap button {
+  flex: 1 1 auto;
+}
+
 /* ---- Tarjetas de acceso (submenú) ---- */
 .nav-cards {
   display: grid;

@@ -275,7 +275,7 @@ export default function InventarioPage() {
                       onClick={() => setFila({ variante: g.v, ubicacion: f.l, cantidad: f.qty })}
                     >
                       {i === 0 && (
-                        <td rowSpan={g.filas.length} onClick={(e) => e.stopPropagation()}>
+                        <td rowSpan={g.filas.length}>
                           <strong>{g.v.producto}</strong>
                           <div className="attr-list">
                             {g.v.valoracion.length > 0
@@ -318,7 +318,7 @@ export default function InventarioPage() {
                       onClick={() => setFila({ variante: f.v, ubicacion: g.l, cantidad: f.qty })}
                     >
                       {i === 0 && (
-                        <td rowSpan={g.filas.length} onClick={(e) => e.stopPropagation()}>
+                        <td rowSpan={g.filas.length}>
                           <strong>{g.l.nombre}</strong>
                         </td>
                       )}

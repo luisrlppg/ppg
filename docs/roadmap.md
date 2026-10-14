@@ -47,7 +47,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
   edición inline de cantidad (evita mis-clicks); el ajuste de conteo físico pasa a ser el modo
   *Reajustar*. La vista **Min Max** conserva mín/máx editables
   (`components/inventario/cantidad-editable.tsx`). Se elimina `components/inventario/modal-movimiento.tsx`.
-  `pnpm --filter @ppg/web build` en verde.
+  Ajustes (2026-10-14): el modal abre al hacer clic en **cualquier celda** de la fila (se quitó el
+  `stopPropagation` del `<td rowSpan>`) y el selector de modos usa la variante `wrap` de
+  `components/ui/segmented.tsx` para no desbordar el modal. `pnpm --filter @ppg/web build` en verde.
 
 - **Selector de ubicación + chips con stock (2026-10-14):** se añadió
   `components/ui/selector-ubicacion.tsx` (input que filtra las opciones de ubicación por nombre) y el
