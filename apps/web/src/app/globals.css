@@ -1357,6 +1357,55 @@ select:focus {
   color: #fff;
 }
 
+/* ---- Selector de variante (buscar producto + chips + lista) ---- */
+.selector-variante {
+  display: block;
+}
+
+.selector-variante-lista {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.selector-variante-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.selector-variante-item:hover {
+  border-color: var(--brand);
+}
+
+.selector-variante-item.on {
+  border-color: var(--brand);
+  background: var(--info-bg);
+}
+
+.selector-variante-nombre {
+  font-weight: 600;
+}
+
+.selector-variante-atributos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 /* ---- Atributos de variante (inventario) ---- */
 .attr-list {
   margin-top: 2px;

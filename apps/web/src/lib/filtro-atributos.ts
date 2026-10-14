@@ -15,6 +15,15 @@ export interface ProductoFiltrable {
   variantes: number;
 }
 
+/** Variante concreta elegible: producto + atributos + identidad de la variante. */
+export interface VarianteFiltrable extends ItemFiltrable {
+  variantId: number;
+  nombre: string;
+  sku: string;
+  stockActual?: number;
+  uom?: string;
+}
+
 /**
  * Buscador de producto + filtro por atributos (mismos valores presentes en los
  * items). Compartido por Inventario y Fabricación. Dentro de un atributo es

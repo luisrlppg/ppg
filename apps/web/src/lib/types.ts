@@ -608,6 +608,7 @@ export interface CostoVariante {
   sku: string;
   nombre: string;
   costoCompra: number | null;
+  valoracion: { attribute: string; valor: string }[];
 }
 
 export interface CostoComponente {

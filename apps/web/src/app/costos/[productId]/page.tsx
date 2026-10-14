@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppShell from "@/components/app-shell";
 import PageHeader from "@/components/ui/page-header";
 import HelpNote from "@/components/ui/help-note";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import SelectorVariante from "@/components/ui/selector-variante";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/preferences";
 import type { CostoDetalle, CostoPreview, CostoValor, FuenteCostoValor } from "@/lib/types";
@@ -146,6 +147,15 @@ export default function CostoProductoPage() {
   const margen = precio > 0 ? precio - costoTotal : null;
   const margenPct = precio > 0 ? ((precio - costoTotal) / precio) * 100 : null;
 
+  const variantesFiltrables = useMemo(() => {
+    if (!detalle) return [];
+    return detalle.variantes.map((vr) => ({
+      ...vr,
+      productoId: detalle.productId,
+      producto: detalle.nombre,
+    }));
+  }, [detalle]);
+
   function setValor(i: number, campo: keyof EditValor, v: string) {
     setValores((prev) => prev.map((x, j) => (j === i ? { ...x, [campo]: v } : x)));
   }
@@ -268,6 +278,10 @@ export default function CostoProductoPage() {
                 <tbody>
                   {valores.map((v, i) => {
                     const r = resueltos.get(v.clave.trim());
+                    const vrSel =
+                      v.fuente === "variante" && v.variantId
+                        ? detalle?.variantes.find((x) => String(x.variantId) === v.variantId)
+                        : undefined;
                     return (
                       <tr key={i}>
                         <td>
@@ -343,18 +357,20 @@ export default function CostoProductoPage() {
                             </div>
                           )}
                           {v.fuente === "variante" && (
-                            <select
-                              value={v.variantId}
-                              onChange={(e) => setValor(i, "variantId", e.target.value)}
-                            >
-                              <option value="">— Elegir variante —</option>
-                              {detalle.variantes.map((vr) => (
-                                <option key={vr.variantId} value={vr.variantId}>
-                                  {vr.nombre} ({vr.sku})
-                                  {vr.costoCompra === null ? " · sin costo" : ` · ${money(vr.costoCompra)}`}
-                                </option>
-                              ))}
-                            </select>
+                            <div style={{ minWidth: 260 }}>
+                              <SelectorVariante
+                                items={variantesFiltrables}
+                                value={v.variantId ? Number(v.variantId) : null}
+                                onChange={(id) => setValor(i, "variantId", id === null ? "" : String(id))}
+                                ocultarBusqueda
+                                vacio="Este producto no tiene variantes."
+                              />
+                              {vrSel && (
+                                <p className="muted small" style={{ margin: "4px 0 0" }}>
+                                  {vrSel.costoCompra === null ? "Sin costo de compra" : `Costo: ${money(vrSel.costoCompra)}`}
+                                </p>
+                              )}
+                            </div>
                           )}
                           {v.fuente === "formula" && (
                             <input

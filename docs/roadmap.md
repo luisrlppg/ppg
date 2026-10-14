@@ -6,8 +6,9 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 1. **Modularización** (prioridad actual del equipo): dividir los archivos web masivos. Ya extraídos
    `reportes/page.tsx` (1003→100) a `components/reportes/` y `productos/[id]/page.tsx` (1148→183) a
-   `components/productos/detalle/`. Quedan: `inventario/page.tsx` (602), `ventas/page.tsx` (579),
-   `fabricacion/page.tsx` (364). La API ya quedó mayormente modularizada.
+   `components/productos/detalle/`. Quedan: `ventas/page.tsx` (579), `fabricacion/page.tsx` (364);
+   `inventario/page.tsx` bajó a 457 al extraer el modal de movimientos. La API ya quedó mayormente
+   modularizada.
 2. **WSL2** — completar setup de dev en Linux.
 3. **Catálogo:** pendientes en [`catalog-state.md`](./catalog-state.md) (`PIN-0011`, decidir si se
    limpian del crosswalk los 4 SKUs `VST` eliminados por `reorg-vastago.ts` —ver
@@ -36,6 +37,15 @@ Estado y trabajo pendiente de PPG ERP. Para ubicar archivos ver `project-nav.md`
 
 > **Ventana rodante:** al añadir un hito arriba, mueve el más antiguo a `git log`. Este log no crece
 > indefinidamente. Detalle de cambios previos: `git log --oneline`.
+
+- **Selector de variante por producto + atributos (2026-10-14):** se reemplazaron los `<select>`
+  planos de variante por `components/ui/selector-variante.tsx` (busca producto por nombre y acota con
+  chips de atributo; reutiliza `useFiltroAtributos`; `VarianteFiltrable` en `lib/filtro-atributos.ts`).
+  En **Inventario** el modal de entrada/salida/transferir se extrajo a
+  `components/inventario/modal-movimiento.tsx` (la página queda en 457 líneas). En **Costos**, el
+  `GET /costos/:productId` ahora incluye `valoracion` por variante y el `<select>` de fuente
+  "variante" usa el mismo selector (`ocultarBusqueda`). `pnpm --filter @ppg/web build` y
+  `pnpm --filter @ppg/api build` en verde.
 
 - **Gestión de ubicaciones + borrado de usuarios (2026-10-07):** en **Inventario**, botón
   **Ubicaciones** (sólo `admin`) → `components/inventario/ubicaciones-modal.tsx`: crear, renombrar y

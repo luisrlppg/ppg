@@ -115,7 +115,7 @@ export class CostosService {
       where: { id: productId },
       include: {
         variants: {
-          select: { id: true, sku: true, nombre: true, costoCompra: true, price: true, activo: true },
+          include: { variantAttributes: { include: { attribute: true, value: true } } },
           orderBy: { nombre: "asc" },
         },
         components: { include: { component: { select: { id: true, nombre: true, skuBase: true } } } },
@@ -147,6 +147,9 @@ export class CostosService {
         sku: v.sku,
         nombre: v.nombre,
         costoCompra: v.costoCompra === null ? null : dec(v.costoCompra),
+        valoracion: v.variantAttributes
+          .map((va) => ({ attribute: va.attribute.nombre, valor: va.value.valor }))
+          .sort((a, b) => a.attribute.localeCompare(b.attribute)),
       })),
       componentes: p.components.map((c) => ({
         componentId: c.componentId,

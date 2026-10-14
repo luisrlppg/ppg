@@ -9,6 +9,7 @@ import Segmented from "@/components/ui/segmented";
 import StickyBar from "@/components/ui/sticky-bar";
 import BuscadorAtributos, { FiltroAtributosModal } from "@/components/ui/buscador-atributos";
 import CantidadEditable from "@/components/inventario/cantidad-editable";
+import ModalMovimiento, { type Accion } from "@/components/inventario/modal-movimiento";
 import UbicacionesModal from "@/components/inventario/ubicaciones-modal";
 import { api } from "@/lib/api";
 import { descargarCSV } from "@/lib/csv";
@@ -16,7 +17,6 @@ import { useFiltroAtributos } from "@/lib/filtro-atributos";
 import { useAuth, useFormatCantidad } from "@/lib/preferences";
 import type { Existencia, Movimiento, Ubicacion } from "@/lib/types";
 
-type Accion = "entrada" | "salida" | "mover";
 type Vista = "ubicacion" | "variante" | "variante-minmax";
 
 export default function InventarioPage() {
@@ -64,77 +64,15 @@ export default function InventarioPage() {
 
   // --------------------------------------------------------------- Acciones
   const [accion, setAccion] = useState<Accion | null>(null);
-  const [selId, setSelId] = useState<number | null>(null);
-  const [cantidad, setCantidad] = useState("");
-  const [ubiId, setUbiId] = useState("");
-  const [ref, setRef] = useState("");
-  const [origen, setOrigen] = useState("");
-  const [destino, setDestino] = useState("");
-  const [cargando, setCargando] = useState(false);
 
-  function abrir(a: Accion, variantId?: number) {
-    setAccion(a);
-    setSelId(variantId ?? null);
-    setCantidad("");
-    setRef("");
-    setUbiId(String(locs[0]?.id ?? ""));
-    setOrigen(String(locs[0]?.id ?? ""));
-    setDestino(String(locs[1]?.id ?? locs[0]?.id ?? ""));
+  function abrir(a: Accion) {
     setError("");
     setMsg("");
+    setAccion(a);
   }
 
   function cerrarAccion() {
     setAccion(null);
-    setSelId(null);
-  }
-
-  async function ejecutar(e: React.FormEvent) {
-    e.preventDefault();
-    if (selId === null) {
-      setError("Selecciona una variante.");
-      return;
-    }
-    setCargando(true);
-    setError("");
-    try {
-      const qty = Number(cantidad);
-      if (accion === "entrada" || accion === "salida") {
-        if (!Number.isFinite(qty) || qty <= 0) {
-          setError("La cantidad debe ser mayor a 0.");
-          return;
-        }
-        if (accion === "salida") {
-          const disponible = exist.find((x) => x.variantId === selId)?.porUbicacion[Number(ubiId)]?.qty ?? 0;
-          if (qty > disponible) {
-            setError(`Stock insuficiente en la ubicación: hay ${formatCantidad(disponible)} y se intentan sacar ${formatCantidad(qty)}.`);
-            return;
-          }
-        }
-        await api("/inventario/movimiento", {
-          method: "POST",
-          body: JSON.stringify({
-            variantId: selId,
-            locationId: Number(ubiId),
-            motivo: accion,
-            cantidad: accion === "salida" ? -qty : qty,
-            ref: ref || undefined,
-          }),
-        });
-        notify(null, accion === "entrada" ? "Entrada registrada." : "Salida registrada.");
-      } else if (accion === "mover") {
-        await api("/inventario/mover", {
-          method: "POST",
-          body: JSON.stringify({ variantId: selId, fromLocationId: Number(origen), toLocationId: Number(destino), cantidad: qty, ref: ref || undefined }),
-        });
-        notify(null, "Transferencia registrada.");
-      }
-      cerrarAccion();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setCargando(false);
-    }
   }
 
   // ---------------------------------------------------------- Ajuste por celda
@@ -166,9 +104,6 @@ export default function InventarioPage() {
 
   // ---------------------------------------------------------- Nueva ubicación
   const [showUbi, setShowUbi] = useState(false);
-
-  const seleccion = exist.find((x) => x.variantId === selId);
-  const disponible = seleccion?.porUbicacion[Number(ubiId)]?.qty ?? 0;
 
   // ------------------------------------------------- Filtro producto/atributos
   const qtyEn = (v: Existencia, locId: number) => v.porUbicacion[locId]?.qty ?? 0;
@@ -450,97 +385,17 @@ export default function InventarioPage() {
 
       {/* --- Modal: entrada / salida / transferencia --- */}
       {accion && (
-        <Modal
-          title={
-            accion === "entrada" ? "Registrar entrada"
-              : accion === "salida" ? "Registrar salida"
-              : "Transferir entre ubicaciones"
-          }
-          onClose={cerrarAccion}
-        >
-          <form onSubmit={ejecutar}>
-            <label>
-              Variante
-              <select value={selId ?? ""} onChange={(e) => setSelId(e.target.value ? Number(e.target.value) : null)} required>
-                <option value="">— Elegir —</option>
-                {exist.map((v) => (
-                  <option key={v.variantId} value={v.variantId}>
-                    {v.producto} · {v.nombre} ({v.sku})
-                  </option>
-                ))}
-              </select>
-            </label>
-            {seleccion && (
-              <p className="muted small" style={{ margin: "0 0 8px" }}>
-                <strong>{seleccion.producto}</strong> · {seleccion.nombre} ({seleccion.sku}) · Stock total: {formatCantidad(seleccion.stockActual)} {seleccion.uom}
-              </p>
-            )}
-
-            {(accion === "entrada" || accion === "salida") && (
-              <label>
-                Ubicación
-                <select value={ubiId} onChange={(e) => setUbiId(e.target.value)}>
-                  {locs.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            {accion === "salida" && seleccion && (
-              <p className="muted small" style={{ margin: "0 0 8px" }}>
-                Disponible en la ubicación: <strong>{formatCantidad(disponible)} {seleccion.uom}</strong>
-              </p>
-            )}
-
-            {accion === "mover" && (
-              <div className="row">
-                <label>
-                  Origen
-                  <select value={origen} onChange={(e) => setOrigen(e.target.value)}>
-                    {locs.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Destino
-                  <select value={destino} onChange={(e) => setDestino(e.target.value)}>
-                    {locs.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
-
-            <div className="row">
-              <label>
-                Cantidad
-                <input type="number" step="0.001" min="0" value={cantidad} onChange={(e) => setCantidad(e.target.value)} required />
-              </label>
-              <label>
-                Referencia (opcional)
-                <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="ej. venta 001, lote 7" />
-              </label>
-            </div>
-
-            <div className="row" style={{ justifyContent: "flex-end" }}>
-              <button type="button" className="btn ghost" onClick={cerrarAccion}>
-                Cancelar
-              </button>
-              <button className="btn primary" disabled={cargando}>
-                {cargando ? "Guardando…" : "Registrar"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <ModalMovimiento
+          key={accion}
+          accion={accion}
+          exist={exist}
+          locs={locs}
+          onCerrar={cerrarAccion}
+          onHecho={(m) => {
+            notify(null, m);
+            cerrarAccion();
+          }}
+        />
       )}
 
       {/* --- Modal: filtros por atributos --- */}
